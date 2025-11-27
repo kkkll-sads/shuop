@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Cultural Asset Trader</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      /* Hide scrollbar globally for a native app feel */
+      ::-webkit-scrollbar {
+        display: none;
+        width: 0 !important;
+        height: 0 !important;
+      }
+      
+      /* Hide scrollbar for Firefox */
+      * {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+
+      body {
+        background-color: #f3f4f6;
+        -webkit-tap-highlight-color: transparent;
+        /* Prevent bounce effect on some devices if desired, feel free to remove */
+        overscroll-behavior-y: none;
+      }
+
+      /* Custom utility for safe area bottom padding (iPhone X+) */
+      .pb-safe {
+        padding-bottom: constant(safe-area-inset-bottom); /* iOS 11.0 */
+        padding-bottom: env(safe-area-inset-bottom); /* iOS 11.2 */
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>

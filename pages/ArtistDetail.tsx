@@ -1,7 +1,11 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { Artist, Product } from '../types';
-import { PRODUCTS } from '../constants';
+import {
+  fetchShopProducts,
+  normalizeAssetUrl,
+  ShopProductItem,
+} from '../services/api';
 
 interface ArtistDetailProps {
   artist: Artist;
@@ -10,16 +14,36 @@ interface ArtistDetailProps {
 }
 
 const ArtistDetail: React.FC<ArtistDetailProps> = ({ artist, onBack, onProductSelect }) => {
-  // Find products by this artist (mock logic: simple string includes or exact match if we had normalized data)
-  // Since mock data names might not match perfectly, we'll just show some random products for demo if no match,
-  // or strictly filter. Let's strictly filter but rely on the mock data names being consistent.
-  // For demo purposes, if we don't find any, we might show a few random ones to make the page look good.
-  let artistWorks = PRODUCTS.filter(p => p.artist === artist.name);
-  
-  // Fallback for demo if no works found for specific artist in mock PRODUCTS
-  if (artistWorks.length === 0) {
-    artistWorks = PRODUCTS.slice(0, 4); 
-  }
+  const [works, setWorks] = useState<Product[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const load = async () => {
+      try {
+        const res = await fetchShopProducts({ page: 1, limit: 20 });
+        if (!isMounted) return;
+        const list = res.data?.list ?? [];
+
+        const mapped: Product[] = list.map((item: ShopProductItem) => ({
+          id: String(item.id),
+          title: item.name,
+          // 暂无真实艺术家字段，使用分类名占位
+          artist: item.category || artist.name,
+          price: item.score_price || item.price || 0,
+          image: normalizeAssetUrl(item.thumbnail),
+          category: item.category || '其他',
+        }));
+
+        setWorks(mapped.slice(0, 8));
+      } catch (e) {
+        console.error('加载艺术家代表作品失败:', e);
+      }
+    };
+    load();
+    return () => {
+      isMounted = false;
+    };
+  }, [artist.name]);
 
   return (
     <div className="min-h-screen bg-gray-50 pb-safe">
@@ -63,7 +87,7 @@ const ArtistDetail: React.FC<ArtistDetailProps> = ({ artist, onBack, onProductSe
             </div>
             
             <div className="grid grid-cols-2 gap-3">
-                {artistWorks.map((work) => (
+                {works.map((work) => (
                     <div 
                         key={work.id} 
                         className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-100 active:scale-[0.99] transition-transform"

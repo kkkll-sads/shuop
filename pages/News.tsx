@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { ArrowRight, Trash2, FileText } from 'lucide-react';
 import { NewsItem } from '../types';
 
@@ -8,8 +8,27 @@ interface NewsProps {
   onMarkAllRead: () => void;
 }
 
+const NEWS_TAB_STORAGE_KEY = 'cat_news_active_tab';
+
 const News: React.FC<NewsProps> = ({ newsList, onNavigate, onMarkAllRead }) => {
-  const [activeTab, setActiveTab] = useState<'announcement' | 'dynamics'>('announcement');
+  // 从 localStorage 恢复标签页状态，如果没有则默认为 'announcement'
+  const [activeTab, setActiveTab] = useState<'announcement' | 'dynamics'>(() => {
+    try {
+      const saved = localStorage.getItem(NEWS_TAB_STORAGE_KEY);
+      return (saved === 'dynamics' || saved === 'announcement') ? saved : 'announcement';
+    } catch {
+      return 'announcement';
+    }
+  });
+
+  // 当标签页改变时，保存到 localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(NEWS_TAB_STORAGE_KEY, activeTab);
+    } catch (e) {
+      // 忽略存储错误
+    }
+  }, [activeTab]);
 
   const filteredNews = useMemo(() => {
     return newsList.filter(item => {
@@ -18,17 +37,25 @@ const News: React.FC<NewsProps> = ({ newsList, onNavigate, onMarkAllRead }) => {
     });
   }, [activeTab, newsList]);
 
+  const hasUnread = useMemo(() => newsList.some(item => item.isUnread), [newsList]);
+
   return (
     <div className="pb-24 min-h-screen bg-gray-50">
       <header className="bg-white sticky top-0 z-10">
         <div className="flex items-center justify-center p-3 border-b border-gray-100 relative">
             <h1 className="font-bold text-lg">资讯</h1>
             <button 
-                onClick={onMarkAllRead}
-                className="absolute right-4 text-gray-500 active:text-gray-800 p-1 rounded-full hover:bg-gray-50 transition-colors"
-                title="清除未读"
+                onClick={hasUnread ? onMarkAllRead : undefined}
+                disabled={!hasUnread}
+                className={`absolute right-4 flex items-center gap-1 text-xs font-medium rounded-full px-3 py-1 transition-colors border ${
+                    hasUnread 
+                        ? 'text-blue-600 border-blue-100 hover:bg-blue-50 active:bg-blue-100' 
+                        : 'text-gray-300 border-gray-100 cursor-not-allowed'
+                }`}
+                title={hasUnread ? '一键清除未读' : '暂无未读公告'}
             >
-                <Trash2 size={20} />
+                <Trash2 size={16} />
+              
             </button>
         </div>
         <div className="flex">
@@ -55,7 +82,14 @@ const News: React.FC<NewsProps> = ({ newsList, onNavigate, onMarkAllRead }) => {
                 <div 
                     key={item.id} 
                     className="bg-white rounded-xl p-4 shadow-sm relative cursor-pointer active:bg-gray-50 transition-colors"
-                    onClick={() => onNavigate(item.id)}
+                    onClick={() => {
+                      // 根据新闻项类型设置标签页，确保返回时显示正确的标签
+                      const targetTab = item.type === 'announcement' ? 'announcement' : 'dynamics';
+                      if (activeTab !== targetTab) {
+                        setActiveTab(targetTab);
+                      }
+                      onNavigate(item.id);
+                    }}
                 >
                     {item.isUnread && <div className="absolute top-4 right-4 w-2 h-2 bg-red-500 rounded-full ring-4 ring-white"></div>}
                     <div className="text-xs text-gray-400 mb-3">{item.date}</div>

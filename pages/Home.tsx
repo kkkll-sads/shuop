@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronRight, Building2, Newspaper, Palette, Trophy } from 'lucide-react';
-import { ARTISTS, BANNERS, NEWS } from '../constants';
-import { Tab } from '../types';
+import { ARTISTS, BANNERS } from '../constants';
+import { Tab, NewsItem } from '../types';
 
 interface HomeProps {
   onNavigate: (page: string) => void;
   onSwitchTab: (tab: Tab) => void;
+  announcements?: NewsItem[];
 }
 
-const Home: React.FC<HomeProps> = ({ onNavigate, onSwitchTab }) => {
+const Home: React.FC<HomeProps> = ({ onNavigate, onSwitchTab, announcements = [] }) => {
   const [currentBanner, setCurrentBanner] = useState(0);
   const [noticeIndex, setNoticeIndex] = useState(0);
   
@@ -27,13 +28,23 @@ const Home: React.FC<HomeProps> = ({ onNavigate, onSwitchTab }) => {
 
   // Notice Auto-scroll
   useEffect(() => {
+    if (!announcements.length) return;
     noticeTimerRef.current = setInterval(() => {
-        setNoticeIndex(prev => (prev + 1) % NEWS.length);
+        setNoticeIndex(prev => (prev + 1) % announcements.length);
     }, 3000);
     return () => {
         if (noticeTimerRef.current) clearInterval(noticeTimerRef.current);
     };
-  }, []);
+  }, [announcements.length]);
+
+  // Reset index when数据长度变化
+  useEffect(() => {
+    if (!announcements.length) {
+      setNoticeIndex(0);
+      return;
+    }
+    setNoticeIndex((prev) => prev % announcements.length);
+  }, [announcements.length]);
 
   useEffect(() => {
     startBannerTimer();
@@ -158,8 +169,12 @@ const Home: React.FC<HomeProps> = ({ onNavigate, onSwitchTab }) => {
         
         {/* Scrolling Notice */}
         <div 
-            className="flex items-center mt-3 text-xs text-gray-600 bg-gray-50 p-2 rounded-lg active:bg-gray-100 transition-colors cursor-pointer"
-            onClick={() => onNavigate(`news-detail:${NEWS[noticeIndex].id}`)}
+            className={`flex items-center mt-3 text-xs text-gray-600 bg-gray-50 p-2 rounded-lg transition-colors ${announcements.length ? 'cursor-pointer active:bg-gray-100' : 'opacity-60'}`}
+            onClick={() => {
+              if (announcements.length) {
+                onNavigate(`news-detail:${announcements[noticeIndex]?.id}`);
+              }
+            }}
         >
             <span className="bg-blue-600 text-white px-1 rounded text-[10px] mr-2 flex-shrink-0 font-medium">平台资讯</span>
             <div className="flex-1 h-5 overflow-hidden relative">
@@ -167,7 +182,7 @@ const Home: React.FC<HomeProps> = ({ onNavigate, onSwitchTab }) => {
                     className="absolute w-full transition-transform duration-500 ease-in-out"
                     style={{ transform: `translateY(-${noticeIndex * 1.25}rem)` }} 
                  >
-                    {NEWS.map((item) => (
+                    {(announcements.length ? announcements : [{ id: 'placeholder', title: '暂无公告' } as NewsItem]).map((item) => (
                         <div key={item.id} className="h-5 flex items-center w-full">
                             <span className="truncate text-gray-700">{item.title}</span>
                         </div>

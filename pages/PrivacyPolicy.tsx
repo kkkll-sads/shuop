@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import SubPageLayout from '../components/SubPageLayout';
-import { fetchAboutUsPage, PageContent } from '../services/api';
+import { fetchPrivacyPolicyPage, PageContent } from '../services/api';
 
-interface AboutUsProps {
+interface PrivacyPolicyProps {
   onBack: () => void;
 }
 
-const AboutUs: React.FC<AboutUsProps> = ({ onBack }) => {
+const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onBack }) => {
   const [page, setPage] = useState<PageContent | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -14,11 +14,11 @@ const AboutUs: React.FC<AboutUsProps> = ({ onBack }) => {
   useEffect(() => {
     let cancelled = false;
 
-    const fetchAboutUs = async () => {
+    const fetchPage = async () => {
       setLoading(true);
       setError(null);
       try {
-        const json = await fetchAboutUsPage();
+        const json = await fetchPrivacyPolicyPage();
 
         if (!cancelled) {
           if (json.code === 1 && json.data) {
@@ -29,7 +29,7 @@ const AboutUs: React.FC<AboutUsProps> = ({ onBack }) => {
         }
       } catch (e: any) {
         if (!cancelled) {
-          console.error('加载关于我们失败:', e);
+          console.error('加载隐私政策失败:', e);
           setError('网络异常，请检查网络后重试');
         }
       } finally {
@@ -39,7 +39,7 @@ const AboutUs: React.FC<AboutUsProps> = ({ onBack }) => {
       }
     };
 
-    fetchAboutUs();
+    fetchPage();
 
     return () => {
       cancelled = true;
@@ -47,7 +47,7 @@ const AboutUs: React.FC<AboutUsProps> = ({ onBack }) => {
   }, []);
 
   return (
-    <SubPageLayout title={page?.title || '中心介绍'} onBack={onBack}>
+    <SubPageLayout title={page?.title || '隐私政策'} onBack={onBack}>
       <div className="p-4 m-4 bg-white rounded-xl shadow-sm border border-gray-100">
         {loading && (
           <div className="py-10 text-center text-gray-400 text-sm">正在加载...</div>
@@ -63,14 +63,16 @@ const AboutUs: React.FC<AboutUsProps> = ({ onBack }) => {
             dangerouslySetInnerHTML={{ __html: page.content }}
           />
         )}
-        
+
         <div className="mt-8 pt-4 border-t border-gray-100 text-center text-xs text-gray-400">
-            <p>Copyright © 2025 数权中心. All rights reserved.</p>
-            <p className="mt-1">版本 v1.0.2</p>
+          <p>Copyright © 2025 数权中心. All rights reserved.</p>
+          <p className="mt-1">版本 v1.0.2</p>
         </div>
       </div>
     </SubPageLayout>
   );
 };
 
-export default AboutUs;
+export default PrivacyPolicy;
+
+

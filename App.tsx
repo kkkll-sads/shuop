@@ -17,12 +17,26 @@ import AboutUs from './pages/AboutUs';
 import ArtistShowcase from './pages/ArtistShowcase';
 import ArtistDetail from './pages/ArtistDetail';
 import MasterpieceShowcase from './pages/MasterpieceShowcase';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import UserAgreement from './pages/UserAgreement';
 import ProductDetail from './pages/ProductDetail';
+import Settings from './pages/Settings';
+import ResetLoginPassword from './pages/ResetLoginPassword';
+import ResetPayPassword from './pages/ResetPayPassword';
+import EditProfile from './pages/EditProfile';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import NotificationSettings from './pages/NotificationSettings';
+import AccountDeletion from './pages/AccountDeletion';
+import ForgotPassword from './pages/ForgotPassword';
+import CardManagement from './pages/CardManagement';
+import AgentAuth from './pages/AgentAuth';
+import HelpCenter from './pages/HelpCenter';
+import UserSurvey from './pages/UserSurvey';
+import OnlineService from './pages/OnlineService';
 import { Tab, Product, NewsItem, LoginSuccessPayload } from './types';
-import { NEWS, ARTISTS } from './constants';
-import { AUTH_TOKEN_KEY, USER_INFO_KEY } from './services/api';
+import { ARTISTS } from './constants';
+import { AUTH_TOKEN_KEY, USER_INFO_KEY, fetchAnnouncements, AnnouncementItem } from './services/api';
 
 const STORAGE_KEY = 'cat_read_news_ids';
 const AUTH_KEY = 'cat_is_logged_in';
@@ -51,13 +65,63 @@ const App: React.FC = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   
   // Initialize news list based on storage
-  const [newsList, setNewsList] = useState<NewsItem[]>(() => {
-    const readIds = getReadNewsIds();
-    return NEWS.map(item => ({
-      ...item,
-      isUnread: readIds.includes(item.id) ? false : item.isUnread
-    }));
-  });
+  const [newsList, setNewsList] = useState<NewsItem[]>([]);
+
+  // 将公告接口返回的数据转换为前端使用的 NewsItem 结构
+  const mapAnnouncementToNewsItem = (item: AnnouncementItem, readIds: string[], newsType: 'announcement' | 'dynamic'): NewsItem => {
+    const id = String(item.id);
+    const isRead = readIds.includes(id);
+
+    // 简单将 HTML 内容转换为纯文本并保留段落换行
+    let content = item.content || '';
+    // 将常见块级标签转换为换行
+    content = content
+      .replace(/<\/p>/gi, '\n\n')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/li>/gi, '\n')
+      .replace(/<\/h[1-6]>/gi, '\n\n');
+    // 去掉其余 HTML 标签
+    content = content.replace(/<\/?[^>]+(>|$)/g, '');
+
+    return {
+      id,
+      date: item.createtime || '',
+      title: item.title || '',
+      isUnread: !isRead,
+      type: newsType,
+      content,
+    };
+  };
+
+  // 首次加载时从接口获取平台公告和平台动态列表
+  useEffect(() => {
+    const loadAnnouncements = async () => {
+      try {
+        const readIds = getReadNewsIds();
+        
+        // 同时请求平台公告（normal）和平台动态（important）
+        const [announcementRes, dynamicRes] = await Promise.all([
+          fetchAnnouncements({ page: 1, limit: 10, type: 'normal' }),
+          fetchAnnouncements({ page: 1, limit: 10, type: 'important' }),
+        ]);
+
+        const announcementList = announcementRes.data?.list ?? [];
+        const dynamicList = dynamicRes.data?.list ?? [];
+
+        // 合并两种类型的数据
+        const allMapped = [
+          ...announcementList.map((item) => mapAnnouncementToNewsItem(item, readIds, 'announcement')),
+          ...dynamicList.map((item) => mapAnnouncementToNewsItem(item, readIds, 'dynamic')),
+        ];
+
+        setNewsList(allMapped);
+      } catch (error) {
+        console.error('加载资讯失败:', error);
+      }
+    };
+
+    loadAnnouncements();
+  }, []);
 
   const handleLogin = (payload?: LoginSuccessPayload) => {
     setIsLoggedIn(true);
@@ -73,11 +137,14 @@ const App: React.FC = () => {
     setSelectedProduct(null);
   };
 
-  const handleLogout = () => { // Optional: for future use
+  const handleLogout = () => {
     setIsLoggedIn(false);
     localStorage.removeItem(AUTH_KEY);
     localStorage.removeItem(AUTH_TOKEN_KEY);
     localStorage.removeItem(USER_INFO_KEY);
+    setSubPage(null);
+    setActiveTab('home');
+    setSelectedProduct(null);
   };
 
   // Helper to navigate to product detail
@@ -128,6 +195,29 @@ const App: React.FC = () => {
             <Register 
                 onBack={() => setSubPage(null)} 
                 onRegisterSuccess={() => setSubPage(null)}
+                onNavigateUserAgreement={() => setSubPage('user-agreement')}
+                onNavigatePrivacyPolicy={() => setSubPage('privacy-policy')}
+            />
+          );
+      }
+      if (subPage === 'privacy-policy') {
+          return (
+            <PrivacyPolicy
+              onBack={() => setSubPage(null)}
+            />
+          );
+      }
+      if (subPage === 'user-agreement') {
+          return (
+            <UserAgreement
+              onBack={() => setSubPage(null)}
+            />
+          );
+      }
+      if (subPage === 'forgot-password') {
+          return (
+            <ForgotPassword
+              onBack={() => setSubPage(null)}
             />
           );
       }
@@ -135,6 +225,9 @@ const App: React.FC = () => {
         <Login 
             onLogin={handleLogin} 
             onNavigateRegister={() => setSubPage('register')} 
+            onNavigateUserAgreement={() => setSubPage('user-agreement')}
+            onNavigatePrivacyPolicy={() => setSubPage('privacy-policy')}
+            onNavigateForgotPassword={() => setSubPage('forgot-password')}
         />
       );
   }
@@ -158,6 +251,13 @@ const App: React.FC = () => {
         const newsId = subPage.split(':')[1];
         const newsItem = newsList.find(item => item.id === newsId);
         if (newsItem) {
+            // 根据新闻项类型保存标签页状态，确保返回时显示正确的标签
+            const targetTab = newsItem.type === 'announcement' ? 'announcement' : 'dynamics';
+            try {
+              localStorage.setItem('cat_news_active_tab', targetTab);
+            } catch (e) {
+              // 忽略存储错误
+            }
             return <AnnouncementDetail newsItem={newsItem} onBack={() => setSubPage(null)} />;
         }
     }
@@ -191,10 +291,39 @@ const App: React.FC = () => {
 
     // Sub page Routing
     switch (subPage) {
+      case 'service-center:settings':
+        return (
+          <Settings
+            onBack={() => setSubPage(null)}
+            onLogout={handleLogout}
+            onNavigate={(page) => setSubPage(page)}
+          />
+        );
+      case 'service-center:reset-login-password':
+        return <ResetLoginPassword onBack={() => setSubPage('service-center:settings')} />;
+      case 'service-center:reset-pay-password':
+        return <ResetPayPassword onBack={() => setSubPage('service-center:settings')} />;
+      case 'service-center:notification-settings':
+        return <NotificationSettings onBack={() => setSubPage('service-center:settings')} />;
+      case 'service-center:account-deletion':
+        return <AccountDeletion onBack={() => setSubPage('service-center:settings')} />;
+      case 'service-center:edit-profile':
+        return (
+          <EditProfile
+            onBack={() => setSubPage('service-center:settings')}
+            onLogout={handleLogout}
+          />
+        );
+      case 'card-management':
+        return <CardManagement onBack={() => setSubPage(null)} />;
       case 'trading-zone':
         return <TradingZone onBack={() => setSubPage(null)} />;
       case 'about-us':
-        return <AboutUs onBack={() => setSubPage(null)} />;
+        return <AboutUs onBack={() => setSubPage('service-center:settings')} />;
+      case 'privacy-policy':
+        return (
+          <PrivacyPolicy onBack={() => setSubPage('service-center:settings')} />
+        );
       case 'artist-showcase':
         return (
             <ArtistShowcase 
@@ -212,6 +341,16 @@ const App: React.FC = () => {
         return <RealNameAuth onBack={() => setSubPage(null)} />;
       case 'my-friends':
         return <MyFriends onBack={() => setSubPage(null)} />;
+      case 'agent-auth':
+        return <AgentAuth onBack={() => setSubPage(null)} />;
+      case 'help-center':
+        return <HelpCenter onBack={() => setSubPage(null)} />;
+      case 'profile:user-agreement':
+        return <UserAgreement onBack={() => setSubPage(null)} />;
+      case 'user-survey':
+        return <UserSurvey onBack={() => setSubPage(null)} />;
+      case 'online-service':
+        return <OnlineService onBack={() => setSubPage(null)} />;
     }
 
     // Tab Routing
@@ -221,6 +360,7 @@ const App: React.FC = () => {
           <Home 
             onNavigate={(page) => setSubPage(page)} 
             onSwitchTab={(tab) => setActiveTab(tab)}
+            announcements={newsList}
           />
         );
       case 'market':
@@ -229,7 +369,19 @@ const App: React.FC = () => {
         return (
             <News 
                 newsList={newsList}
-                onNavigate={(id) => setSubPage(`news-detail:${id}`)} 
+                onNavigate={(id) => {
+                  // 根据新闻项类型保存标签页状态，确保返回时显示正确的标签
+                  const newsItem = newsList.find(item => item.id === id);
+                  if (newsItem) {
+                    const targetTab = newsItem.type === 'announcement' ? 'announcement' : 'dynamics';
+                    try {
+                      localStorage.setItem('cat_news_active_tab', targetTab);
+                    } catch (e) {
+                      // 忽略存储错误
+                    }
+                  }
+                  setSubPage(`news-detail:${id}`);
+                }} 
                 onMarkAllRead={handleMarkAllRead}
             />
         );

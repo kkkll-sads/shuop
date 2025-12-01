@@ -1,4 +1,4 @@
-import { Artist, Product, NewsItem, Banner, Order } from './types';
+import { Artist, Product, Banner, Order } from './types';
 
 export const ARTISTS: Artist[] = [
   { 
@@ -52,49 +52,6 @@ export const PRODUCTS: Product[] = [
   { id: '4', title: '《古居图》', artist: '张成', price: 9880.00, image: 'https://picsum.photos/seed/art4/300/300', category: 'painting' },
   { id: '5', title: '《喜上眉梢》', artist: '王明', price: 5600.00, image: 'https://picsum.photos/seed/art5/300/300', category: 'painting' },
   { id: '6', title: '《旭日东升》', artist: '李华', price: 12000.00, image: 'https://picsum.photos/seed/art6/300/300', category: 'painting' },
-];
-
-export const NEWS: NewsItem[] = [
-  { 
-    id: '1', 
-    date: '2025-11-15 09:01:49', 
-    title: '关于数权中心系统升级维护完成并恢复交易的公告', 
-    isUnread: true,
-    type: 'announcement',
-    content: `尊敬的用户：\n\n您好！\n\n数权中心系统已于2025年11月15日09:00完成系统升级维护工作。目前平台各项功能已恢复正常使用，您可以正常进行交易、充值、提现等操作。\n\n本次升级优化了交易撮合引擎，提升了系统并发处理能力，为您提供更加流畅的交易体验。\n\n感谢您的理解与支持！`
-  },
-  { 
-    id: '2', 
-    date: '2025-11-10 19:13:48', 
-    title: '关于数权中心系统升级维护的公告', 
-    isUnread: true,
-    type: 'announcement',
-    content: `尊敬的用户：\n\n为了提供更优质的服务，本平台将于2025年11月14日23:00至11月15日09:00进行系统升级维护。\n\n维护期间，将暂停所有交易服务及资金存取功能。请您提前做好相关安排，由此给您带来的不便，敬请谅解。`
-  },
-  { 
-    id: '3', 
-    date: '2025-10-24 15:54:18', 
-    title: '关于10月24日“数权中心”板块临时调整部分场次交易时间的通告', 
-    isUnread: true,
-    type: 'announcement',
-    content: `尊敬的用户：\n\n接交易所通知，因网络波动原因，原定于今日16:00进行的“非遗专场”交易将推迟至17:00开始，结束时间顺延至17:30。\n\n其他场次交易时间不变。请广大交易商互相转告，合理安排交易时间。`
-  },
-  {
-    id: '4',
-    date: '2025-11-14 10:00:00',
-    title: '热烈祝贺当代著名画家崔宏波先生作品入驻平台',
-    isUnread: false,
-    type: 'dynamic',
-    content: `近日，当代著名画家、国家一级美术师崔宏波先生正式签约入驻数权中心平台。\n\n崔宏波先生擅长山水画，其作品大气磅礴，笔墨苍劲，多次在国内外书画大赛中获奖。本次入驻，崔先生将带来其代表作《山河锦绣》系列，并以数字化资产的形式限量发售。\n\n首批藏品将于本月20日开启申购，敬请关注！`
-  },
-  {
-    id: '5',
-    date: '2025-11-12 14:20:00',
-    title: '平台“双十一”艺术品交易额突破新高',
-    isUnread: false,
-    type: 'dynamic',
-    content: `截止昨日24:00，数权中心平台“双十一”艺术品专场活动圆满收官。\n\n据统计，本次活动累计交易额突破5000万元，同比增长120%。其中，非遗文创类产品受到年轻藏家的热烈追捧，成交量占比超过40%。\n\n这标志着数字化艺术品交易市场正在迎来新的爆发期，平台将继续致力于挖掘优质文化资产，回馈广大用户。`
-  }
 ];
 
 export const BANNERS: Banner[] = [

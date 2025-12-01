@@ -1,8 +1,15 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Search, Filter, LayoutGrid, List } from 'lucide-react';
-import { PRODUCTS } from '../constants';
 import { Product } from '../types';
+import {
+  fetchShopProducts,
+  fetchShopProductsBySales,
+  fetchShopProductsByLatest,
+  fetchShopProductCategories,
+  normalizeAssetUrl,
+  ShopProductItem,
+} from '../services/api';
 
 interface MarketProps {
     onProductSelect?: (product: Product) => void;
@@ -12,18 +19,106 @@ const Market: React.FC<MarketProps> = ({ onProductSelect }) => {
   const [activeFilter, setActiveFilter] = useState('comprehensive');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [categoryList, setCategoryList] = useState<string[]>([]);
 
-  // Categories Configuration
-  const categories = [
+  // Categories Configuration（含“全部”+后端分类）
+  const categories = useMemo(
+    () => [
       { id: 'all', label: '全部商品', icon: LayoutGrid },
-      { id: 'painting', label: '文化艺术', icon: Filter },
-      { id: 'intangible', label: '非遗产品', icon: List }, // Mock category for now
-      { id: 'other', label: '其他产品', icon: LayoutGrid } // Mock category for now
-  ];
+      ...categoryList.map((name) => ({
+        id: name,
+        label: name,
+        icon:
+          name === '数码产品' || name === '数码配件'
+            ? Filter
+            : name === '优惠券'
+            ? List
+            : LayoutGrid,
+      })),
+    ],
+    [categoryList],
+  );
+
+  const adaptShopProduct = (item: ShopProductItem): Product => ({
+    id: String(item.id),
+    title: item.name,
+    // 暂无艺术家字段，用分类占位，避免界面空白
+    artist: item.category || '积分商品',
+    // 使用积分价格为主，若没有则退回现金价
+    price: item.score_price || item.price || 0,
+    image: normalizeAssetUrl(item.thumbnail),
+    category: item.category || '其他',
+  });
+
+  // 加载分类列表（只在首次加载时执行）
+  useEffect(() => {
+    let isMounted = true;
+    const loadCategories = async () => {
+      try {
+        const categoriesRes = await fetchShopProductCategories();
+        if (isMounted) {
+          setCategoryList(categoriesRes.data?.list ?? []);
+        }
+      } catch (e: any) {
+        console.error('加载商品分类失败:', e);
+      }
+    };
+    loadCategories();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // 根据筛选条件加载商品列表
+  useEffect(() => {
+    let isMounted = true;
+    const load = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // 根据 activeFilter 选择不同的接口
+        let listRes;
+        if (activeFilter === 'sales') {
+          // 销量排序：调用热销接口
+          listRes = await fetchShopProductsBySales({ page: 1, limit: 100 });
+        } else if (activeFilter === 'new') {
+          // 最新排序：调用最新接口
+          listRes = await fetchShopProductsByLatest({ page: 1, limit: 100 });
+        } else {
+          // 综合或价格排序：调用普通列表接口
+          listRes = await fetchShopProducts({ page: 1, limit: 100 });
+        }
+
+        if (isMounted) {
+          const remoteList = listRes.data?.list ?? [];
+          setProducts(remoteList.map(adaptShopProduct));
+        }
+      } catch (e: any) {
+        console.error('加载商品列表失败:', e);
+        if (isMounted) {
+          setError(e?.message || '加载商品失败，请稍后重试');
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    load();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeFilter]);
 
   // Filtering Logic
   const filteredProducts = useMemo(() => {
-      return PRODUCTS.filter(product => {
+      return products.filter(product => {
           // Filter by Search Query
           const matchesSearch = product.title.includes(searchQuery) || 
                                 product.artist.includes(searchQuery);
@@ -39,14 +134,21 @@ const Market: React.FC<MarketProps> = ({ onProductSelect }) => {
           if (activeFilter === 'price_desc') return b.price - a.price;
           return 0; // Default order
       });
-  }, [searchQuery, selectedCategory, activeFilter]);
+  }, [products, searchQuery, selectedCategory, activeFilter]);
 
   const handleFilterClick = (filter: string) => {
       if (filter === 'price') {
-          // Toggle price sort
+          // Toggle price sort（价格排序在前端处理，不需要重新加载数据）
           setActiveFilter(prev => prev === 'price_asc' ? 'price_desc' : 'price_asc');
+      } else if (filter === 'sales') {
+          // 销量排序：切换到销量筛选，会触发 useEffect 重新加载数据
+          setActiveFilter('sales');
+      } else if (filter === 'new') {
+          // 最新排序：切换到最新筛选，会触发 useEffect 重新加载数据
+          setActiveFilter('new');
       } else {
-          setActiveFilter(filter);
+          // 综合排序：切换到综合筛选，会触发 useEffect 重新加载数据
+          setActiveFilter('comprehensive');
       }
   };
 
@@ -120,7 +222,17 @@ const Market: React.FC<MarketProps> = ({ onProductSelect }) => {
 
       {/* Product Grid */}
       <div className="p-3">
-        {filteredProducts.length > 0 ? (
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+            <LayoutGrid size={40} className="mb-2 opacity-20" />
+            <p className="text-xs">商品加载中...</p>
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center py-12 text-red-400">
+            <LayoutGrid size={40} className="mb-2 opacity-20" />
+            <p className="text-xs">{error}</p>
+          </div>
+        ) : filteredProducts.length > 0 ? (
             <div className="grid grid-cols-2 gap-3">
                 {filteredProducts.map((product) => (
                     <div 

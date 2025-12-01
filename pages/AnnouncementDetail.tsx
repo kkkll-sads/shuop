@@ -33,10 +33,7 @@ const AnnouncementDetail: React.FC<AnnouncementDetailProps> = ({ newsItem, onBac
         <div className="text-gray-700 text-sm">
             {renderContent(newsItem.content)}
             
-            <div className="mt-8 text-right font-medium text-gray-800">
-                <p>数权中心运营中心</p>
-                <p className="text-xs text-gray-500 mt-1">{newsItem.date.split(' ')[0]}</p>
-            </div>
+        
         </div>
       </div>
     </SubPageLayout>

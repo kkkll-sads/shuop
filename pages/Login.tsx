@@ -6,9 +6,18 @@ import { LoginSuccessPayload } from '../types';
 interface LoginProps {
   onLogin: (payload?: LoginSuccessPayload) => void;
   onNavigateRegister: () => void;
+  onNavigateUserAgreement: () => void;
+  onNavigatePrivacyPolicy: () => void;
+  onNavigateForgotPassword: () => void;
 }
 
-const Login: React.FC<LoginProps> = ({ onLogin, onNavigateRegister }) => {
+const Login: React.FC<LoginProps> = ({
+  onLogin,
+  onNavigateRegister,
+  onNavigateUserAgreement,
+  onNavigatePrivacyPolicy,
+  onNavigateForgotPassword,
+}) => {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [agreed, setAgreed] = useState(false);
@@ -125,7 +134,13 @@ const Login: React.FC<LoginProps> = ({ onLogin, onNavigateRegister }) => {
            <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
            <span>记住账号</span>
         </label>
-        <button className="text-blue-500">忘记密码?</button>
+        <button
+          type="button"
+          className="text-blue-500"
+          onClick={onNavigateForgotPassword}
+        >
+          忘记密码?
+        </button>
       </div>
 
       {/* Login Button */}
@@ -146,7 +161,22 @@ const Login: React.FC<LoginProps> = ({ onLogin, onNavigateRegister }) => {
             {agreed && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
          </div>
          <div className="leading-5">
-            阅读并同意 <span className="text-blue-500">《用户协议》</span> 及 <span className="text-blue-500">《隐私政策》</span>
+            阅读并同意{' '}
+            <button
+              type="button"
+              className="text-blue-500 underline-offset-2"
+              onClick={onNavigateUserAgreement}
+            >
+              《用户协议》
+            </button>{' '}
+            及{' '}
+            <button
+              type="button"
+              className="text-blue-500 underline-offset-2"
+              onClick={onNavigatePrivacyPolicy}
+            >
+              《隐私政策》
+            </button>
          </div>
       </div>
 

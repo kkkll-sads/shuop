@@ -1,7 +1,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { Settings, MessageSquare, ShieldCheck, CreditCard, MapPin, Users, UserCheck, HelpCircle, FileText, HeadphonesIcon, ChevronRight, Wallet, Receipt } from 'lucide-react';
-import { AUTH_TOKEN_KEY, USER_INFO_KEY, fetchProfile } from '../services/api';
+import { AUTH_TOKEN_KEY, USER_INFO_KEY, fetchProfile, normalizeAssetUrl } from '../services/api';
 import { UserInfo } from '../types';
 
 // Helper for custom coin icon
@@ -89,11 +89,9 @@ const Profile: React.FC<ProfileProps> = ({ onNavigate }) => {
 
   const displayName = userInfo?.nickname || userInfo?.username || '用户';
   const displayAvatarText = displayName.slice(0, 1).toUpperCase();
+  const displayAvatarUrl = normalizeAssetUrl(userInfo?.avatar);
   const displayId = userInfo?.id ? `ID: ${userInfo.id}` : 'ID: --';
-  const maskMobile = (mobile?: string) => {
-    if (!mobile) return '--';
-    return mobile.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2');
-  };
+
 
   const stats = useMemo(() => ([
     { label: '可用余额', val: formatAmount(userInfo?.money) },
@@ -106,20 +104,24 @@ const Profile: React.FC<ProfileProps> = ({ onNavigate }) => {
     <div className="pb-24 min-h-screen bg-gray-50">
         {/* User Header */}
         <div className="bg-gradient-to-b from-blue-400 to-blue-500 pt-12 pb-16 px-6 relative">
-            {loading && (
-              <div className="absolute top-4 right-4 text-xs text-white opacity-80">
-                同步中...
-              </div>
-            )}
+         
             <div className="flex items-center justify-between text-white mb-6">
                 <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-full bg-green-200 border-2 border-white flex items-center justify-center text-2xl font-bold text-green-700">
-                        {displayAvatarText || '用'}
+                    <div className="w-16 h-16 rounded-full bg-green-200 border-2 border-white flex items-center justify-center text-2xl font-bold text-green-700 overflow-hidden">
+                        {displayAvatarUrl ? (
+                          <img
+                            src={displayAvatarUrl}
+                            alt="用户头像"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          displayAvatarText || '用'
+                        )}
                     </div>
                     <div>
                         <h2 className="text-xl font-bold">{displayName}</h2>
                         <div className="text-xs opacity-80 mt-1">{displayId}</div>
-                        <div className="text-xs opacity-80">{maskMobile(userInfo?.mobile)}</div>
+                       
                     </div>
                 </div>
                 <div className="flex gap-3">
@@ -207,14 +209,14 @@ const Profile: React.FC<ProfileProps> = ({ onNavigate }) => {
                 <div className="grid grid-cols-4 gap-y-6 gap-x-4">
                     {[
                         {label: '实名认证', icon: UserCheck, action: () => onNavigate('real-name-auth')},
-                        {label: '卡号管理', icon: CreditCard, action: () => {}},
+                        {label: '卡号管理', icon: CreditCard, action: () => onNavigate('card-management')},
                         {label: '收货地址', icon: MapPin, action: () => onNavigate('address-list')},
                         {label: '我的好友', icon: Users, action: () => onNavigate('my-friends')},
-                        {label: '代理认证', icon: UserCheck, action: () => {}},
-                        {label: '帮助中心', icon: HelpCircle, action: () => onNavigate('about-us')}, // Reusing About Us or create generic
-                        {label: '规则协议', icon: FileText, action: () => onNavigate('about-us')},
-                        {label: '用户问卷', icon: FileText, action: () => {}},
-                        {label: '在线客服', icon: HeadphonesIcon, action: () => {}},
+                        {label: '代理认证', icon: UserCheck, action: () => onNavigate('agent-auth')},
+                        {label: '帮助中心', icon: HelpCircle, action: () => onNavigate('help-center')},
+                        {label: '规则协议', icon: FileText, action: () => onNavigate('profile:user-agreement')},
+                        {label: '用户问卷', icon: FileText, action: () => onNavigate('user-survey')},
+                        {label: '在线客服', icon: HeadphonesIcon, action: () => onNavigate('online-service')},
                     ].map((item, idx) => (
                         <div key={idx} className="flex flex-col items-center cursor-pointer active:opacity-60" onClick={item.action}>
                              <item.icon size={24} className="text-gray-600 mb-2" strokeWidth={1.5} />

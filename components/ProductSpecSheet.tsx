@@ -1,18 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Minus, Plus } from 'lucide-react';
 import { Product } from '../types';
+import { createOrder, AUTH_TOKEN_KEY } from '../services/api';
 
 interface ProductSpecSheetProps {
   isOpen: boolean;
   onClose: () => void;
   product: Product;
+  onSuccess?: () => void;
 }
 
-const ProductSpecSheet: React.FC<ProductSpecSheetProps> = ({ isOpen, onClose, product }) => {
+const ProductSpecSheet: React.FC<ProductSpecSheetProps> = ({ isOpen, onClose, product, onSuccess }) => {
   const [quantity, setQuantity] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   // In a real app, specs would come from the product data.
   // Mocking a spec based on the screenshot.
   const [selectedSpec, setSelectedSpec] = useState(`${product.title} (${product.artist})`);
+
+  // 重置状态当弹窗关闭时
+  useEffect(() => {
+    if (!isOpen) {
+      setQuantity(1);
+      setError(null);
+      setIsLoading(false);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -20,6 +33,61 @@ const ProductSpecSheet: React.FC<ProductSpecSheetProps> = ({ isOpen, onClose, pr
     const newQty = quantity + delta;
     if (newQty >= 1) {
       setQuantity(newQty);
+    }
+  };
+
+  const handleExchange = async () => {
+    const token = localStorage.getItem(AUTH_TOKEN_KEY);
+    
+    if (!token) {
+      setError('请先登录后再进行兑换');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // 将 product.id 转换为数字（如果后端需要）
+      const productId = typeof product.id === 'string' ? parseInt(product.id, 10) : product.id;
+      
+      if (isNaN(productId)) {
+        throw new Error('商品ID格式错误');
+      }
+
+      const response = await createOrder({
+        items: [
+          {
+            product_id: productId,
+            quantity: quantity,
+          },
+        ],
+        pay_type: 'score', // 积分支付
+        remark: '',
+        token,
+      });
+
+      // 检查响应
+      const isSuccess = response.code === 1 || response.code === 200;
+      if (isSuccess) {
+        if (onSuccess) {
+          onSuccess();
+        }
+        onClose();
+        // 显示后端返回的提示信息
+        alert(response.msg || response.message || '兑换成功！');
+      } else {
+        const errorMsg =
+          response.msg ||
+          response.message ||
+          `兑换失败 (code: ${response.code ?? '未知'})`;
+        throw new Error(errorMsg);
+      }
+    } catch (err: any) {
+      console.error('兑换失败:', err);
+      setError(err.message || '兑换失败，请稍后重试');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -92,9 +160,22 @@ const ProductSpecSheet: React.FC<ProductSpecSheetProps> = ({ isOpen, onClose, pr
           </div>
         </div>
 
+        {/* Error Message */}
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+            {error}
+          </div>
+        )}
+
         {/* Action Button */}
-        <button className="w-full bg-blue-600 text-white font-bold py-3 rounded-full shadow-lg shadow-blue-200 active:scale-[0.99] transition-transform">
-          立即兑换
+        <button 
+          onClick={handleExchange}
+          disabled={isLoading}
+          className={`w-full bg-blue-600 text-white font-bold py-3 rounded-full shadow-lg shadow-blue-200 active:scale-[0.99] transition-transform ${
+            isLoading ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
+        >
+          {isLoading ? '兑换中...' : '立即兑换'}
         </button>
       </div>
     </div>

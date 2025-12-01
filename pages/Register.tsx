@@ -8,7 +8,19 @@ interface RegisterProps {
   onRegisterSuccess: () => void;
 }
 
-const Register: React.FC<RegisterProps> = ({ onBack, onRegisterSuccess }) => {
+interface RegisterProps {
+  onBack: () => void;
+  onRegisterSuccess: () => void;
+  onNavigateUserAgreement: () => void;
+  onNavigatePrivacyPolicy: () => void;
+}
+
+const Register: React.FC<RegisterProps> = ({
+  onBack,
+  onRegisterSuccess,
+  onNavigateUserAgreement,
+  onNavigatePrivacyPolicy,
+}) => {
   const [inviteCode, setInviteCode] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -181,7 +193,22 @@ const Register: React.FC<RegisterProps> = ({ onBack, onRegisterSuccess }) => {
                 {agreed && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
              </div>
              <div className="leading-5">
-                阅读并同意 <span className="text-blue-500">《用户协议》</span> 及 <span className="text-blue-500">《隐私政策》</span>
+                阅读并同意{' '}
+                <button
+                  type="button"
+                  className="text-blue-500 underline-offset-2"
+                  onClick={onNavigateUserAgreement}
+                >
+                  《用户协议》
+                </button>{' '}
+                及{' '}
+                <button
+                  type="button"
+                  className="text-blue-500 underline-offset-2"
+                  onClick={onNavigatePrivacyPolicy}
+                >
+                  《隐私政策》
+                </button>
              </div>
         </div>
 

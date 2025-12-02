@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { X, Minus, Plus } from 'lucide-react';
 import { Product } from '../types';
-import { createOrder, AUTH_TOKEN_KEY } from '../services/api';
+import { createOrder, buyCollectionItem, AUTH_TOKEN_KEY } from '../services/api';
 
 interface ProductSpecSheetProps {
   isOpen: boolean;
@@ -17,15 +17,9 @@ const ProductSpecSheet: React.FC<ProductSpecSheetProps> = ({ isOpen, onClose, pr
   // In a real app, specs would come from the product data.
   // Mocking a spec based on the screenshot.
   const [selectedSpec, setSelectedSpec] = useState(`${product.title} (${product.artist})`);
-
-  // 重置状态当弹窗关闭时
-  useEffect(() => {
-    if (!isOpen) {
-      setQuantity(1);
-      setError(null);
-      setIsLoading(false);
-    }
-  }, [isOpen]);
+  
+  // 判断商品类型：默认为藏品商品（兼容旧数据）
+  const isShopProduct = product.productType === 'shop';
 
   if (!isOpen) return null;
 
@@ -40,7 +34,7 @@ const ProductSpecSheet: React.FC<ProductSpecSheetProps> = ({ isOpen, onClose, pr
     const token = localStorage.getItem(AUTH_TOKEN_KEY);
     
     if (!token) {
-      setError('请先登录后再进行兑换');
+      setError('请先登录后再进行购买');
       return;
     }
 
@@ -55,37 +49,62 @@ const ProductSpecSheet: React.FC<ProductSpecSheetProps> = ({ isOpen, onClose, pr
         throw new Error('商品ID格式错误');
       }
 
-      const response = await createOrder({
-        items: [
-          {
-            product_id: productId,
-            quantity: quantity,
-          },
-        ],
-        pay_type: 'score', // 积分支付
-        remark: '',
-        token,
-      });
+      // 根据商品类型选择不同的接口和支付方式
+      // shop: 积分商城，使用 createOrder 接口，使用积分支付
+      // collection: 藏品商城，使用 buyCollectionItem 接口，使用余额支付
+      let response;
+
+      if (isShopProduct) {
+        // 积分商城商品，使用 createOrder 接口
+        const payType = 'score';
+        const addressId = undefined;
+
+        response = await createOrder({
+          items: [
+            {
+              product_id: productId,
+              quantity: quantity,
+            },
+          ],
+          pay_type: payType,
+          address_id: addressId,
+          remark: '',
+          token,
+        });
+      } else {
+        // 藏品商品，使用 buyCollectionItem 接口
+        const payType = 'money'; // 藏品使用余额支付
+
+        response = await buyCollectionItem({
+          item_id: productId,
+          quantity: quantity,
+          pay_type: payType,
+          product_id_record: selectedSpec, // 使用选中的规格作为产品ID记录
+          token,
+        });
+      }
 
       // 检查响应
-      const isSuccess = response.code === 1 || response.code === 200;
-      if (isSuccess) {
+      if (response.code === 1 || response.code === 200 || response.code === 0) {
+        // 成功
         if (onSuccess) {
           onSuccess();
         }
         onClose();
-        // 显示后端返回的提示信息
-        alert(response.msg || response.message || '兑换成功！');
+        // 优先使用接口返回的成功消息
+        const successMessage =  response.msg || (isShopProduct ? '兑换成功！' : '购买成功！');
+        alert(successMessage);
       } else {
-        const errorMsg =
-          response.msg ||
-          response.message ||
-          `兑换失败 (code: ${response.code ?? '未知'})`;
-        throw new Error(errorMsg);
+        // 优先使用接口返回的错误消息
+        const errorMsg = response.msg || response.message || (isShopProduct ? '兑换失败，请稍后重试' : '购买失败，请稍后重试');
+        setError(errorMsg);
       }
     } catch (err: any) {
-      console.error('兑换失败:', err);
-      setError(err.message || '兑换失败，请稍后重试');
+      console.error(isShopProduct ? '兑换失败:' : '购买失败:', err);
+      // 优先使用接口返回的错误消息，如果没有则使用错误对象的 message
+      // 检查错误对象是否包含 response（某些情况下错误可能包含原始响应）
+      const errorMsg = err.response?.msg || err.msg || err.message || (isShopProduct ? '兑换失败，请稍后重试' : '购买失败，请稍后重试');
+      setError(errorMsg);
     } finally {
       setIsLoading(false);
     }
@@ -112,7 +131,7 @@ const ProductSpecSheet: React.FC<ProductSpecSheetProps> = ({ isOpen, onClose, pr
           </div>
           <div className="flex-1 pt-1">
             <div className="text-blue-500 font-bold text-lg">
-              {product.price.toFixed(2)} <span className="text-xs">积分</span>
+              {product.price.toFixed(2)} <span className="text-xs">{product.productType === 'shop' ? '积分' : '元'}</span>
             </div>
             <div className="text-xs text-gray-500 mt-1">
               已选: {selectedSpec}, {quantity}件
@@ -175,7 +194,9 @@ const ProductSpecSheet: React.FC<ProductSpecSheetProps> = ({ isOpen, onClose, pr
             isLoading ? 'opacity-50 cursor-not-allowed' : ''
           }`}
         >
-          {isLoading ? '兑换中...' : '立即兑换'}
+          {isLoading 
+            ? (product.productType === 'shop' ? '兑换中...' : '购买中...') 
+            : (product.productType === 'shop' ? '立即兑换' : '立即购买')}
         </button>
       </div>
     </div>

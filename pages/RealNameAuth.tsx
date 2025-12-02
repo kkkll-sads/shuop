@@ -64,7 +64,8 @@ const RealNameAuth: React.FC<RealNameAuthProps> = ({ onBack }) => {
         }
       } catch (e: any) {
         console.error('获取实名认证状态异常:', e);
-        setError(e?.message || '获取实名认证状态失败，请稍后重试');
+        // 优先使用接口返回的错误消息
+        setError(e?.msg || e?.response?.msg || e?.message || '获取实名认证状态失败，请稍后重试');
       } finally {
         setLoading(false);
       }
@@ -115,7 +116,9 @@ const RealNameAuth: React.FC<RealNameAuthProps> = ({ onBack }) => {
       }
     } catch (e: any) {
       console.error('身份证图片上传失败:', e);
-      alert(e?.message || '图片上传失败，请稍后重试');
+      // 优先使用接口返回的错误消息
+      const errorMsg = e?.msg || e?.response?.msg || e?.message || '图片上传失败，请稍后重试';
+      alert(errorMsg);
     } finally {
       if (type === 'front') {
         setUploadingFront(false);
@@ -153,7 +156,9 @@ const RealNameAuth: React.FC<RealNameAuthProps> = ({ onBack }) => {
       }
     } catch (e: any) {
       console.error('提交实名认证失败:', e);
-      alert(e?.message || '提交实名认证失败，请稍后重试');
+      // 优先使用接口返回的错误消息
+      const errorMsg = e?.msg || e?.response?.msg || e?.message || '提交实名认证失败，请稍后重试';
+      alert(errorMsg);
     } finally {
       setSubmitting(false);
     }

@@ -51,6 +51,7 @@ const Market: React.FC<MarketProps> = ({ onProductSelect }) => {
     price: item.score_price || item.price || 0,
     image: normalizeAssetUrl(item.thumbnail),
     category: item.category || '其他',
+    productType: 'shop', // 标记为积分商城商品
   });
 
   // 加载分类列表（只在首次加载时执行）
@@ -100,7 +101,8 @@ const Market: React.FC<MarketProps> = ({ onProductSelect }) => {
       } catch (e: any) {
         console.error('加载商品列表失败:', e);
         if (isMounted) {
-          setError(e?.message || '加载商品失败，请稍后重试');
+          // 优先使用接口返回的错误消息
+          setError(e?.msg || e?.response?.msg || e?.message || '加载商品失败，请稍后重试');
         }
       } finally {
         if (isMounted) {

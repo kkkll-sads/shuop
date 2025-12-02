@@ -60,7 +60,8 @@ const AgentAuth: React.FC<AgentAuthProps> = ({ onBack }) => {
         }
       } catch (e: any) {
         console.error('获取代理商状态异常:', e);
-        setError(e?.message || '获取代理商状态失败，请稍后重试');
+        // 优先使用接口返回的错误消息
+        setError(e?.msg || e?.response?.msg || e?.message || '获取代理商状态失败，请稍后重试');
       } finally {
         setLoading(false);
       }
@@ -96,9 +97,11 @@ const AgentAuth: React.FC<AgentAuthProps> = ({ onBack }) => {
       setLicenseImagePath(path || fullUrl);
       const previewUrl = normalizeAssetUrl(fullUrl || path);
       setLicensePreview(previewUrl);
-    } catch (err: any) {
-      console.error('营业执照上传失败:', err);
-      alert(err?.message || '营业执照上传失败，请稍后重试');
+      } catch (err: any) {
+        console.error('营业执照上传失败:', err);
+        // 优先使用接口返回的错误消息
+        const errorMsg = err?.msg || err?.response?.msg || err?.message || '营业执照上传失败，请稍后重试';
+        alert(errorMsg);
     } finally {
       setUploadingLicense(false);
     }
@@ -134,7 +137,9 @@ const AgentAuth: React.FC<AgentAuthProps> = ({ onBack }) => {
       }
     } catch (e: any) {
       console.error('提交代理商申请失败:', e);
-      alert(e?.message || '提交代理商申请失败，请稍后重试');
+      // 优先使用接口返回的错误消息
+      const errorMsg = e?.msg || e?.response?.msg || e?.message || '提交代理商申请失败，请稍后重试';
+      alert(errorMsg);
     } finally {
       setSubmitting(false);
     }

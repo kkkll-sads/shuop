@@ -7,6 +7,8 @@ export interface Product {
   price: number;
   image: string;
   category: string;
+  /** 商品类型：'shop' 为积分商城商品，'collection' 为藏品商城商品 */
+  productType?: 'shop' | 'collection';
 }
 
 export interface Artist {
@@ -76,6 +78,7 @@ export interface UserInfo {
   join_time: number;
   motto: string;
   draw_count: number;
+  user_type: number;
   token: string;
   refresh_token: string;
 }

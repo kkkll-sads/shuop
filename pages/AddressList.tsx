@@ -65,7 +65,8 @@ const AddressList: React.FC<AddressListProps> = ({ onBack }) => {
         setError(res.msg || '获取地址列表失败');
       }
     } catch (e: any) {
-      setError(e.message || '获取地址列表失败');
+      // 优先使用接口返回的错误消息
+      setError(e?.msg || e?.response?.msg || e?.message || '获取地址列表失败');
     } finally {
       setLoading(false);
     }
@@ -83,7 +84,9 @@ const AddressList: React.FC<AddressListProps> = ({ onBack }) => {
       // 删除成功后刷新列表
       loadAddresses();
     } catch (e: any) {
-      alert(e.message || '删除收货地址失败');
+      // 优先使用接口返回的错误消息
+      const errorMsg = e?.msg || e?.response?.msg || e?.message || '删除收货地址失败';
+      alert(errorMsg);
     }
   };
 
@@ -145,7 +148,8 @@ const AddressList: React.FC<AddressListProps> = ({ onBack }) => {
         setFormError(res.msg || '保存地址失败，请检查填写信息');
       }
     } catch (e: any) {
-      setFormError(e?.message || '保存地址失败，请稍后重试');
+      // 优先使用接口返回的错误消息
+      setFormError(e?.msg || e?.response?.msg || e?.message || '保存地址失败，请稍后重试');
     } finally {
       setFormLoading(false);
     }

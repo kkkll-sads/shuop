@@ -65,7 +65,8 @@ const Profile: React.FC<ProfileProps> = ({ onNavigate }) => {
         }
       } catch (err: any) {
         if (!isMounted) return;
-        setError(err.message || '获取个人信息失败');
+        // 优先使用接口返回的错误消息
+        setError(err?.msg || err?.response?.msg || err?.message || '获取个人信息失败');
       } finally {
         if (isMounted) {
           setLoading(false);
@@ -90,7 +91,22 @@ const Profile: React.FC<ProfileProps> = ({ onNavigate }) => {
   const displayName = userInfo?.nickname || userInfo?.username || '用户';
   const displayAvatarText = displayName.slice(0, 1).toUpperCase();
   const displayAvatarUrl = normalizeAssetUrl(userInfo?.avatar);
-  const displayId = userInfo?.id ? `ID: ${userInfo.id}` : 'ID: --';
+  
+  // 根据 user_type 显示用户类型
+  const getUserTypeLabel = (userType?: number): string => {
+    if (userType === undefined || userType === null) return '--';
+    switch (userType) {
+      case 0:
+        return '新用户';
+      case 1:
+        return '普通用户';
+      case 2:
+        return '交易用户';
+      default:
+        return '--';
+    }
+  };
+  const displayId = getUserTypeLabel(userInfo?.user_type);
 
 
   const stats = useMemo(() => ([

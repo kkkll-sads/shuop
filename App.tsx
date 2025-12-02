@@ -38,6 +38,7 @@ import BalanceRecharge from './pages/BalanceRecharge';
 import BalanceWithdraw from './pages/BalanceWithdraw';
 import ExtensionWithdraw from './pages/ExtensionWithdraw';
 import ServiceRecharge from './pages/ServiceRecharge';
+import AssetHistory from './pages/AssetHistory';
 import { Tab, Product, NewsItem, LoginSuccessPayload } from './types';
 import { ARTISTS } from './constants';
 import { AUTH_TOKEN_KEY, USER_INFO_KEY, fetchAnnouncements, AnnouncementItem } from './services/api';
@@ -379,11 +380,22 @@ const App: React.FC = () => {
       case 'asset:balance-recharge':
         return <BalanceRecharge onBack={() => setSubPage('asset-view')} />;
       case 'asset:balance-withdraw':
-        return <BalanceWithdraw onBack={() => setSubPage('asset-view')} />;
+        return (
+          <BalanceWithdraw
+            onBack={() => setSubPage('asset-view')}
+            onNavigate={(page) => setSubPage(page)}
+          />
+        );
       case 'asset:extension-withdraw':
         return <ExtensionWithdraw onBack={() => setSubPage('asset-view')} />;
       case 'asset:service-recharge':
         return <ServiceRecharge onBack={() => setSubPage('asset-view')} />;
+      case 'asset-history':
+        return (
+          <AssetHistory
+            onBack={() => setSubPage('asset-view')}
+          />
+        );
     }
 
     // Tab Routing

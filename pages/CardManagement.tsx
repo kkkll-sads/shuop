@@ -76,7 +76,8 @@ const CardManagement: React.FC<CardManagementProps> = ({ onBack }) => {
         setError(res.msg || '获取卡号列表失败');
       }
     } catch (e: any) {
-      setError(e?.message || '获取卡号列表失败');
+      // 优先使用接口返回的错误消息
+      setError(e?.msg || e?.response?.msg || e?.message || '获取卡号列表失败');
     } finally {
       setLoading(false);
     }
@@ -175,7 +176,9 @@ const CardManagement: React.FC<CardManagementProps> = ({ onBack }) => {
                   setNotice(res.msg || '删除失败，请稍后重试');
                 }
               } catch (e: any) {
-                setNotice(e?.message || '删除失败，请稍后重试');
+                // 优先使用接口返回的错误消息
+                const errorMsg = e?.msg || e?.response?.msg || e?.message || '删除失败，请稍后重试';
+                setNotice(errorMsg);
               }
             }}
           >
@@ -269,7 +272,8 @@ const CardManagement: React.FC<CardManagementProps> = ({ onBack }) => {
         }
       }
     } catch (e: any) {
-      setFormError(e?.message || '提交失败，请稍后重试');
+      // 优先使用接口返回的错误消息
+      setFormError(e?.msg || e?.response?.msg || e?.message || '提交失败，请稍后重试');
     } finally {
       setFormLoading(false);
     }

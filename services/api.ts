@@ -78,6 +78,8 @@ export const API_ENDPOINTS = {
   account: {
     profile: '/Account/profile',
     cancelAccount: '/Account/cancelAccount',
+    /** 余额日志（资金明细） */
+    balance: '/Account/balance',
   },
   address: {
     /** 收货地址列表 */
@@ -120,6 +122,14 @@ export const API_ENDPOINTS = {
   recharge: {
     /** 充值公司账户列表 */
     companyAccountList: '/Recharge/getCompanyAccountList',
+    /** 提交充值订单 */
+    submitOrder: '/Recharge/submitOrder',
+    /** 提交提现申请 */
+    submitWithdraw: '/Recharge/submitWithdraw',
+    /** 获取我的充值订单列表 */
+    getMyOrderList: '/Recharge/getMyOrderList',
+    /** 获取我的提现记录列表 */
+    getMyWithdrawList: '/Recharge/getMyWithdrawList',
   },
   common: {
     page: '/Common/page',
@@ -145,6 +155,22 @@ export const API_ENDPOINTS = {
   shopOrder: {
     /** 创建订单 */
     create: '/shopOrder/create',
+  },
+  collectionSession: {
+    /** 交易专场列表 */
+    index: '/collectionSession/index',
+    /** 交易专场详情 */
+    detail: '/collectionSession/detail',
+  },
+  collectionItem: {
+    /** 交易商品列表 */
+    index: '/collectionItem/index',
+    /** 根据专场ID获取商品列表 */
+    bySession: '/collectionItem/bySession',
+    /** 交易商品详情 */
+    detail: '/collectionItem/detail',
+    /** 购买藏品 */
+    buy: '/collectionItem/buy',
   },
 } as const;
 
@@ -1671,6 +1697,600 @@ export async function fetchCompanyAccountList(
     return data;
   } catch (error: any) {
     console.error('获取充值公司账户列表失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 提交充值订单
+ * 对应后端: /Recharge/submitOrder
+ * 示例接口: http://18.166.211.131/index.php/api/Recharge/submitOrder
+ */
+export interface SubmitRechargeOrderParams {
+  /** 充值金额(元) */
+  amount: number;
+  /** 支付方式: bank_card=银行卡, alipay=支付宝, wechat=微信, usdt=USDT */
+  payment_type: 'bank_card' | 'alipay' | 'wechat' | 'usdt';
+  /** 公司收款账户ID */
+  company_account_id: number;
+  /** 付款截图文件(支持jpg/png/gif格式)，与payment_screenshot_id或payment_screenshot_url二选一 */
+  payment_screenshot?: File;
+  /** 付款截图附件ID（通过/api/ajax/upload接口上传后获取），与payment_screenshot或payment_screenshot_url二选一 */
+  payment_screenshot_id?: number;
+  /** 付款截图文件路径（通过/api/ajax/upload接口上传后获取），与payment_screenshot或payment_screenshot_id二选一 */
+  payment_screenshot_url?: string;
+  token?: string;
+}
+
+export interface SubmitRechargeOrderResponse {
+  order_no: string;
+  order_id: number;
+  [key: string]: any;
+}
+
+export async function submitRechargeOrder(
+  params: SubmitRechargeOrderParams,
+): Promise<ApiResponse<SubmitRechargeOrderResponse>> {
+  const token = params.token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+
+  if (!token) {
+    throw new Error('未找到用户登录信息，请先登录后再提交充值订单');
+  }
+
+  if (!params.amount || params.amount <= 0) {
+    throw new Error('请输入有效的充值金额');
+  }
+
+  if (!params.payment_type) {
+    throw new Error('请选择支付方式');
+  }
+
+  if (!params.company_account_id) {
+    throw new Error('请选择充值账户');
+  }
+
+  const formData = new FormData();
+  formData.append('amount', String(params.amount));
+  formData.append('payment_type', params.payment_type);
+  formData.append('company_account_id', String(params.company_account_id));
+
+  // 处理付款截图：优先使用文件，其次使用ID，最后使用URL
+  if (params.payment_screenshot instanceof File) {
+    formData.append('payment_screenshot', params.payment_screenshot);
+  } else if (params.payment_screenshot_id) {
+    formData.append('payment_screenshot_id', String(params.payment_screenshot_id));
+  } else if (params.payment_screenshot_url) {
+    formData.append('payment_screenshot_url', params.payment_screenshot_url);
+  }
+
+  try {
+    const data = await apiFetch(API_ENDPOINTS.recharge.submitOrder, {
+      method: 'POST',
+      body: formData,
+      token,
+    });
+    console.log('提交充值订单接口原始响应:', data);
+    return data;
+  } catch (error: any) {
+    console.error('提交充值订单失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 提交提现申请
+ * 对应后端: /Recharge/submitWithdraw
+ * 示例接口: http://18.166.211.131/index.php/api/Recharge/submitWithdraw
+ */
+export interface SubmitWithdrawParams {
+  /** 提现金额(元) */
+  amount: number;
+  /** 用户绑定的收款账户ID */
+  payment_account_id: number | null;
+  /** 支付密码 */
+  pay_password: string;
+  /** 提现备注 */
+  remark?: string;
+  token?: string;
+}
+
+export interface SubmitWithdrawResponse {
+  [key: string]: any;
+}
+
+export async function submitWithdraw(
+  params: SubmitWithdrawParams,
+): Promise<ApiResponse<SubmitWithdrawResponse>> {
+  const token = params.token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+
+  if (!token) {
+    throw new Error('未找到用户登录信息，请先登录后再提交提现申请');
+  }
+
+  if (!params.amount || params.amount <= 0) {
+    throw new Error('请输入有效的提现金额');
+  }
+
+  if (!params.payment_account_id) {
+    throw new Error('请选择收款账户');
+  }
+
+  if (!params.pay_password) {
+    throw new Error('请输入支付密码');
+  }
+
+  const requestBody = {
+    amount: params.amount,
+    payment_account_id: params.payment_account_id,
+    pay_password: params.pay_password,
+    remark: params.remark || '',
+  };
+
+  try {
+    const data = await apiFetch<SubmitWithdrawResponse>(
+      API_ENDPOINTS.recharge.submitWithdraw,
+      {
+        method: 'POST',
+        body: JSON.stringify(requestBody),
+        token,
+      },
+    );
+    console.log('提交提现申请接口原始响应:', data);
+    return data;
+  } catch (error: any) {
+    console.error('提交提现申请失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 获取我的充值订单列表
+ * 对应后端: /Recharge/getMyOrderList
+ * 示例接口: http://18.166.211.131/index.php/api/Recharge/getMyOrderList?page=1&limit=10
+ */
+export interface RechargeOrderItem {
+  id: number;
+  order_no: string;
+  user_id: number;
+  amount: string;
+  payment_type: string;
+  company_account_id: number;
+  payment_screenshot: string;
+  status: number;
+  audit_admin_id: number;
+  audit_time: number;
+  audit_remark: string;
+  create_time: number;
+  update_time: number;
+  payment_type_text: string;
+  status_text: string;
+  create_time_text: string;
+  audit_time_text: string;
+}
+
+export interface RechargeOrderListData {
+  total: number;
+  per_page: number;
+  current_page: number;
+  last_page: number;
+  data: RechargeOrderItem[];
+  has_more: boolean;
+}
+
+export interface GetMyOrderListParams {
+  page?: number;
+  limit?: number;
+  token?: string;
+}
+
+export async function getMyOrderList(
+  params: GetMyOrderListParams = {},
+): Promise<ApiResponse<RechargeOrderListData>> {
+  const token = params.token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+  const page = params.page || 1;
+  const limit = params.limit || 10;
+
+  const search = new URLSearchParams();
+  search.append('page', String(page));
+  search.append('limit', String(limit));
+
+  const path = `${API_ENDPOINTS.recharge.getMyOrderList}?${search.toString()}`;
+
+  try {
+    const data = await apiFetch<RechargeOrderListData>(path, {
+      method: 'GET',
+      token,
+    });
+    console.log('获取充值订单列表接口原始响应:', data);
+    return data;
+  } catch (error: any) {
+    console.error('获取充值订单列表失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 获取我的提现记录列表
+ * 对应后端: /Recharge/getMyWithdrawList
+ * 示例接口: http://18.166.211.131/index.php/api/Recharge/getMyWithdrawList?page=1&limit=10
+ */
+export interface WithdrawOrderItem {
+  id: number;
+  user_id: number;
+  payment_account_id: number;
+  amount: string;
+  fee: string;
+  actual_amount: string;
+  account_type: string;
+  account_name: string;
+  account_number: string;
+  bank_name: string;
+  bank_branch: string;
+  status: number;
+  audit_time: number;
+  audit_admin_id: number;
+  audit_reason: string;
+  pay_time: number | null;
+  pay_admin_id: number;
+  pay_reason: string;
+  remark: string;
+  create_time: number;
+  update_time: number;
+  account_type_text: string;
+  status_text: string;
+  create_time_text: string;
+  audit_time_text: string;
+  pay_time_text: string;
+}
+
+export interface WithdrawOrderListData {
+  total: number;
+  per_page: number;
+  current_page: number;
+  last_page: number;
+  data: WithdrawOrderItem[];
+  has_more: boolean;
+}
+
+export interface GetMyWithdrawListParams {
+  page?: number;
+  limit?: number;
+  token?: string;
+}
+
+export async function getMyWithdrawList(
+  params: GetMyWithdrawListParams = {},
+): Promise<ApiResponse<WithdrawOrderListData>> {
+  const token = params.token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+  const page = params.page || 1;
+  const limit = params.limit || 10;
+
+  const search = new URLSearchParams();
+  search.append('page', String(page));
+  search.append('limit', String(limit));
+
+  const path = `${API_ENDPOINTS.recharge.getMyWithdrawList}?${search.toString()}`;
+
+  try {
+    const data = await apiFetch<WithdrawOrderListData>(path, {
+      method: 'GET',
+      token,
+    });
+    console.log('获取提现记录列表接口原始响应:', data);
+    return data;
+  } catch (error: any) {
+    console.error('获取提现记录列表失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 余额日志（资金明细）
+ * 对应后端: /Account/balance
+ * 示例接口: http://18.166.211.131/index.php/api/Account/balance?page=1&limit=10
+ */
+export interface BalanceLogItem {
+  id: number;
+  user_id: number;
+  money: string;
+  before: string;
+  after: string;
+  memo: string;
+  create_time: number;
+}
+
+export interface BalanceLogData {
+  list: BalanceLogItem[];
+  total: number;
+  per_page: number;
+  current_page: number;
+}
+
+export interface GetBalanceLogParams {
+  page?: number;
+  limit?: number;
+  token?: string;
+}
+
+export async function getBalanceLog(
+  params: GetBalanceLogParams = {},
+): Promise<ApiResponse<BalanceLogData>> {
+  const token = params.token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+  const page = params.page || 1;
+  const limit = params.limit || 10;
+
+  const search = new URLSearchParams();
+  search.append('page', String(page));
+  search.append('limit', String(limit));
+
+  const path = `${API_ENDPOINTS.account.balance}?${search.toString()}`;
+
+  try {
+    const data = await apiFetch<BalanceLogData>(path, {
+      method: 'GET',
+      token,
+    });
+    console.log('获取余额日志接口原始响应:', data);
+    return data;
+  } catch (error: any) {
+    console.error('获取余额日志失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 交易专场相关接口
+ * 对应后端:
+ * - 列表: /collectionSession/index
+ * - 详情: /collectionSession/detail?id=1
+ */
+
+export interface CollectionSessionItem {
+  id: number;
+  title: string;
+  image: string;
+  start_time: string; // HH:mm
+  end_time: string;   // HH:mm
+  is_active: boolean;
+  [key: string]: any;
+}
+
+export interface CollectionSessionListData {
+  list: CollectionSessionItem[];
+  [key: string]: any;
+}
+
+/**
+ * 获取交易专场列表
+ * 示例接口: http://18.166.211.131/index.php/api/collectionSession/index
+ */
+export async function fetchCollectionSessions(): Promise<
+  ApiResponse<CollectionSessionListData>
+> {
+  try {
+    const data = await apiFetch<CollectionSessionListData>(
+      API_ENDPOINTS.collectionSession.index,
+      {
+        method: 'GET',
+      },
+    );
+    console.log('交易专场列表接口原始响应:', data);
+    return data;
+  } catch (error: any) {
+    console.error('获取交易专场列表失败:', error);
+    throw error;
+  }
+}
+
+export interface CollectionSessionDetailData extends CollectionSessionItem {
+  status: string;
+  sort: number;
+  create_time: number;
+  update_time: number;
+  [key: string]: any;
+}
+
+/**
+ * 获取交易专场详情
+ * 示例接口: http://18.166.211.131/index.php/api/collectionSession/detail?id=1
+ */
+export async function fetchCollectionSessionDetail(
+  id: number | string,
+): Promise<ApiResponse<CollectionSessionDetailData>> {
+  const search = new URLSearchParams();
+  search.set('id', String(id));
+
+  const path = `${API_ENDPOINTS.collectionSession.detail}?${search.toString()}`;
+
+  try {
+    const data = await apiFetch<CollectionSessionDetailData>(path, {
+      method: 'GET',
+    });
+    console.log('交易专场详情接口原始响应:', data);
+    return data;
+  } catch (error: any) {
+    console.error('获取交易专场详情失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 交易商品相关接口
+ * 对应后端:
+ * - 列表: /collectionItem/index?page=1&limit=10
+ * - 按专场获取: /collectionItem/bySession?session_id=1&page=1&limit=10
+ * - 详情: /collectionItem/detail?id=1
+ */
+
+export interface CollectionItem {
+  id: number;
+  session_id: number;
+  title: string;
+  image: string;
+  price: number;
+  stock: number;
+  sales: number;
+  [key: string]: any;
+}
+
+export interface CollectionItemListData {
+  list: CollectionItem[];
+  total: number;
+  page: number;
+  limit: number;
+  [key: string]: any;
+}
+
+export interface FetchCollectionItemsParams {
+  page?: number;
+  limit?: number;
+  session_id?: number;
+}
+
+/**
+ * 获取交易商品列表
+ * 示例接口: http://18.166.211.131/index.php/api/collectionItem/index?page=1&limit=10
+ */
+export async function fetchCollectionItems(
+  params: FetchCollectionItemsParams = {},
+): Promise<ApiResponse<CollectionItemListData>> {
+  const { page = 1, limit = 10, session_id } = params;
+  const search = new URLSearchParams();
+  search.set('page', String(page));
+  search.set('limit', String(limit));
+  if (session_id) {
+    search.set('session_id', String(session_id));
+  }
+
+  const path = `${API_ENDPOINTS.collectionItem.index}?${search.toString()}`;
+
+  try {
+    const data = await apiFetch<CollectionItemListData>(path, {
+      method: 'GET',
+    });
+    console.log('交易商品列表接口原始响应:', data);
+    return data;
+  } catch (error: any) {
+    console.error('获取交易商品列表失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 根据专场ID获取商品列表
+ * 示例接口: http://18.166.211.131/index.php/api/collectionItem/bySession?session_id=1&page=1&limit=10
+ */
+export async function fetchCollectionItemsBySession(
+  sessionId: number | string,
+  params: { page?: number; limit?: number } = {},
+): Promise<ApiResponse<CollectionItemListData>> {
+  const { page = 1, limit = 10 } = params;
+  const search = new URLSearchParams();
+  search.set('session_id', String(sessionId));
+  search.set('page', String(page));
+  search.set('limit', String(limit));
+
+  const path = `${API_ENDPOINTS.collectionItem.bySession}?${search.toString()}`;
+
+  try {
+    const data = await apiFetch<CollectionItemListData>(path, {
+      method: 'GET',
+    });
+    console.log('按专场获取商品列表接口原始响应:', data);
+    return data;
+  } catch (error: any) {
+    console.error('按专场获取商品列表失败:', error);
+    throw error;
+  }
+}
+
+export interface CollectionItemDetailData extends CollectionItem {
+  images?: string[];
+  description?: string;
+  artist?: string;
+  status?: string;
+  sort?: number;
+  create_time?: number;
+  update_time?: number;
+  [key: string]: any;
+}
+
+/**
+ * 获取交易商品详情
+ * 示例接口: http://18.166.211.131/index.php/api/collectionItem/detail?id=1
+ */
+export async function fetchCollectionItemDetail(
+  id: number | string,
+): Promise<ApiResponse<CollectionItemDetailData>> {
+  const search = new URLSearchParams();
+  search.set('id', String(id));
+
+  const path = `${API_ENDPOINTS.collectionItem.detail}?${search.toString()}`;
+
+  try {
+    const data = await apiFetch<CollectionItemDetailData>(path, {
+      method: 'GET',
+    });
+    console.log('交易商品详情接口原始响应:', data);
+    return data;
+  } catch (error: any) {
+    console.error('获取交易商品详情失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 购买藏品接口
+ * 对应后端: /collectionItem/buy
+ * 示例接口: http://18.166.211.131/index.php/api/collectionItem/buy
+ */
+export interface BuyCollectionItemParams {
+  /** 藏品ID */
+  item_id: number | string;
+  /** 购买数量，默认1 */
+  quantity?: number;
+  /** 支付方式: money=余额, score=积分 */
+  pay_type: 'money' | 'score';
+  /** 产品ID记录（如'第一天产品'） */
+  product_id_record?: string;
+  token?: string;
+}
+
+export async function buyCollectionItem(
+  params: BuyCollectionItemParams,
+): Promise<ApiResponse> {
+  const token = params.token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+
+  if (!token) {
+    throw new Error('未找到用户登录信息，请先登录后再购买藏品');
+  }
+
+  if (!params.item_id) {
+    throw new Error('缺少藏品ID');
+  }
+
+  if (!params.pay_type) {
+    throw new Error('请选择支付方式');
+  }
+
+  const formData = new FormData();
+  formData.append('item_id', String(params.item_id));
+  formData.append('quantity', String(params.quantity || 1));
+  formData.append('pay_type', params.pay_type);
+  if (params.product_id_record) {
+    formData.append('product_id_record', params.product_id_record);
+  }
+
+  try {
+    const data = await apiFetch(API_ENDPOINTS.collectionItem.buy, {
+      method: 'POST',
+      body: formData,
+      token,
+    });
+    console.log('购买藏品接口原始响应:', data);
+    return data;
+  } catch (error: any) {
+    console.error('购买藏品失败:', error);
     throw error;
   }
 }

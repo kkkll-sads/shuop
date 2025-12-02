@@ -1,7 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronLeft, Share2, MoreHorizontal, ChevronRight } from 'lucide-react';
 import { Product } from '../types';
 import ProductSpecSheet from '../components/ProductSpecSheet';
+import {
+  fetchCollectionItemDetail,
+  fetchShopProductDetail,
+  CollectionItemDetailData,
+  ShopProductDetailData,
+  normalizeAssetUrl,
+} from '../services/api';
 
 interface ProductDetailProps {
   product: Product;
@@ -10,6 +17,47 @@ interface ProductDetailProps {
 
 const ProductDetail: React.FC<ProductDetailProps> = ({ product, onBack }) => {
   const [isSpecOpen, setIsSpecOpen] = useState(false);
+  const [detailData, setDetailData] = useState<CollectionItemDetailData | ShopProductDetailData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  
+  // 判断商品类型：默认为藏品商品（兼容旧数据）
+  const isShopProduct = product.productType === 'shop';
+
+  // 获取商品详情
+  useEffect(() => {
+    const loadDetail = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        setCurrentImageIndex(0); // 重置图片索引
+        
+        let response;
+        if (isShopProduct) {
+          // 积分商城商品
+          response = await fetchShopProductDetail(product.id);
+        } else {
+          // 藏品商城商品
+          response = await fetchCollectionItemDetail(product.id);
+        }
+        
+        if (response.code === 1 && response.data) {
+          setDetailData(response.data);
+        } else {
+          setError(response.msg || '获取商品详情失败');
+        }
+      } catch (err: any) {
+        console.error('加载商品详情失败:', err);
+        // 优先使用接口返回的错误消息
+        setError(err?.msg || err?.response?.msg || err?.message || '加载商品详情失败，请稍后重试');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDetail();
+  }, [product.id, isShopProduct]);
 
   return (
     <div className="min-h-screen bg-gray-50 pb-safe relative">
@@ -36,27 +84,78 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, onBack }) => {
       <div className="pb-20">
         {/* Product Image */}
         <div className="w-full aspect-square bg-white relative">
-            <img 
-                src={product.image} 
-                alt={product.title} 
-                className="w-full h-full object-contain"
-            />
-            <div className="absolute bottom-4 right-4 bg-black/30 backdrop-blur-md text-white text-xs px-3 py-1 rounded-full">
-                1/1
-            </div>
+            {loading ? (
+              <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                <span className="text-gray-400 text-sm">加载中...</span>
+              </div>
+            ) : error ? (
+              <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                <span className="text-red-400 text-sm">{error}</span>
+              </div>
+            ) : (
+              <>
+                <img 
+                    src={
+                      (detailData as any)?.images && (detailData as any).images.length > 0
+                        ? (detailData as any).images[currentImageIndex]
+                        : (detailData as any)?.image || (detailData as any)?.thumbnail || product.image
+                    } 
+                    alt={product.title} 
+                    className="w-full h-full object-contain"
+                />
+                {((detailData as any)?.images && (detailData as any).images.length > 1) && (
+                  <>
+                    {/* 图片切换箭头 */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCurrentImageIndex((prev) => 
+                          prev > 0 ? prev - 1 : (detailData as any).images!.length - 1
+                        );
+                      }}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/30 backdrop-blur-md text-white p-2 rounded-full hover:bg-black/50 transition-colors z-10"
+                    >
+                      <ChevronLeft size={20} />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCurrentImageIndex((prev) => 
+                          prev < (detailData as any).images!.length - 1 ? prev + 1 : 0
+                        );
+                      }}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/30 backdrop-blur-md text-white p-2 rounded-full hover:bg-black/50 transition-colors z-10"
+                    >
+                      <ChevronRight size={20} />
+                    </button>
+                    {/* 图片计数器 */}
+                    <div className="absolute bottom-4 right-4 bg-black/30 backdrop-blur-md text-white text-xs px-3 py-1 rounded-full">
+                      {currentImageIndex + 1}/{(detailData as any).images.length}
+                    </div>
+                  </>
+                )}
+              </>
+            )}
         </div>
 
         {/* Product Info */}
         <div className="bg-white p-4 mb-2">
             <div className="flex items-baseline gap-2 mb-2">
                 <span className="text-red-500 font-bold text-2xl">
-                    {product.price.toFixed(2)}
+                    {isShopProduct 
+                      ? ((detailData as any)?.score_price ?? product.price)
+                      : ((detailData as any)?.price ?? product.price)}
                 </span>
-                <span className="text-red-500 text-xs">积分</span>
+                <span className="text-red-500 text-xs">
+                  {isShopProduct ? '积分' : '元'}
+                </span>
             </div>
             
             <h2 className="text-lg font-bold text-gray-800 mb-1">
-                {product.title} <span className="text-gray-500 font-normal text-sm ml-1">({product.artist})</span>
+                {(detailData as any)?.title || (detailData as any)?.name || product.title}{' '}
+                <span className="text-gray-500 font-normal text-sm ml-1">
+                    ({(detailData as any)?.artist || product.artist})
+                </span>
             </h2>
         </div>
 
@@ -77,15 +176,58 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, onBack }) => {
                 <div className="h-px w-12 bg-gray-200"></div>
             </div>
             
-            {/* Mock Detail Content */}
-            <div className="space-y-4">
+            {/* Detail Content */}
+            {loading ? (
+              <div className="py-8 text-center text-gray-400 text-sm">
+                加载详情中...
+              </div>
+            ) : error ? (
+              <div className="py-8 text-center text-red-400 text-sm">
+                {error}
+              </div>
+            ) : detailData ? (
+              <div className="space-y-4">
+                {/* 详情图片列表 */}
+                {(detailData as any).images && (detailData as any).images.length > 0 ? (
+                  (detailData as any).images.map((img: string, index: number) => (
+                    <img 
+                      key={index}
+                      src={normalizeAssetUrl(img)} 
+                      alt={`${(detailData as any).title || (detailData as any).name} - ${index + 1}`} 
+                      className="w-full rounded-lg"
+                    />
+                  ))
+                ) : (detailData as any).image ? (
+                  <img 
+                    src={normalizeAssetUrl((detailData as any).image)} 
+                    alt={(detailData as any).title || (detailData as any).name} 
+                    className="w-full rounded-lg"
+                  />
+                ) : (detailData as any).thumbnail ? (
+                  <img 
+                    src={normalizeAssetUrl((detailData as any).thumbnail)} 
+                    alt={(detailData as any).name || product.title} 
+                    className="w-full rounded-lg"
+                  />
+                ) : null}
+                
+                {/* 商品描述 */}
+                {(detailData as any).description && (
+                  <p className="text-sm text-gray-600 leading-relaxed px-2 whitespace-pre-wrap">
+                    {(detailData as any).description}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-4">
                 <img src={product.image} alt="Detail 1" className="w-full rounded-lg" />
                 <p className="text-sm text-gray-600 leading-relaxed px-2">
-                    这是一幅由著名艺术家{product.artist}创作的精品画作。
-                    作品笔触细腻，意境深远，具有极高的收藏价值与艺术欣赏价值。
-                    画面构图严谨，色彩层次丰富，展现了独特的艺术风格。
+                  这是一幅由12著名艺术家{product.artist}创作的精品画作。
+                  作品笔触细腻，意境深远，具有极高的收藏价值与艺术欣赏价值。
+                  画面构图严谨，色彩层次丰富，展现了独特的艺术风格。
                 </p>
-            </div>
+              </div>
+            )}
         </div>
       </div>
 
@@ -95,7 +237,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, onBack }) => {
             onClick={() => setIsSpecOpen(true)}
             className="bg-blue-600 text-white text-sm font-bold px-8 py-2.5 rounded-md shadow-md shadow-blue-200 active:scale-95 transition-transform w-full sm:w-auto"
           >
-            立即兑换
+            立即购买
           </button>
       </div>
 

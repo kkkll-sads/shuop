@@ -2,6 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Clock } from 'lucide-react';
 import { Product } from '../types';
+import {
+  fetchCollectionSessions,
+  fetchCollectionSessionDetail,
+  fetchCollectionItemsBySession,
+  CollectionSessionItem,
+  CollectionItem,
+} from '../services/api';
 
 interface TradingZoneProps {
   onBack: () => void;
@@ -16,81 +23,48 @@ interface TradingSession {
   endTime: string;   // HH:mm
 }
 
-interface TradingItem {
-  id: string;
-  title: string;
-  image: string;
-  price: number;
-}
-
-const SESSIONS: TradingSession[] = [
-  {
-    id: '1',
-    title: '富春山居图',
-    image: 'https://picsum.photos/seed/landscape1/600/300',
-    startTime: '09:00',
-    endTime: '11:00',
-  },
-  {
-    id: '2',
-    title: '杭州西湖',
-    image: 'https://picsum.photos/seed/landscape2/600/300',
-    startTime: '14:00',
-    endTime: '16:00',
-  },
-  {
-    id: '3',
-    title: '不忘初心（全天场）',
-    image: 'https://picsum.photos/seed/landscape3/600/300',
-    startTime: '00:00',
-    endTime: '23:59', // 基本保证每天都有一个「未结束」的专场
-  },
-];
-
-// 模拟每个专场下的在售藏品数据（参考积分商城样式，一排三个）
-const TRADING_ITEMS: TradingItem[] = [
-  {
-    id: 'p1',
-    title: '富春山居图 · 预售版',
-    image: 'https://picsum.photos/seed/trade1/400/400',
-    price: 1688,
-  },
-  {
-    id: 'p2',
-    title: '西湖十景 · 数字藏品',
-    image: 'https://picsum.photos/seed/trade2/400/400',
-    price: 888,
-  },
-  {
-    id: 'p3',
-    title: '不忘初心 · 典藏版',
-    image: 'https://picsum.photos/seed/trade3/400/400',
-    price: 1280,
-  },
-  {
-    id: 'p4',
-    title: '江南水乡 · 限量款',
-    image: 'https://picsum.photos/seed/trade4/400/400',
-    price: 520,
-  },
-  {
-    id: 'p5',
-    title: '华夏古韵 · 纸本设色',
-    image: 'https://picsum.photos/seed/trade5/400/400',
-    price: 1999,
-  },
-  {
-    id: 'p6',
-    title: '山河锦绣 · 主题典藏',
-    image: 'https://picsum.photos/seed/trade6/400/400',
-    price: 980,
-  },
-];
 
 const TradingZone: React.FC<TradingZoneProps> = ({ onBack, onProductSelect }) => {
   const [now, setNow] = useState(new Date());
   const [selectedSession, setSelectedSession] = useState<TradingSession | null>(null);
   const [priceFilter, setPriceFilter] = useState<'all' | '0-1k' | '1-4k' | '4-8k' | '8k+'>('all');
+  const [sessions, setSessions] = useState<TradingSession[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [tradingItems, setTradingItems] = useState<CollectionItem[]>([]);
+  const [itemsLoading, setItemsLoading] = useState(false);
+  const [itemsError, setItemsError] = useState<string | null>(null);
+
+  // 获取专场列表
+  useEffect(() => {
+    const loadSessions = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await fetchCollectionSessions();
+        if (response.code === 1 && response.data?.list) {
+          const sessionList: TradingSession[] = response.data.list.map((item: CollectionSessionItem) => ({
+            id: String(item.id),
+            title: item.title,
+            image: item.image,
+            startTime: item.start_time,
+            endTime: item.end_time,
+          }));
+          setSessions(sessionList);
+        } else {
+          setError(response.msg || '获取专场列表失败');
+        }
+      } catch (err: any) {
+        console.error('加载专场列表失败:', err);
+        // 优先使用接口返回的错误消息
+        setError(err?.msg || err?.response?.msg || err?.message || '加载专场列表失败，请稍后重试');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadSessions();
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -102,8 +76,43 @@ const TradingZone: React.FC<TradingZoneProps> = ({ onBack, onProductSelect }) =>
   const handleBack = () => {
     if (selectedSession) {
       setSelectedSession(null);
+      setTradingItems([]);
+      setItemsError(null);
     } else {
       onBack();
+    }
+  };
+
+  const handleSessionSelect = async (session: TradingSession) => {
+    try {
+      setItemsLoading(true);
+      setItemsError(null);
+      
+      // 获取专场详情（可选）
+      const detailResponse = await fetchCollectionSessionDetail(session.id);
+      
+      // 获取该专场的商品列表
+      const itemsResponse = await fetchCollectionItemsBySession(session.id, {
+        page: 1,
+        limit: 100, // 获取足够多的商品
+      });
+      
+      if (itemsResponse.code === 1 && itemsResponse.data?.list) {
+        setTradingItems(itemsResponse.data.list);
+        setSelectedSession(session);
+      } else {
+        setItemsError(itemsResponse.msg || '获取商品列表失败');
+        // 即使获取商品失败，仍然进入专场页面
+        setSelectedSession(session);
+      }
+    } catch (err: any) {
+      console.error('获取专场数据失败:', err);
+      // 优先使用接口返回的错误消息
+      setItemsError(err?.msg || err?.response?.msg || err?.message || '加载专场数据失败，请稍后重试');
+      // 即使获取失败，仍然使用列表数据进入专场
+      setSelectedSession(session);
+    } finally {
+      setItemsLoading(false);
     }
   };
 
@@ -229,60 +238,77 @@ const TradingZone: React.FC<TradingZoneProps> = ({ onBack, onProductSelect }) =>
                   <div className="w-1 h-4 bg-blue-500 rounded-full" />
                   <span className="text-sm font-bold text-gray-800">场内在售藏品</span>
                 </div>
-                <span className="text-[11px] text-gray-400">共 {TRADING_ITEMS.length} 件</span>
+                <span className="text-[11px] text-gray-400">
+                  {itemsLoading ? '加载中...' : `共 ${tradingItems.length} 件`}
+                </span>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
-                {TRADING_ITEMS.filter((item) => {
-                  if (priceFilter === 'all') return true;
-                  if (priceFilter === '0-1k') return item.price < 1000;
-                  if (priceFilter === '1-4k') return item.price >= 1000 && item.price < 4000;
-                  if (priceFilter === '4-8k') return item.price >= 4000 && item.price < 8000;
-                  return item.price >= 8000;
-                }).map((item) => (
-                  <div
-                    key={item.id}
-                    className="bg-gray-50 rounded-lg overflow-hidden shadow-[0_1px_3px_rgba(15,23,42,0.08)] active:scale-[0.97] transition-transform cursor-pointer flex flex-col relative"
-                    onClick={() => {
-                      if (!onProductSelect) return;
-                      const product: Product = {
-                        id: item.id,
-                        title: item.title,
-                        artist: selectedSession ? selectedSession.title : '交易专区',
-                        price: item.price,
-                        image: item.image,
-                        category: '交易专区',
-                      };
-                      onProductSelect(product);
-                    }}
-                  >
-                    {/* 顶部“交易开始”角标 */}
-                    <div className="absolute top-0 left-0 z-10">
-                      <div className="bg-blue-500 text-[10px] text-white px-2 py-0.5 rounded-br-lg rounded-tl-none rounded-tr-none">
-                        交易开始
+              {itemsLoading ? (
+                <div className="py-8 text-center text-gray-500 text-sm">
+                  加载商品中...
+                </div>
+              ) : itemsError ? (
+                <div className="py-8 text-center text-red-500 text-sm">
+                  {itemsError}
+                </div>
+              ) : tradingItems.length === 0 ? (
+                <div className="py-8 text-center text-gray-500 text-sm">
+                  暂无商品
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-3">
+                  {tradingItems.filter((item) => {
+                    if (priceFilter === 'all') return true;
+                    if (priceFilter === '0-1k') return item.price < 1000;
+                    if (priceFilter === '1-4k') return item.price >= 1000 && item.price < 4000;
+                    if (priceFilter === '4-8k') return item.price >= 4000 && item.price < 8000;
+                    return item.price >= 8000;
+                  }).map((item) => (
+                    <div
+                      key={item.id}
+                      className="bg-gray-50 rounded-lg overflow-hidden shadow-[0_1px_3px_rgba(15,23,42,0.08)] active:scale-[0.97] transition-transform cursor-pointer flex flex-col relative"
+                      onClick={() => {
+                        if (!onProductSelect) return;
+                        const product: Product = {
+                          id: String(item.id),
+                          title: item.title,
+                          artist: selectedSession ? selectedSession.title : '交易专区',
+                          price: item.price,
+                          image: item.image,
+                          category: '交易专区',
+                          productType: 'collection', // 标记为藏品商城商品
+                        };
+                        onProductSelect(product);
+                      }}
+                    >
+                      {/* 顶部"交易开始"角标 */}
+                      <div className="absolute top-0 left-0 z-10">
+                        <div className="bg-blue-500 text-[10px] text-white px-2 py-0.5 rounded-br-lg rounded-tl-none rounded-tr-none">
+                          交易开始
+                        </div>
+                      </div>
+                      <div className="w-full aspect-[3/4] bg-gray-100">
+                        <img
+                          src={item.image}
+                          alt={item.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="px-1.5 pt-1.5 pb-2 flex-1 flex flex-col justify-between">
+                        <div className="h-8 mb-1">
+                          <p className="text-[11px] text-gray-800 font-medium line-clamp-2 leading-4">
+                            {item.title}
+                          </p>
+                        </div>
+                        <div className="text-[11px] text-red-500 font-bold">
+                          <span className="text-[9px] mr-0.5">¥</span>
+                          {item.price.toFixed(2)}
+                        </div>
                       </div>
                     </div>
-                    <div className="w-full aspect-[3/4] bg-gray-100">
-                      <img
-                        src={item.image}
-                        alt={item.title}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="px-1.5 pt-1.5 pb-2 flex-1 flex flex-col justify-between">
-                      <div className="h-8 mb-1">
-                        <p className="text-[11px] text-gray-800 font-medium line-clamp-2 leading-4">
-                          {item.title}
-                        </p>
-                      </div>
-                      <div className="text-[11px] text-red-500 font-bold">
-                        <span className="text-[9px] mr-0.5">¥</span>
-                        {item.price.toFixed(2)}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </>
         ) : (
@@ -301,7 +327,20 @@ const TradingZone: React.FC<TradingZoneProps> = ({ onBack, onProductSelect }) =>
             </div>
 
             {/* Session List */}
-            {SESSIONS.map((session) => {
+            {loading ? (
+              <div className="bg-white rounded-xl p-8 text-center text-gray-500">
+                加载中...
+              </div>
+            ) : error ? (
+              <div className="bg-white rounded-xl p-8 text-center text-red-500">
+                {error}
+              </div>
+            ) : sessions.length === 0 ? (
+              <div className="bg-white rounded-xl p-8 text-center text-gray-500">
+                暂无专场数据
+              </div>
+            ) : (
+              sessions.map((session) => {
               const { status, target } = getSessionStatus(session);
               
               let timerDisplay = null;
@@ -365,7 +404,7 @@ const TradingZone: React.FC<TradingZoneProps> = ({ onBack, onProductSelect }) =>
                       {status === 'active' && (
                         <button
                           className="bg-green-600 text-white text-sm px-5 py-1.5 rounded-full font-medium shadow-md active:scale-95 transition-transform"
-                          onClick={() => setSelectedSession(session)}
+                          onClick={() => handleSessionSelect(session)}
                         >
                           进入交易
                         </button>
@@ -378,7 +417,8 @@ const TradingZone: React.FC<TradingZoneProps> = ({ onBack, onProductSelect }) =>
                   </div>
                 </div>
               );
-            })}
+            })
+            )}
           </>
         )}
       </div>

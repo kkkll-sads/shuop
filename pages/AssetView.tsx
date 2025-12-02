@@ -4,9 +4,10 @@ import { ArrowLeft, Wallet, Receipt, CreditCard, FileText } from 'lucide-react';
 
 interface AssetViewProps {
   onBack: () => void;
+  onNavigate: (page: string) => void;
 }
 
-const AssetView: React.FC<AssetViewProps> = ({ onBack }) => {
+const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate }) => {
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
       <header className="bg-white px-4 py-3 flex items-center sticky top-0 z-10">
@@ -41,22 +42,27 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack }) => {
               </div>
           </div>
 
-          {/* Actions */}
-          <div className="grid grid-cols-4 gap-4 mb-8">
-              {[
-                  {label: '余额充值', icon: Wallet},
-                  {label: '余额提现', icon: Receipt},
-                  {label: '拓展提现', icon: Receipt},
-                  {label: '服务充值', icon: CreditCard}
-              ].map((item, idx) => (
-                  <div key={idx} className="flex flex-col items-center">
-                      <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center mb-2 text-gray-700">
-                          <item.icon size={20} />
-                      </div>
-                      <span className="text-xs text-gray-600">{item.label}</span>
-                  </div>
-              ))}
-          </div>
+         {/* Actions */}
+         <div className="grid grid-cols-4 gap-4 mb-8">
+             {[
+                 {label: '余额充值', icon: Wallet, page: 'asset:balance-recharge'},
+                 {label: '余额提现', icon: Receipt, page: 'asset:balance-withdraw'},
+                 {label: '拓展提现', icon: Receipt, page: 'asset:extension-withdraw'},
+                 {label: '服务充值', icon: CreditCard, page: 'asset:service-recharge'}
+             ].map((item, idx) => (
+                 <button
+                   key={idx}
+                   type="button"
+                   onClick={() => onNavigate(item.page)}
+                   className="flex flex-col items-center focus:outline-none active:opacity-80"
+                 >
+                     <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center mb-2 text-gray-700">
+                         <item.icon size={20} />
+                     </div>
+                     <span className="text-xs text-gray-600">{item.label}</span>
+                 </button>
+             ))}
+         </div>
 
           {/* Tabs */}
           <div className="flex justify-between bg-white p-1 rounded-full mb-8">

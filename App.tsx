@@ -34,6 +34,10 @@ import AgentAuth from './pages/AgentAuth';
 import HelpCenter from './pages/HelpCenter';
 import UserSurvey from './pages/UserSurvey';
 import OnlineService from './pages/OnlineService';
+import BalanceRecharge from './pages/BalanceRecharge';
+import BalanceWithdraw from './pages/BalanceWithdraw';
+import ExtensionWithdraw from './pages/ExtensionWithdraw';
+import ServiceRecharge from './pages/ServiceRecharge';
 import { Tab, Product, NewsItem, LoginSuccessPayload } from './types';
 import { ARTISTS } from './constants';
 import { AUTH_TOKEN_KEY, USER_INFO_KEY, fetchAnnouncements, AnnouncementItem } from './services/api';
@@ -63,6 +67,7 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>('home');
   const [subPage, setSubPage] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [productDetailOrigin, setProductDetailOrigin] = useState<'market' | 'artist' | 'trading-zone' | null>(null);
   
   // Initialize news list based on storage
   const [newsList, setNewsList] = useState<NewsItem[]>([]);
@@ -148,8 +153,9 @@ const App: React.FC = () => {
   };
 
   // Helper to navigate to product detail
-  const handleProductSelect = (product: Product) => {
+  const handleProductSelect = (product: Product, origin: 'market' | 'artist' | 'trading-zone' = 'market') => {
       setSelectedProduct(product);
+      setProductDetailOrigin(origin);
       setSubPage('product-detail');
   };
 
@@ -239,8 +245,13 @@ const App: React.FC = () => {
             <ProductDetail 
                 product={selectedProduct} 
                 onBack={() => {
-                    setSubPage(null);
+                    if (productDetailOrigin === 'trading-zone') {
+                      setSubPage('trading-zone');
+                    } else {
+                      setSubPage(null);
+                    }
                     setSelectedProduct(null);
+                    setProductDetailOrigin(null);
                 }} 
             />
         );
@@ -271,7 +282,7 @@ const App: React.FC = () => {
                 <ArtistDetail 
                     artist={artist} 
                     onBack={() => setSubPage(null)}
-                    onProductSelect={handleProductSelect}
+                    onProductSelect={(product) => handleProductSelect(product, 'artist')}
                 />
             );
         }
@@ -317,8 +328,17 @@ const App: React.FC = () => {
       case 'card-management':
         return <CardManagement onBack={() => setSubPage(null)} />;
       case 'trading-zone':
-        return <TradingZone onBack={() => setSubPage(null)} />;
+        return (
+          <TradingZone
+            onBack={() => setSubPage(null)}
+            onProductSelect={(product) => handleProductSelect(product, 'trading-zone')}
+          />
+        );
+      case 'home:about-us':
+        // 从首页入口进入「中心介绍」，返回时应回到首页
+        return <AboutUs onBack={() => setSubPage(null)} />;
       case 'about-us':
+        // 从设置页进入「关于我们」，返回时回到设置
         return <AboutUs onBack={() => setSubPage('service-center:settings')} />;
       case 'privacy-policy':
         return (
@@ -334,7 +354,12 @@ const App: React.FC = () => {
       case 'masterpiece-showcase':
         return <MasterpieceShowcase onBack={() => setSubPage(null)} />;
       case 'asset-view':
-        return <AssetView onBack={() => setSubPage(null)} />;
+        return (
+          <AssetView
+            onBack={() => setSubPage(null)}
+            onNavigate={(page) => setSubPage(page)}
+          />
+        );
       case 'address-list':
         return <AddressList onBack={() => setSubPage(null)} />;
       case 'real-name-auth':
@@ -351,6 +376,14 @@ const App: React.FC = () => {
         return <UserSurvey onBack={() => setSubPage(null)} />;
       case 'online-service':
         return <OnlineService onBack={() => setSubPage(null)} />;
+      case 'asset:balance-recharge':
+        return <BalanceRecharge onBack={() => setSubPage('asset-view')} />;
+      case 'asset:balance-withdraw':
+        return <BalanceWithdraw onBack={() => setSubPage('asset-view')} />;
+      case 'asset:extension-withdraw':
+        return <ExtensionWithdraw onBack={() => setSubPage('asset-view')} />;
+      case 'asset:service-recharge':
+        return <ServiceRecharge onBack={() => setSubPage('asset-view')} />;
     }
 
     // Tab Routing
@@ -364,7 +397,7 @@ const App: React.FC = () => {
           />
         );
       case 'market':
-        return <Market onProductSelect={handleProductSelect} />;
+        return <Market onProductSelect={(product) => handleProductSelect(product, 'market')} />;
       case 'news':
         return (
             <News 

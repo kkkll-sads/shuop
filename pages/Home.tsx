@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronRight, Building2, Newspaper, Palette, Trophy } from 'lucide-react';
-import { ARTISTS, BANNERS } from '../constants';
-import { Tab, NewsItem } from '../types';
+import { ARTISTS } from '../constants';
+import { Tab, NewsItem, Banner } from '../types';
+import { fetchBanners, normalizeAssetUrl } from '../services/api';
 
 interface HomeProps {
   onNavigate: (page: string) => void;
@@ -12,6 +13,7 @@ interface HomeProps {
 const Home: React.FC<HomeProps> = ({ onNavigate, onSwitchTab, announcements = [] }) => {
   const [currentBanner, setCurrentBanner] = useState(0);
   const [noticeIndex, setNoticeIndex] = useState(0);
+  const [banners, setBanners] = useState<Banner[]>([]);
   
   const touchStartRef = useRef(0);
   const touchEndRef = useRef(0);
@@ -20,9 +22,10 @@ const Home: React.FC<HomeProps> = ({ onNavigate, onSwitchTab, announcements = []
 
   // Banner Auto-play
   const startBannerTimer = () => {
+    if (!banners.length) return;
     if (bannerTimerRef.current) clearInterval(bannerTimerRef.current);
     bannerTimerRef.current = setInterval(() => {
-        setCurrentBanner(prev => (prev + 1) % BANNERS.length);
+        setCurrentBanner(prev => (prev + 1) % banners.length);
     }, 4000);
   };
 
@@ -47,10 +50,46 @@ const Home: React.FC<HomeProps> = ({ onNavigate, onSwitchTab, announcements = []
   }, [announcements.length]);
 
   useEffect(() => {
+    if (!banners.length) {
+      if (bannerTimerRef.current) {
+        clearInterval(bannerTimerRef.current);
+        bannerTimerRef.current = null;
+      }
+      setCurrentBanner(0);
+      return;
+    }
     startBannerTimer();
     return () => {
         if (bannerTimerRef.current) clearInterval(bannerTimerRef.current);
     };
+  }, [banners.length]);
+
+  // 加载轮播图数据
+  useEffect(() => {
+    const loadBanners = async () => {
+      try {
+        const res = await fetchBanners({ page: 1, limit: 10 });
+        if (res.code === 1 && res.data?.list?.length) {
+          const mapped: Banner[] = res.data.list.map((item) => ({
+            id: String(item.id),
+            image: normalizeAssetUrl(item.image),
+            tag: item.description || '',
+            title: item.title || '',
+          }));
+          setBanners(mapped);
+          setCurrentBanner(0);
+        } else {
+          setBanners([]);
+          setCurrentBanner(0);
+        }
+      } catch (error) {
+        console.error('加载轮播图失败:', error);
+        setBanners([]);
+        setCurrentBanner(0);
+      }
+    };
+
+    loadBanners();
   }, []);
 
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -63,6 +102,10 @@ const Home: React.FC<HomeProps> = ({ onNavigate, onSwitchTab, announcements = []
   };
 
   const handleTouchEnd = () => {
+    if (!banners.length) {
+      startBannerTimer();
+      return;
+    }
     if (!touchStartRef.current || !touchEndRef.current) {
         startBannerTimer();
         return;
@@ -73,9 +116,9 @@ const Home: React.FC<HomeProps> = ({ onNavigate, onSwitchTab, announcements = []
     const isRightSwipe = distance < -50;
 
     if (isLeftSwipe) {
-      setCurrentBanner((prev) => (prev + 1) % BANNERS.length);
+      setCurrentBanner((prev) => (prev + 1) % banners.length);
     } else if (isRightSwipe) {
-      setCurrentBanner((prev) => (prev - 1 + BANNERS.length) % BANNERS.length);
+      setCurrentBanner((prev) => (prev - 1 + banners.length) % banners.length);
     }
     
     // Reset
@@ -89,7 +132,7 @@ const Home: React.FC<HomeProps> = ({ onNavigate, onSwitchTab, announcements = []
         label: '中心介绍', 
         icon: Building2, 
         color: 'text-blue-600', 
-        action: () => onNavigate('about-us') 
+        action: () => onNavigate('home:about-us') 
     },
     { 
         label: '平台动态', 
@@ -130,7 +173,7 @@ const Home: React.FC<HomeProps> = ({ onNavigate, onSwitchTab, announcements = []
                 className="flex h-full transition-transform duration-500 ease-out" 
                 style={{ transform: `translateX(-${currentBanner * 100}%)` }}
             >
-                {BANNERS.map((banner) => (
+                {banners.map((banner) => (
                     <div key={banner.id} className="w-full flex-shrink-0 relative h-full">
                         <img 
                             src={banner.image} 
@@ -156,7 +199,7 @@ const Home: React.FC<HomeProps> = ({ onNavigate, onSwitchTab, announcements = []
 
             {/* Indicators */}
             <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
-                {BANNERS.map((_, idx) => (
+                {banners.map((_, idx) => (
                     <div 
                         key={idx} 
                         className={`h-1.5 rounded-full transition-all duration-300 ${

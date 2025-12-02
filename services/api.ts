@@ -113,6 +113,14 @@ export const API_ENDPOINTS = {
     /** 平台公告列表 */
     list: '/Announcement/index',
   },
+  banner: {
+    /** 轮播图列表 */
+    list: '/Banner/getBannerList',
+  },
+  recharge: {
+    /** 充值公司账户列表 */
+    companyAccountList: '/Recharge/getCompanyAccountList',
+  },
   common: {
     page: '/Common/page',
   },
@@ -528,6 +536,55 @@ export async function fetchAnnouncements(
       : API_ENDPOINTS.announcement.list;
 
   return apiFetch<AnnouncementListData>(path, {
+    method: 'GET',
+  });
+}
+
+/**
+ * 轮播图 Banner 列表
+ * 示例接口: http://18.166.211.131/index.php/api/Banner/getBannerList?page=1&limit=10
+ */
+export interface BannerApiItem {
+  id: number;
+  title: string;
+  image: string;
+  url?: string;
+  description?: string;
+  sort?: number;
+  status?: string;
+  start_time?: string;
+  end_time?: string;
+  create_time?: number;
+  update_time?: number;
+  [key: string]: any;
+}
+
+export interface BannerListData {
+  list: BannerApiItem[];
+  total: number;
+  current_page: number;
+  last_page: number;
+  [key: string]: any;
+}
+
+export interface FetchBannersParams {
+  page?: number;
+  limit?: number;
+}
+
+export async function fetchBanners(
+  params: FetchBannersParams = {},
+): Promise<ApiResponse<BannerListData>> {
+  const search = new URLSearchParams();
+  if (params.page !== undefined) search.set('page', String(params.page));
+  if (params.limit !== undefined) search.set('limit', String(params.limit));
+
+  const path =
+    search.toString().length > 0
+      ? `${API_ENDPOINTS.banner.list}?${search.toString()}`
+      : API_ENDPOINTS.banner.list;
+
+  return apiFetch<BannerListData>(path, {
     method: 'GET',
   });
 }
@@ -1551,6 +1608,69 @@ export async function createOrder(
     return data;
   } catch (error: any) {
     console.error('创建订单失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 充值公司账户列表
+ * 对应后端: /Recharge/getCompanyAccountList?usage=recharge
+ * 示例接口: http://18.166.211.131/index.php/api/Recharge/getCompanyAccountList?usage=recharge
+ */
+export interface CompanyAccountItem {
+  id: number;
+  type: string;
+  account_name: string;
+  account_number: string;
+  bank_name: string | null;
+  bank_branch: string | null;
+  qrcode: string;
+  status: number;
+  sort: number;
+  remark: string;
+  create_time: number;
+  update_time: number;
+  type_text: string;
+  status_text: string;
+  [key: string]: any;
+}
+
+export interface CompanyAccountListData {
+  list: CompanyAccountItem[];
+  [key: string]: any;
+}
+
+export interface FetchCompanyAccountListParams {
+  usage?: string;
+  token?: string;
+}
+
+export async function fetchCompanyAccountList(
+  params: FetchCompanyAccountListParams = {},
+): Promise<ApiResponse<CompanyAccountListData>> {
+  const usage = params.usage || 'recharge';
+  const token = params.token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+
+  if (!token) {
+    throw new Error('未找到用户登录信息，请先登录后再获取充值账户信息');
+  }
+
+  const search = new URLSearchParams();
+  if (usage) {
+    search.set('usage', usage);
+  }
+
+  const path = `${API_ENDPOINTS.recharge.companyAccountList}?${search.toString()}`;
+
+  try {
+    const data = await apiFetch<CompanyAccountListData>(path, {
+      method: 'GET',
+      token,
+    });
+    console.log('充值公司账户列表接口原始响应:', data);
+    return data;
+  } catch (error: any) {
+    console.error('获取充值公司账户列表失败:', error);
     throw error;
   }
 }

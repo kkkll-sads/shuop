@@ -1,4 +1,5 @@
 import { Artist, Product, Banner, Order } from './types';
+import { MyCollectionItem } from './services/api';
 
 export const ARTISTS: Artist[] = [
   { 
@@ -124,4 +125,115 @@ export const MOCK_ORDERS: Order[] = [
     type: 'points',
     subStatusIndex: 2
   }
+];
+
+/**
+ * 我的购买藏品模拟数据
+ * JSON数据结构示例：
+ * {
+ *   "code": 1,
+ *   "msg": "success",
+ *   "data": {
+ *     "list": [
+ *       {
+ *         "id": 1,
+ *         "item_id": 101,
+ *         "title": "《大吉祥》",
+ *         "image": "/uploads/collection/item1.jpg",
+ *         "price": "9880.00",
+ *         "buy_time": 1700000000,
+ *         "buy_time_text": "2023-11-15 10:30:00",
+ *         "delivery_status": 0,
+ *         "delivery_status_text": "未提货",
+ *         "consignment_status": 0,
+ *         "consignment_status_text": "未寄售"
+ *       }
+ *     ],
+ *     "total": 10,
+ *     "per_page": 10,
+ *     "current_page": 1,
+ *     "last_page": 1,
+ *     "has_more": false
+ *   }
+ * }
+ */
+export const MOCK_MY_COLLECTIONS: MyCollectionItem[] = [
+  {
+    id: 1,
+    item_id: 101,
+    title: '《大吉祥》',
+    image: 'https://picsum.photos/seed/art1/300/300',
+    price: '9880.00',
+    buy_time: 1700000000,
+    buy_time_text: '2023-11-15 10:30:00',
+    delivery_status: 0,
+    delivery_status_text: '未提货',
+    consignment_status: 0,
+    consignment_status_text: '未寄售',
+  },
+  {
+    id: 2,
+    item_id: 102,
+    title: '《果香》',
+    image: 'https://picsum.photos/seed/art2/300/300',
+    price: '9880.00',
+    buy_time: 1699900000,
+    buy_time_text: '2023-11-14 15:20:00',
+    delivery_status: 1,
+    delivery_status_text: '已提货',
+    consignment_status: 2,
+    consignment_status_text: '寄售中',
+  },
+  {
+    id: 3,
+    item_id: 103,
+    title: '《冠群芳》',
+    image: 'https://picsum.photos/seed/art3/300/300',
+    price: '9880.00',
+    buy_time: 1699800000,
+    buy_time_text: '2023-11-13 09:15:00',
+    delivery_status: 1,
+    delivery_status_text: '已提货',
+    consignment_status: 4,
+    consignment_status_text: '已售出',
+  },
+  {
+    id: 4,
+    item_id: 104,
+    title: '《古居图》',
+    image: 'https://picsum.photos/seed/art4/300/300',
+    price: '9880.00',
+    buy_time: 1699700000,
+    buy_time_text: '2023-11-12 14:45:00',
+    delivery_status: 0,
+    delivery_status_text: '未提货',
+    consignment_status: 1,
+    consignment_status_text: '待寄售',
+  },
+  {
+    id: 5,
+    item_id: 105,
+    title: '《喜上眉梢》',
+    image: 'https://picsum.photos/seed/art5/300/300',
+    price: '5600.00',
+    buy_time: 1699600000,
+    buy_time_text: '2023-11-11 11:30:00',
+    delivery_status: 1,
+    delivery_status_text: '已提货',
+    consignment_status: 3,
+    consignment_status_text: '寄售失败',
+  },
+  {
+    id: 6,
+    item_id: 106,
+    title: '《旭日东升》',
+    image: 'https://picsum.photos/seed/art6/300/300',
+    price: '12000.00',
+    buy_time: 1699500000,
+    buy_time_text: '2023-11-10 16:20:00',
+    delivery_status: 0,
+    delivery_status_text: '未提货',
+    consignment_status: 2,
+    consignment_status_text: '寄售中',
+  },
 ];

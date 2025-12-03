@@ -171,6 +171,14 @@ export const API_ENDPOINTS = {
     detail: '/collectionItem/detail',
     /** 购买藏品 */
     buy: '/collectionItem/buy',
+    /** 获取购买记录列表 */
+    purchaseRecords: '/collectionItem/purchaseRecords',
+    /** 获取寄售商品列表 */
+    consignmentList: '/collectionItem/consignmentList',
+    /** 申请提货 */
+    deliver: '/collectionItem/deliver',
+    /** 申请寄售 */
+    consign: '/collectionItem/consign',
   },
 } as const;
 
@@ -2291,6 +2299,292 @@ export async function buyCollectionItem(
     return data;
   } catch (error: any) {
     console.error('购买藏品失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 购买记录列表
+ * 对应后端: /collectionItem/purchaseRecords
+ */
+export interface PurchaseRecordItem {
+  order_id: number;
+  order_no: string;
+  total_amount: number;
+  status: string;
+  pay_type: string;
+  pay_time: number;
+  item_id: number;
+  item_title: string;
+  item_image: string;
+  price: number;
+  quantity: number;
+  subtotal: number;
+  pay_time_text: string;
+  status_text: string;
+  pay_type_text: string;
+  [key: string]: any;
+}
+
+export interface PurchaseRecordListData {
+  list: PurchaseRecordItem[];
+  total: number;
+  per_page: number;
+  current_page: number;
+  last_page: number;
+  has_more: boolean;
+  consignment_coupon?: number;
+}
+
+export interface GetPurchaseRecordsParams {
+  page?: number;
+  limit?: number;
+  token?: string;
+}
+
+export async function getPurchaseRecords(
+  params: GetPurchaseRecordsParams = {},
+): Promise<ApiResponse<PurchaseRecordListData>> {
+  const token = params.token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+  const page = params.page || 1;
+  const limit = params.limit || 10;
+
+  if (!token) {
+    throw new Error('未找到用户登录信息，请先登录后再查看购买记录');
+  }
+
+  const search = new URLSearchParams();
+  search.append('page', String(page));
+  search.append('limit', String(limit));
+
+  const path = `${API_ENDPOINTS.collectionItem.purchaseRecords}?${search.toString()}`;
+
+  try {
+    const data = await apiFetch<PurchaseRecordListData>(path, {
+      method: 'GET',
+      token,
+    });
+    console.log('获取购买记录列表接口原始响应:', data);
+    return data;
+  } catch (error: any) {
+    console.error('获取购买记录列表失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 为兼容前端逻辑，利用购买记录作为我的藏品列表
+ */
+export interface MyCollectionItem {
+  id: number;
+  user_collection_id?: number | string;
+  item_id: number;
+  title: string;
+  image: string;
+  price: string;
+  buy_time: number;
+  buy_time_text: string;
+  delivery_status: number;
+  delivery_status_text: string;
+  consignment_status: number;
+  consignment_status_text: string;
+  original_record?: PurchaseRecordItem;
+  [key: string]: any;
+}
+
+export interface MyCollectionListData {
+  list: MyCollectionItem[];
+  total: number;
+  per_page: number;
+  current_page: number;
+  last_page: number;
+  has_more: boolean;
+  consignment_coupon?: number;
+}
+
+export interface GetMyCollectionParams extends GetPurchaseRecordsParams {}
+
+export async function getMyCollection(
+  params: GetMyCollectionParams = {},
+): Promise<ApiResponse<MyCollectionListData>> {
+  const response = await getPurchaseRecords(params);
+
+  const mappedList: MyCollectionItem[] =
+    response.data?.list?.map((record) => ({
+      id: record.order_id,
+      user_collection_id: record.order_id,
+      item_id: record.item_id,
+      title: record.item_title,
+      image: record.item_image,
+      price: String(record.price ?? record.total_amount ?? 0),
+      buy_time: record.pay_time,
+      buy_time_text: record.pay_time_text,
+      delivery_status: 0,
+      delivery_status_text: '未提货',
+      consignment_status: 0,
+      consignment_status_text: '未寄售',
+      original_record: record,
+    })) || [];
+
+  return {
+    ...response,
+    data: {
+      list: mappedList,
+      total: response.data?.total ?? mappedList.length,
+      per_page: response.data?.per_page ?? mappedList.length,
+      current_page: response.data?.current_page ?? (params.page || 1),
+      last_page: response.data?.last_page ?? 1,
+      has_more: response.data?.has_more ?? false,
+      consignment_coupon: response.data?.consignment_coupon ?? 0,
+    },
+  };
+}
+
+/**
+ * 寄售商品列表
+ * 对应后端: /collectionItem/consignmentList
+ */
+export interface ConsignmentItem {
+  id: number;
+  item_id: number;
+  title: string;
+  image: string;
+  price: number;
+  status: string;
+  status_text: string;
+  created_at?: string;
+  [key: string]: any;
+}
+
+export interface ConsignmentListData {
+  list: ConsignmentItem[];
+  total: number;
+  per_page: number;
+  current_page: number;
+  last_page: number;
+  has_more: boolean;
+}
+
+export interface GetConsignmentListParams {
+  page?: number;
+  limit?: number;
+  token?: string;
+}
+
+export async function getConsignmentList(
+  params: GetConsignmentListParams = {},
+): Promise<ApiResponse<ConsignmentListData>> {
+  const token = params.token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+  const page = params.page || 1;
+  const limit = params.limit || 10;
+
+  if (!token) {
+    throw new Error('未找到用户登录信息，请先登录后再查看寄售列表');
+  }
+
+  const search = new URLSearchParams();
+  search.append('page', String(page));
+  search.append('limit', String(limit));
+
+  const path = `${API_ENDPOINTS.collectionItem.consignmentList}?${search.toString()}`;
+
+  try {
+    const data = await apiFetch<ConsignmentListData>(path, {
+      method: 'GET',
+      token,
+    });
+    console.log('获取寄售列表接口原始响应:', data);
+    return data;
+  } catch (error: any) {
+    console.error('获取寄售列表失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 申请提货
+ * 对应后端: /collectionItem/deliver
+ */
+export interface DeliverCollectionItemParams {
+  user_collection_id: number | string;
+  address_id?: number | string | null;
+  token?: string;
+}
+
+export async function deliverCollectionItem(
+  params: DeliverCollectionItemParams,
+): Promise<ApiResponse> {
+  const token = params.token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+
+  if (!token) {
+    throw new Error('未找到用户登录信息，请先登录后再申请提货');
+  }
+
+  if (!params.user_collection_id) {
+    throw new Error('缺少用户藏品 ID');
+  }
+
+  const body = {
+    user_collection_id: params.user_collection_id,
+    address_id: params.address_id ?? null,
+  };
+
+  try {
+    const data = await apiFetch(API_ENDPOINTS.collectionItem.deliver, {
+      method: 'POST',
+      body: JSON.stringify(body),
+      token,
+    });
+    console.log('申请提货接口原始响应:', data);
+    return data;
+  } catch (error: any) {
+    console.error('申请提货失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 申请寄售
+ * 对应后端: /collectionItem/consign
+ */
+export interface ConsignCollectionItemParams {
+  user_collection_id: number | string;
+  price: number;
+  token?: string;
+}
+
+export async function consignCollectionItem(
+  params: ConsignCollectionItemParams,
+): Promise<ApiResponse> {
+  const token = params.token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+
+  if (!token) {
+    throw new Error('未找到用户登录信息，请先登录后再申请寄售');
+  }
+
+  if (!params.user_collection_id) {
+    throw new Error('缺少用户藏品 ID');
+  }
+
+  if (params.price === undefined || params.price === null || Number(params.price) <= 0) {
+    throw new Error('请填写有效的寄售价格');
+  }
+
+  const body = {
+    user_collection_id: params.user_collection_id,
+    price: params.price,
+  };
+
+  try {
+    const data = await apiFetch(API_ENDPOINTS.collectionItem.consign, {
+      method: 'POST',
+      body: JSON.stringify(body),
+      token,
+    });
+    console.log('申请寄售接口原始响应:', data);
+    return data;
+  } catch (error: any) {
+    console.error('申请寄售失败:', error);
     throw error;
   }
 }

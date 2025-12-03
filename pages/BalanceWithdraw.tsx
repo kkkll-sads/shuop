@@ -70,24 +70,12 @@ const BalanceWithdraw: React.FC<BalanceWithdrawProps> = ({ onBack, onNavigate })
 
       setLoadingBalance(true);
       try {
-        // 先尝试从本地缓存获取
-        const cachedUserInfo = localStorage.getItem(USER_INFO_KEY);
-        if (cachedUserInfo) {
-          try {
-            const userInfo: UserInfo = JSON.parse(cachedUserInfo);
-            if (userInfo.money) {
-              setBalance(parseFloat(userInfo.money).toFixed(2));
-            }
-          } catch (e) {
-            console.warn('解析本地用户信息失败:', e);
-          }
-        }
-
+ 
         // 从服务器获取最新余额
         const response = await fetchProfile(token);
         if (response.code === 1 && response.data?.userInfo) {
           const userInfo = response.data.userInfo;
-          setBalance(parseFloat(userInfo.money || '0').toFixed(2));
+          setBalance(parseFloat(userInfo.withdrawable_money || '0').toFixed(2));
           localStorage.setItem(USER_INFO_KEY, JSON.stringify(userInfo));
         }
       } catch (err: any) {

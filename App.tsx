@@ -359,6 +359,7 @@ const App: React.FC = () => {
           <AssetView
             onBack={() => setSubPage(null)}
             onNavigate={(page) => setSubPage(page)}
+            onProductSelect={(product) => handleProductSelect(product, 'market')}
           />
         );
       case 'address-list':

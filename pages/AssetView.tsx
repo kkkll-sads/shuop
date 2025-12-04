@@ -27,13 +27,13 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
   const [activeTab, setActiveTab] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Data states
   const [balanceLogs, setBalanceLogs] = useState<BalanceLogItem[]>([]);
   const [rechargeOrders, setRechargeOrders] = useState<RechargeOrderItem[]>([]);
   const [withdrawOrders, setWithdrawOrders] = useState<WithdrawOrderItem[]>([]);
   const [myCollections, setMyCollections] = useState<MyCollectionItem[]>([]);
-  
+
   const [page, setPage] = useState<number>(1);
   const [hasMore, setHasMore] = useState<boolean>(false);
 
@@ -41,10 +41,10 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
   const [showActionModal, setShowActionModal] = useState<boolean>(false);
   const [selectedItem, setSelectedItem] = useState<MyCollectionItem | null>(null);
   const [actionTab, setActionTab] = useState<'delivery' | 'consignment'>('delivery');
-  
+
   // 寄售券数量（模拟数据，实际应从API获取）
   const [consignmentTicketCount, setConsignmentTicketCount] = useState<number>(0);
-  
+
   // 48小时倒计时
   const [countdown, setCountdown] = useState<{ hours: number; minutes: number; seconds: number } | null>(null);
   // 寄售价格
@@ -186,11 +186,10 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
         </div>
         <div className="text-right">
           <div className="text-lg font-bold text-green-600">+{item.amount}</div>
-          <div className={`text-xs mt-1 ${
-            item.status === 1 ? 'text-green-600' : 
-            item.status === 2 ? 'text-red-600' : 
-            'text-yellow-600'
-          }`}>
+          <div className={`text-xs mt-1 ${item.status === 1 ? 'text-green-600' :
+              item.status === 2 ? 'text-red-600' :
+                'text-yellow-600'
+            }`}>
             {item.status_text}
           </div>
         </div>
@@ -216,11 +215,10 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
         </div>
         <div className="text-right">
           <div className="text-lg font-bold text-red-600">-{item.amount}</div>
-          <div className={`text-xs mt-1 ${
-            item.status === 1 ? 'text-green-600' : 
-            item.status === 2 ? 'text-red-600' : 
-            'text-yellow-600'
-          }`}>
+          <div className={`text-xs mt-1 ${item.status === 1 ? 'text-green-600' :
+              item.status === 2 ? 'text-red-600' :
+                'text-yellow-600'
+            }`}>
             {item.status_text}
           </div>
         </div>
@@ -268,15 +266,15 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
     const now = Math.floor(Date.now() / 1000);
     const elapsed = now - buyTime;
     const totalSeconds = 48 * 3600 - elapsed;
-    
+
     if (totalSeconds <= 0) {
       return null; // 已超过48小时
     }
-    
+
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
-    
+
     return { hours, minutes, seconds };
   };
 
@@ -574,16 +572,16 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
   };
 
   const renderCollectionItem = (item: MyCollectionItem) => (
-    <div 
-      key={item.id} 
+    <div
+      key={item.id}
       className="bg-white rounded-lg p-4 mb-3 shadow-sm cursor-pointer active:bg-gray-50 transition-colors"
       onClick={() => handleItemClick(item)}
     >
       <div className="flex gap-3">
         <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-          <img 
-            src={normalizeAssetUrl(item.image)} 
-            alt={item.title} 
+          <img
+            src={normalizeAssetUrl(item.image)}
+            alt={item.title}
             className="w-full h-full object-cover"
             onError={(e) => {
               (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150';
@@ -597,7 +595,7 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
           </div>
           <div className="text-xs text-gray-500 mb-2">购买时间: {item.buy_time_text}</div>
           <div className="text-sm font-bold text-gray-900 mb-2">¥ {item.price}</div>
-          
+
           <div className="flex gap-2 flex-wrap">
             {/* 如果已售出，只显示"已售出"标签 */}
             {item.consignment_status === 4 ? (
@@ -606,7 +604,7 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
               </div>
             ) : item.consignment_status === 2 ? (
               /* 如果正在寄售中，只显示"寄售中"标签 */
-              <div className="text-xs px-2 py-1 rounded-full bg-blue-50 text-blue-600 border border-blue-200">
+              <div className="text-xs px-2 py-1 rounded-full bg-orange-50 text-orange-600 border border-orange-200">
                 寄售中
               </div>
             ) : item.delivery_status === 1 ? (
@@ -625,15 +623,14 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
                 <div className="text-xs px-2 py-1 rounded-full bg-orange-50 text-orange-600 border border-orange-200">
                   ○ 未提货
                 </div>
-                <div className={`text-xs px-2 py-1 rounded-full ${
-                  item.consignment_status === 0 
+                <div className={`text-xs px-2 py-1 rounded-full ${item.consignment_status === 0
                     ? 'bg-gray-50 text-gray-600 border border-gray-200'
                     : item.consignment_status === 1
-                    ? 'bg-yellow-50 text-yellow-600 border border-yellow-200'
-                    : item.consignment_status === 3
-                    ? 'bg-red-50 text-red-600 border border-red-200'
-                    : 'bg-green-50 text-green-600 border border-green-200'
-                }`}>
+                      ? 'bg-yellow-50 text-yellow-600 border border-yellow-200'
+                      : item.consignment_status === 3
+                        ? 'bg-red-50 text-red-600 border border-red-200'
+                        : 'bg-green-50 text-green-600 border border-green-200'
+                  }`}>
                   {item.consignment_status_text || '未寄售'}
                 </div>
               </>
@@ -684,7 +681,7 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
             <button
               onClick={() => setPage(prev => prev + 1)}
               disabled={loading}
-              className="w-full py-2 text-sm text-blue-600 disabled:opacity-50"
+              className="w-full py-2 text-sm text-orange-600 disabled:opacity-50"
             >
               {loading ? '加载中...' : '加载更多'}
             </button>
@@ -710,7 +707,7 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
             <button
               onClick={() => setPage(prev => prev + 1)}
               disabled={loading}
-              className="w-full py-2 text-sm text-blue-600 disabled:opacity-50"
+              className="w-full py-2 text-sm text-orange-600 disabled:opacity-50"
             >
               {loading ? '加载中...' : '加载更多'}
             </button>
@@ -736,7 +733,7 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
             <button
               onClick={() => setPage(prev => prev + 1)}
               disabled={loading}
-              className="w-full py-2 text-sm text-blue-600 disabled:opacity-50"
+              className="w-full py-2 text-sm text-orange-600 disabled:opacity-50"
             >
               {loading ? '加载中...' : '加载更多'}
             </button>
@@ -762,7 +759,7 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
             <button
               onClick={() => setPage(prev => prev + 1)}
               disabled={loading}
-              className="w-full py-2 text-sm text-blue-600 disabled:opacity-50"
+              className="w-full py-2 text-sm text-orange-600 disabled:opacity-50"
             >
               {loading ? '加载中...' : '加载更多'}
             </button>
@@ -774,77 +771,76 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
       <header className="bg-white px-4 py-3 flex items-center sticky top-0 z-10">
-          <button onClick={onBack} className="absolute left-4 p-1"><ArrowLeft size={20} /></button>
-          <h1 className="text-lg font-bold text-gray-800 w-full text-center">我的资产</h1>
-          <button 
-            onClick={() => onNavigate('asset-history')} 
-            className="absolute right-4 text-sm text-blue-600"
-          >
-            历史记录
-          </button>
+        <button onClick={onBack} className="absolute left-4 p-1"><ArrowLeft size={20} /></button>
+        <h1 className="text-lg font-bold text-gray-800 w-full text-center">我的资产</h1>
+        <button
+          onClick={() => onNavigate('asset-history')}
+          className="absolute right-4 text-sm text-orange-600"
+        >
+          历史记录
+        </button>
       </header>
       <div className="p-4">
-           {/* Asset Card */}
-           <div className="bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl p-6 text-white shadow-lg mb-6 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
-              <div className="relative z-10">
-                  <div className="text-sm opacity-90 mb-1">可用余额 (元)</div>
-                  <div className="text-4xl font-bold mb-6">¥ 0.00</div>
-                  
-                  <div className="w-full h-px bg-white opacity-20 mb-4"></div>
-                  
-                  <div className="flex justify-between text-sm">
-                      <div>
-                          <div className="opacity-70 text-xs mb-1">充值服务费</div>
-                          <div className="font-medium">0.00</div>
-                      </div>
-                      <div>
-                          <div className="opacity-70 text-xs mb-1">拓展服务费</div>
-                          <div className="font-medium">0.00</div>
-                      </div>
-                  </div>
+        {/* Asset Card */}
+        <div className="bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl p-6 text-white shadow-lg mb-6 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+          <div className="relative z-10">
+            <div className="text-sm opacity-90 mb-1">可用余额 (元)</div>
+            <div className="text-4xl font-bold mb-6">¥ 0.00</div>
+
+            <div className="w-full h-px bg-white opacity-20 mb-4"></div>
+
+            <div className="flex justify-between text-sm">
+              <div>
+                <div className="opacity-70 text-xs mb-1">充值服务费</div>
+                <div className="font-medium">0.00</div>
               </div>
+              <div>
+                <div className="opacity-70 text-xs mb-1">拓展服务费</div>
+                <div className="font-medium">0.00</div>
+              </div>
+            </div>
           </div>
+        </div>
 
-         {/* Actions */}
-         <div className="grid grid-cols-4 gap-4 mb-8">
-             {[
-                 {label: '余额充值', icon: Wallet, page: 'asset:balance-recharge'},
-                 {label: '余额提现', icon: Receipt, page: 'asset:balance-withdraw'},
-                 {label: '拓展提现', icon: Receipt, page: 'asset:extension-withdraw'},
-                 {label: '服务充值', icon: CreditCard, page: 'asset:service-recharge'}
-             ].map((item, idx) => (
-                 <button
-                   key={idx}
-                   type="button"
-                   onClick={() => onNavigate(item.page)}
-                   className="flex flex-col items-center focus:outline-none active:opacity-80"
-                 >
-                     <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center mb-2 text-gray-700">
-                         <item.icon size={20} />
-                     </div>
-                     <span className="text-xs text-gray-600">{item.label}</span>
-                 </button>
-             ))}
-         </div>
+        {/* Actions */}
+        <div className="grid grid-cols-4 gap-4 mb-8">
+          {[
+            { label: '余额充值', icon: Wallet, page: 'asset:balance-recharge' },
+            { label: '余额提现', icon: Receipt, page: 'asset:balance-withdraw' },
+            { label: '拓展提现', icon: Receipt, page: 'asset:extension-withdraw' },
+            { label: '服务充值', icon: CreditCard, page: 'asset:service-recharge' }
+          ].map((item, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => onNavigate(item.page)}
+              className="flex flex-col items-center focus:outline-none active:opacity-80"
+            >
+              <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center mb-2 text-gray-700">
+                <item.icon size={20} />
+              </div>
+              <span className="text-xs text-gray-600">{item.label}</span>
+            </button>
+          ))}
+        </div>
 
-          {/* Tabs */}
-          <div className="flex justify-between bg-white p-1 rounded-full mb-8">
-              {tabs.map((tab, idx) => (
-                  <button 
-                    key={idx} 
-                    onClick={() => handleTabChange(idx)}
-                    className={`flex-1 py-2 text-xs rounded-full transition-colors ${
-                      idx === activeTab ? 'bg-blue-100 text-blue-600 font-bold' : 'text-gray-500'
-                    }`}
-                  >
-                      {tab}
-                  </button>
-              ))}
-          </div>
+        {/* Tabs */}
+        <div className="flex justify-between bg-white p-1 rounded-full mb-8">
+          {tabs.map((tab, idx) => (
+            <button
+              key={idx}
+              onClick={() => handleTabChange(idx)}
+              className={`flex-1 py-2 text-xs rounded-full transition-colors ${idx === activeTab ? 'bg-orange-100 text-orange-600 font-bold' : 'text-gray-500'
+                }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
 
-          {/* Content */}
-          {renderContent()}
+        {/* Content */}
+        {renderContent()}
       </div>
 
       {/* 操作弹窗 */}
@@ -869,9 +865,9 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
             {/* 藏品信息 */}
             <div className="flex gap-3 mb-4">
               <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                <img 
-                  src={normalizeAssetUrl(selectedItem.image)} 
-                  alt={selectedItem.title} 
+                <img
+                  src={normalizeAssetUrl(selectedItem.image)}
+                  alt={selectedItem.title}
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150';
@@ -888,33 +884,31 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
             {/* 标签切换 */}
             {(() => {
               // 如果正在寄售中、已寄售成功、已提货、或曾经寄售过，不显示任何标签
-              if (isConsigning(selectedItem) || 
-                  hasConsignedSuccessfully(selectedItem) || 
-                  isDelivered(selectedItem) || 
-                  hasConsignedBefore(selectedItem)) {
+              if (isConsigning(selectedItem) ||
+                hasConsignedSuccessfully(selectedItem) ||
+                isDelivered(selectedItem) ||
+                hasConsignedBefore(selectedItem)) {
                 return null;
               }
-              
+
               // 显示提货和寄售两个标签
               return (
                 <div className="flex bg-gray-100 p-1 rounded-lg mb-4">
                   <button
                     onClick={() => setActionTab('delivery')}
-                    className={`flex-1 py-2 text-xs rounded-md transition-colors ${
-                      actionTab === 'delivery'
-                        ? 'bg-white text-blue-600 font-medium shadow-sm'
+                    className={`flex-1 py-2 text-xs rounded-md transition-colors ${actionTab === 'delivery'
+                        ? 'bg-white text-orange-600 font-medium shadow-sm'
                         : 'text-gray-600'
-                    }`}
+                      }`}
                   >
                     提货
                   </button>
                   <button
                     onClick={() => setActionTab('consignment')}
-                    className={`flex-1 py-2 text-xs rounded-md transition-colors ${
-                      actionTab === 'consignment'
+                    className={`flex-1 py-2 text-xs rounded-md transition-colors ${actionTab === 'consignment'
                         ? 'bg-white text-orange-600 font-medium shadow-sm'
                         : 'text-gray-600'
-                    }`}
+                      }`}
                   >
                     寄售
                   </button>
@@ -1027,13 +1021,13 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
 
                   {/* 寄售券数量显示 */}
                   {!isConsigning(selectedItem) && !hasConsignedSuccessfully(selectedItem) && (
-                    <div className="bg-blue-50 px-3 py-2 rounded-lg">
+                    <div className="bg-orange-50 px-3 py-2 rounded-lg">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-xs text-blue-600">
+                        <div className="flex items-center gap-2 text-xs text-orange-600">
                           <ShoppingBag size={16} />
                           <span>我的寄售券：</span>
                         </div>
-                        <div className="text-sm font-bold text-blue-700">
+                        <div className="text-sm font-bold text-orange-700">
                           {getConsignmentTicketCount()} 张
                         </div>
                       </div>
@@ -1048,7 +1042,7 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
               )}
             </div>
 
-           
+
             {actionError && (
               <div className="text-xs text-red-600 mb-2">{actionError}</div>
             )}
@@ -1057,19 +1051,18 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
             <button
               onClick={handleConfirmAction}
               disabled={actionLoading || !canPerformAction()}
-              className={`w-full py-3 rounded-lg text-sm font-medium transition-colors ${
-                !actionLoading && canPerformAction()
+              className={`w-full py-3 rounded-lg text-sm font-medium transition-colors ${!actionLoading && canPerformAction()
                   ? actionTab === 'delivery'
-                    ? 'bg-blue-600 text-white active:bg-blue-700'
+                    ? 'bg-orange-600 text-white active:bg-orange-700'
                     : 'bg-orange-600 text-white active:bg-orange-700'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
+                }`}
             >
               {actionLoading
                 ? '提交中...'
                 : actionTab === 'delivery'
-                ? '确认提货'
-                : '确认寄售'}
+                  ? '确认提货'
+                  : '确认寄售'}
             </button>
           </div>
         </div>

@@ -144,7 +144,7 @@ const EditProfile: React.FC<EditProfileProps> = ({ onBack, onLogout }) => {
         >
           <span className="text-sm text-gray-800">头像</span>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-yellow-200 overflow-hidden flex items-center justify-center text-base font-bold text-yellow-700">
+            <div className="w-10 h-10 rounded-full bg-orange-200 overflow-hidden flex items-center justify-center text-base font-bold text-orange-700">
               {avatarPreview ? (
                 <img
                   src={avatarPreview}
@@ -155,7 +155,7 @@ const EditProfile: React.FC<EditProfileProps> = ({ onBack, onLogout }) => {
                 displayAvatarText
               )}
             </div>
-            
+
             <ChevronRight size={16} className="text-gray-400" />
           </div>
         </button>
@@ -185,14 +185,14 @@ const EditProfile: React.FC<EditProfileProps> = ({ onBack, onLogout }) => {
       {/* Buttons */}
       <div className="mt-8 px-4 space-y-3">
         <button
-          className="w-full bg-blue-500 text-white text-sm font-semibold py-3 rounded-md active:opacity-80 shadow-sm"
+          className="w-full bg-orange-500 text-white text-sm font-semibold py-3 rounded-md active:opacity-80 shadow-sm"
           onClick={handleSave}
           disabled={saving}
         >
           {saving ? '保存中...' : '保存'}
         </button>
         <button
-          className="w-full bg-white text-blue-500 border border-blue-400 text-sm font-semibold py-3 rounded-md active:bg-blue-50"
+          className="w-full bg-white text-orange-500 border border-orange-400 text-sm font-semibold py-3 rounded-md active:bg-orange-50"
           onClick={onLogout}
         >
           退出登录

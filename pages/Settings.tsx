@@ -106,9 +106,8 @@ const Settings: React.FC<SettingsProps> = ({ onBack, onLogout, onNavigate }) => 
         ].map((item, index) => (
           <button
             key={item.label}
-            className={`w-full px-4 py-3 flex items-center justify-between text-sm text-gray-800 active:bg-gray-50 ${
-              index !== 3 ? 'border-b border-gray-100' : ''
-            }`}
+            className={`w-full px-4 py-3 flex items-center justify-between text-sm text-gray-800 active:bg-gray-50 ${index !== 3 ? 'border-b border-gray-100' : ''
+              }`}
             onClick={item.action}
           >
             <span>{item.label}</span>
@@ -144,7 +143,7 @@ const Settings: React.FC<SettingsProps> = ({ onBack, onLogout, onNavigate }) => 
       {/* Logout button */}
       <div className="mt-8 px-4">
         <button
-          className="w-full bg-blue-500 text-white text-sm font-semibold py-3 rounded-md active:opacity-80 shadow-sm"
+          className="w-full bg-orange-500 text-white text-sm font-semibold py-3 rounded-md active:opacity-80 shadow-sm"
           onClick={onLogout}
         >
           退出登录

@@ -55,13 +55,12 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ category, initialTab, onB
             <button
               key={index}
               onClick={() => setActiveTab(index)}
-              className={`flex-1 min-w-[80px] py-3 text-sm font-medium relative whitespace-nowrap ${
-                activeTab === index ? 'text-blue-600' : 'text-gray-500'
-              }`}
+              className={`flex-1 min-w-[80px] py-3 text-sm font-medium relative whitespace-nowrap ${activeTab === index ? 'text-orange-600' : 'text-gray-500'
+                }`}
             >
               {tab}
               {activeTab === index && (
-                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-6 h-0.5 bg-blue-600 rounded-full"></div>
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-6 h-0.5 bg-orange-600 rounded-full"></div>
               )}
             </button>
           ))}
@@ -75,9 +74,9 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ category, initialTab, onB
             <div key={order.id} className="bg-white rounded-xl p-4 shadow-sm border border-gray-50">
               <div className="flex justify-between items-center mb-3 pb-3 border-b border-gray-50">
                 <span className="text-xs text-gray-500">{order.date}</span>
-                <span className="text-xs font-medium text-blue-600">{order.status}</span>
+                <span className="text-xs font-medium text-orange-600">{order.status}</span>
               </div>
-              
+
               <div className="flex gap-3">
                 <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                   <img src={order.productImage} alt={order.productName} className="w-full h-full object-cover" />
@@ -86,11 +85,11 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ category, initialTab, onB
                   <h3 className="text-sm font-medium text-gray-800 mb-1">{order.productName}</h3>
                   <div className="text-xs text-gray-400 mb-2">数量: {order.quantity}</div>
                   <div className="flex justify-between items-end">
-                     <div className="text-sm font-bold text-gray-900">¥ {order.total.toFixed(2)}</div>
-                     {/* Mock Action Button based on status could go here */}
-                     <button className="px-3 py-1 rounded-full border border-gray-200 text-xs text-gray-600 active:bg-gray-50">
-                        查看详情
-                     </button>
+                    <div className="text-sm font-bold text-gray-900">¥ {order.total.toFixed(2)}</div>
+                    {/* Mock Action Button based on status could go here */}
+                    <button className="px-3 py-1 rounded-full border border-gray-200 text-xs text-gray-600 active:bg-gray-50">
+                      查看详情
+                    </button>
                   </div>
                 </div>
               </div>

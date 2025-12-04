@@ -182,175 +182,171 @@ const RealNameAuth: React.FC<RealNameAuthProps> = ({ onBack }) => {
           <div className="bg-red-50 border border-red-100 text-red-500 text-xs rounded-lg px-3 py-2 mb-4">
             {error}
           </div>
-        ) : (
-          <>
-            <div
-              className={`rounded-2xl p-6 text-white shadow-lg mb-6 flex items-center justify-between ${
-                isAuthed
-                  ? 'bg-gradient-to-r from-green-500 to-emerald-600'
-                  : isPending
-                  ? 'bg-gradient-to-r from-blue-400 to-sky-500'
-                  : 'bg-gradient-to-r from-yellow-400 to-amber-500'
+        ) : (<>
+          <div
+            className={`rounded-2xl p-6 text-white shadow-lg mb-6 flex items-center justify-between ${isAuthed
+              ? 'bg-gradient-to-r from-green-500 to-emerald-600'
+              : isPending
+                ? 'bg-gradient-to-r from-orange-300 to-orange-400'
+                : 'bg-gradient-to-r from-orange-400 to-orange-500'
               }`}
-            >
-              <div>
-                <h2 className="text-xl font-bold mb-1 flex items-center gap-2">
-                  <ShieldCheck size={24} />
-                  {isAuthed
-                    ? '已认证'
-                    : isPending
+          >
+            <div>
+              <h2 className="text-2xl font-bold mb-1">
+                {isAuthed
+                  ? '已认证'
+                  : isPending
                     ? '待审核'
                     : status?.real_name_status_text || '未实名'}
-                </h2>
-                <p className="text-white/90 text-sm opacity-90">
-                  {isAuthed
-                    ? '您的身份信息已通过审核'
-                    : isPending
+              </h2>
+              <p className="text-white/90 text-sm opacity-90">
+                {isAuthed
+                  ? '您的身份信息已通过审核'
+                  : isPending
                     ? '您的实名信息已提交，正在审核中，请耐心等待'
                     : '根据国家监管要求，需完成实名认证后方可使用全部功能'}
-                </p>
-              </div>
-              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                <ShieldCheck size={32} className="text-white" />
-              </div>
-            </div>
-
-            {isAuthed || isPending ? (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="p-4 border-b border-gray-50 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500">
-                    <User size={16} />
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-xs text-gray-400 mb-0.5">真实姓名</div>
-                    <div className="text-sm font-bold text-gray-800">
-                      {status?.real_name || realName || '已认证用户'}
-                    </div>
-                  </div>
-                </div>
-                <div className="p-4 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500">
-                    <CreditCard size={16} />
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-xs text-gray-400 mb-0.5">身份证号</div>
-                    <div className="text-sm font-bold text-gray-800">
-                      {maskedIdCard(status?.id_card || idCard)}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <>
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-4">
-                  <div className="px-4 py-3 border-b border-gray-50 flex items-center">
-                    <span className="w-20 text-xs text-gray-500">真实姓名</span>
-                    <input
-                      type="text"
-                      value={realName}
-                      onChange={(e) => setRealName(e.target.value)}
-                      placeholder="请输入身份证上的姓名"
-                      className="flex-1 text-sm text-gray-900 outline-none bg-transparent placeholder:text-gray-300"
-                    />
-                  </div>
-                  <div className="px-4 py-3 flex items-center">
-                    <span className="w-20 text-xs text-gray-500">身份证号</span>
-                    <input
-                      type="text"
-                      value={idCard}
-                      onChange={(e) => setIdCard(e.target.value)}
-                      placeholder="请输入身份证号码"
-                      className="flex-1 text-sm text-gray-900 outline-none bg-transparent placeholder:text-gray-300"
-                    />
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
-                  <div className="px-4 pt-4 pb-2 text-xs text-gray-500">
-                    请上传本人身份证
-                  </div>
-                  <div className="px-4 pb-4 grid grid-cols-2 gap-3">
-                    <label className="border border-dashed border-gray-200 rounded-lg flex flex-col items-center justify-center py-6 text-xs text-gray-400 active:bg-gray-50">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => handleUpload(e, 'front')}
-                        disabled={uploadingFront}
-                      />
-                      {idCardFrontPreview ? (
-                        <img
-                          src={idCardFrontPreview}
-                          alt="身份证人像面"
-                          className="w-full h-24 object-cover rounded-md mb-2"
-                        />
-                      ) : (
-                        <ImageIcon size={28} className="mb-2 text-gray-300" />
-                      )}
-                      <span className="text-gray-700 text-xs mb-0.5">
-                        身份证人像面
-                      </span>
-                      <span className="text-[10px] text-gray-400">
-                        {uploadingFront ? '上传中...' : '点击上传'}
-                      </span>
-                    </label>
-
-                    <label className="border border-dashed border-gray-200 rounded-lg flex flex-col items-center justify-center py-6 text-xs text-gray-400 active:bg-gray-50">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => handleUpload(e, 'back')}
-                        disabled={uploadingBack}
-                      />
-                      {idCardBackPreview ? (
-                        <img
-                          src={idCardBackPreview}
-                          alt="身份证国徽面"
-                          className="w-full h-24 object-cover rounded-md mb-2"
-                        />
-                      ) : (
-                        <ImageIcon size={28} className="mb-2 text-gray-300" />
-                      )}
-                      <span className="text-gray-700 text-xs mb-0.5">
-                        身份证国徽面
-                      </span>
-                      <span className="text-[10px] text-gray-400">
-                        {uploadingBack ? '上传中...' : '点击上传'}
-                      </span>
-                    </label>
-                  </div>
-                </div>
-
-                {status?.audit_reason ? (
-                  <div className="bg-red-50 border border-red-100 text-red-500 text-xs rounded-lg px-3 py-2 mb-3">
-                    审核未通过原因：{status.audit_reason}
-                  </div>
-                ) : null}
-
-                <button
-                  className="w-full bg-blue-500 text-white text-sm font-semibold py-3 rounded-md active:opacity-80 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
-                  onClick={handleSubmit}
-                  disabled={
-                    submitting ||
-                    uploadingFront ||
-                    uploadingBack
-                  }
-                >
-                  {submitting ? '提交中...' : '提交实名认证'}
-                </button>
-              </>
-            )}
-
-            <div className="mt-8 text-center">
-              <p className="text-xs text-gray-400 leading-5">
-                信息采用加密存储，仅用于平台实名认证及合规监管，不会向无关第三方披露。
-                <br />
-                如需修改已通过的实名认证信息，请联系平台人工客服处理。
               </p>
             </div>
-          </>
-        )}
+            <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+              <ShieldCheck size={32} className="text-white" />
+            </div>
+          </div>
+
+          {isAuthed || isPending ? (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="p-4 border-b border-gray-50 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500">
+                  <User size={16} />
+                </div>
+                <div className="flex-1">
+                  <div className="text-xs text-gray-400 mb-0.5">真实姓名</div>
+                  <div className="text-sm font-bold text-gray-800">
+                    {status?.real_name || realName || '已认证用户'}
+                  </div>
+                </div>
+              </div>
+              <div className="p-4 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500">
+                  <CreditCard size={16} />
+                </div>
+                <div className="flex-1">
+                  <div className="text-xs text-gray-400 mb-0.5">身份证号</div>
+                  <div className="text-sm font-bold text-gray-800">
+                    {maskedIdCard(status?.id_card || idCard)}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-4">
+                <div className="px-4 py-3 border-b border-gray-50 flex items-center">
+                  <span className="w-20 text-xs text-gray-500">真实姓名</span>
+                  <input
+                    type="text"
+                    value={realName}
+                    onChange={(e) => setRealName(e.target.value)}
+                    placeholder="请输入身份证上的姓名"
+                    className="flex-1 text-sm text-gray-900 outline-none bg-transparent placeholder:text-gray-300"
+                  />
+                </div>
+                <div className="px-4 py-3 flex items-center">
+                  <span className="w-20 text-xs text-gray-500">身份证号</span>
+                  <input
+                    type="text"
+                    value={idCard}
+                    onChange={(e) => setIdCard(e.target.value)}
+                    placeholder="请输入身份证号码"
+                    className="flex-1 text-sm text-gray-900 outline-none bg-transparent placeholder:text-gray-300"
+                  />
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+                <div className="px-4 pt-4 pb-2 text-xs text-gray-500">
+                  请上传本人身份证
+                </div>
+                <div className="px-4 pb-4 grid grid-cols-2 gap-3">
+                  <label className="border border-dashed border-gray-200 rounded-lg flex flex-col items-center justify-center py-6 text-xs text-gray-400 active:bg-gray-50">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handleUpload(e, 'front')}
+                      disabled={uploadingFront}
+                    />
+                    {idCardFrontPreview ? (
+                      <img
+                        src={idCardFrontPreview}
+                        alt="身份证人像面"
+                        className="w-full h-24 object-cover rounded-md mb-2"
+                      />
+                    ) : (
+                      <ImageIcon size={28} className="mb-2 text-gray-300" />
+                    )}
+                    <span className="text-gray-700 text-xs mb-0.5">
+                      身份证人像面
+                    </span>
+                    <span className="text-[10px] text-gray-400">
+                      {uploadingFront ? '上传中...' : '点击上传'}
+                    </span>
+                  </label>
+
+                  <label className="border border-dashed border-gray-200 rounded-lg flex flex-col items-center justify-center py-6 text-xs text-gray-400 active:bg-gray-50">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handleUpload(e, 'back')}
+                      disabled={uploadingBack}
+                    />
+                    {idCardBackPreview ? (
+                      <img
+                        src={idCardBackPreview}
+                        alt="身份证国徽面"
+                        className="w-full h-24 object-cover rounded-md mb-2"
+                      />
+                    ) : (
+                      <ImageIcon size={28} className="mb-2 text-gray-300" />
+                    )}
+                    <span className="text-gray-700 text-xs mb-0.5">
+                      身份证国徽面
+                    </span>
+                    <span className="text-[10px] text-gray-400">
+                      {uploadingBack ? '上传中...' : '点击上传'}
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              {status?.audit_reason ? (
+                <div className="bg-red-50 border border-red-100 text-red-500 text-xs rounded-lg px-3 py-2 mb-3">
+                  审核未通过原因：{status.audit_reason}
+                </div>
+              ) : null}
+
+              <button
+                className="w-full bg-orange-500 text-white text-sm font-semibold py-3 rounded-md active:opacity-80 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                onClick={handleSubmit}
+                disabled={
+                  submitting ||
+                  uploadingFront ||
+                  uploadingBack
+                }
+              >
+                {submitting ? '提交中...' : '提交实名认证'}
+              </button>
+            </>
+          )}
+        </>)}
+
+        <div className="mt-8 text-center">
+          <p className="text-xs text-gray-400 leading-5">
+            信息采用加密存储，仅用于平台实名认证及合规监管，不会向无关第三方披露。
+            <br />
+            如需修改已通过的实名认证信息，请联系平台人工客服处理。
+          </p>
+        </div>
       </div>
     </SubPageLayout>
   );

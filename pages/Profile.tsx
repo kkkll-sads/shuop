@@ -1,28 +1,28 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Settings, MessageSquare, ShieldCheck, CreditCard, MapPin, Users, UserCheck, HelpCircle, FileText, HeadphonesIcon, ChevronRight, Wallet, Receipt } from 'lucide-react';
+import { Settings, MessageSquare, ShieldCheck, CreditCard, MapPin, Users, UserCheck, HelpCircle, FileText, HeadphonesIcon, ChevronRight, Wallet, Receipt, Gem, Sprout, Award } from 'lucide-react';
 import { AUTH_TOKEN_KEY, USER_INFO_KEY, fetchProfile, normalizeAssetUrl } from '../services/api';
 import { UserInfo } from '../types';
 
 // Helper for custom coin icon
-const CoinsIcon = ({size, className}: {size: number, className: string}) => (
-    <svg 
-        xmlns="http://www.w3.org/2000/svg" 
-        width={size} 
-        height={size} 
-        viewBox="0 0 24 24" 
-        fill="none" 
-        stroke="currentColor" 
-        strokeWidth="1.5" 
-        strokeLinecap="round" 
-        strokeLinejoin="round" 
-        className={className}
-    >
-        <circle cx="8" cy="8" r="6" />
-        <path d="M18.09 10.37A6 6 0 1 1 10.34 18" />
-        <path d="M7 6h1v4" />
-        <path d="m16.71 13.88.7.71-2.82 2.82" />
-    </svg>
+const CoinsIcon = ({ size, className }: { size: number, className: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <circle cx="8" cy="8" r="6" />
+    <path d="M18.09 10.37A6 6 0 1 1 10.34 18" />
+    <path d="M7 6h1v4" />
+    <path d="m16.71 13.88.7.71-2.82 2.82" />
+  </svg>
 );
 
 interface ProfileProps {
@@ -91,7 +91,7 @@ const Profile: React.FC<ProfileProps> = ({ onNavigate }) => {
   const displayName = userInfo?.nickname || userInfo?.username || '用户';
   const displayAvatarText = displayName.slice(0, 1).toUpperCase();
   const displayAvatarUrl = normalizeAssetUrl(userInfo?.avatar);
-  
+
   // 根据 user_type 显示用户类型
   const getUserTypeLabel = (userType?: number): string => {
     if (userType === undefined || userType === null) return '--';
@@ -118,130 +118,157 @@ const Profile: React.FC<ProfileProps> = ({ onNavigate }) => {
 
   return (
     <div className="pb-24 min-h-screen bg-gray-50">
-        {/* User Header */}
-        <div className="bg-gradient-to-b from-blue-400 to-blue-500 pt-12 pb-16 px-6 relative">
-         
-            <div className="flex items-center justify-between text-white mb-6">
-                <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-full bg-green-200 border-2 border-white flex items-center justify-center text-2xl font-bold text-green-700 overflow-hidden">
-                        {displayAvatarUrl ? (
-                          <img
-                            src={displayAvatarUrl}
-                            alt="用户头像"
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          displayAvatarText || '用'
-                        )}
-                    </div>
-                    <div>
-                        <h2 className="text-xl font-bold">{displayName}</h2>
-                        <div className="text-xs opacity-80 mt-1">{displayId}</div>
-                       
-                    </div>
-                </div>
-                <div className="flex gap-3">
-                    <button onClick={() => onNavigate('service-center:message')}><MessageSquare size={20} /></button>
-                    <button onClick={() => onNavigate('service-center:settings')}><Settings size={20} /></button>
-                </div>
-            </div>
+      {/* Top Background Gradient */}
+      <div className="absolute top-0 left-0 right-0 h-64 bg-gradient-to-b from-[#FFD6A5] to-gray-50 z-0" />
 
-            {/* Stats Overlay */}
-            <div className="flex justify-between text-white px-2">
-                {stats.map((stat, idx) => (
-                    <div key={idx} className="flex flex-col items-center cursor-pointer" onClick={() => idx === 0 && onNavigate('asset-view')}>
-                        <span className="text-lg font-bold mb-1">{stat.val}</span>
-                        <span className="text-xs opacity-80">{stat.label}</span>
-                    </div>
-                ))}
-            </div>
-        </div>
+      {/* User Header */}
+      <div className="pt-12 pb-16 px-6 relative z-10">
 
-        {error && (
-          <div className="mx-4 mt-4 bg-red-50 text-red-600 text-sm px-4 py-2 rounded-lg shadow-sm">
-            {error}
+        <div className="flex items-center justify-between text-gray-800 mb-6">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-full bg-orange-100 border-2 border-white flex items-center justify-center text-2xl font-bold text-orange-600 overflow-hidden shadow-sm">
+              {displayAvatarUrl ? (
+                <img
+                  src={displayAvatarUrl}
+                  alt="用户头像"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                displayAvatarText || '用'
+              )}
+            </div>
+            <div>
+              <h2 className="text-xl font-bold">{displayName}</h2>
+              <div className="flex items-center gap-2 mt-2">
+                {/* User Status Badge */}
+                <div className="flex items-center bg-white border border-orange-200 rounded-full p-0.5 pr-3 shadow-sm inline-flex">
+                  <div className="w-5 h-5 rounded-full bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center mr-1.5 shadow-inner">
+                    {(() => {
+                      const statusConfig = {
+                        0: { icon: Sprout, color: 'text-green-100' },
+                        1: { icon: UserCheck, color: 'text-blue-100' },
+                        2: { icon: Gem, color: 'text-yellow-100' }
+                      }[userInfo?.user_type ?? -1] || { icon: UserCheck, color: 'text-white' };
+                      const Icon = statusConfig.icon;
+                      return <Icon size={12} className={`${statusConfig.color} fill-current`} />;
+                    })()}
+                  </div>
+                  <span className="text-xs font-bold text-orange-600">{displayId}</span>
+                </div>
+
+                {/* Agent Badge (Placeholder Logic) */}
+                <div className="flex items-center bg-white border border-red-200 rounded-full p-0.5 pr-3 shadow-sm inline-flex">
+                  <div className="w-5 h-5 rounded-full bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center mr-1.5 shadow-inner">
+                    <Award size={12} className="text-white fill-white" />
+                  </div>
+                  <span className="text-xs font-bold text-red-600">代理</span>
+                </div>
+              </div>
+
+            </div>
           </div>
-        )}
-
-        <div className="px-4 -mt-8 relative z-10">
-            {/* My Assets Section - Explicit Entry */}
-            <div 
-                className="bg-white rounded-xl p-4 shadow-sm mb-4 flex justify-between items-center cursor-pointer active:bg-gray-50 transition-colors" 
-                onClick={() => onNavigate('asset-view')}
-            >
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
-                        <Wallet size={20} strokeWidth={1.5} />
-                    </div>
-                    <div>
-                        <div className="text-sm font-bold text-gray-800">我的资产</div>
-                        <div className="text-xs text-gray-500">查看余额、积分与资金明细</div>
-                    </div>
-                </div>
-                <div className="flex items-center gap-1">
-                    <span className="text-xs text-gray-400">详情</span>
-                    <ChevronRight size={16} className="text-gray-400" />
-                </div>
-            </div>
-
-            {/* Convenient Services */}
-            <div className="bg-white rounded-xl p-4 shadow-sm mb-4">
-                <div className="font-bold text-gray-800 text-sm mb-4 border-l-4 border-blue-300 pl-2">便捷服务</div>
-                <div className="grid grid-cols-4 gap-4">
-                    {[
-                        {label: '余额充值', icon: Wallet, color: 'text-blue-500', action: () => onNavigate('asset-view')},
-                        {label: '余额提现', icon: Receipt, color: 'text-blue-500', action: () => onNavigate('asset-view')},
-                        {label: '商品寄售', icon: Receipt, color: 'text-blue-500', action: () => onNavigate('order-list:transaction:0')},
-                        {label: '积分兑换', icon: CoinsIcon, color: 'text-blue-500', action: () => onNavigate('market')}, // Link to Market for points exchange
-                    ].map((item, idx) => (
-                        <div key={idx} className="flex flex-col items-center cursor-pointer active:opacity-60" onClick={item.action}>
-                            <item.icon size={24} className={`${item.color} mb-2`} strokeWidth={1.5} />
-                            <span className="text-xs text-gray-600">{item.label}</span>
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            {/* Rights Management */}
-            <div className="bg-white rounded-xl p-4 shadow-sm mb-4">
-                <div className="font-bold text-gray-800 text-sm mb-4 border-l-4 border-blue-300 pl-2">权益管理</div>
-                <div className="grid grid-cols-4 gap-4">
-                    {[
-                        {label: '资产明细', icon: FileText, action: () => onNavigate('asset-view')},
-                        {label: '累计权益', icon: ShieldCheck, action: () => {}},
-                        {label: '寄售券', icon: Receipt, action: () => {}},
-                    ].map((item, idx) => (
-                        <div key={idx} className="flex flex-col items-center cursor-pointer active:opacity-60" onClick={item.action}>
-                             <item.icon size={24} className="text-gray-600 mb-2" strokeWidth={1.5} />
-                            <span className="text-xs text-gray-600">{item.label}</span>
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            {/* Service Management */}
-            <div className="bg-white rounded-xl p-4 shadow-sm mb-4">
-                <div className="font-bold text-gray-800 text-sm mb-4 border-l-4 border-blue-300 pl-2">服务管理</div>
-                <div className="grid grid-cols-4 gap-y-6 gap-x-4">
-                    {[
-                        {label: '实名认证', icon: UserCheck, action: () => onNavigate('real-name-auth')},
-                        {label: '卡号管理', icon: CreditCard, action: () => onNavigate('card-management')},
-                        {label: '收货地址', icon: MapPin, action: () => onNavigate('address-list')},
-                        {label: '我的好友', icon: Users, action: () => onNavigate('my-friends')},
-                        {label: '代理认证', icon: UserCheck, action: () => onNavigate('agent-auth')},
-                        {label: '帮助中心', icon: HelpCircle, action: () => onNavigate('help-center')},
-                        {label: '规则协议', icon: FileText, action: () => onNavigate('profile:user-agreement')},
-                        {label: '用户问卷', icon: FileText, action: () => onNavigate('user-survey')},
-                        {label: '在线客服', icon: HeadphonesIcon, action: () => onNavigate('online-service')},
-                    ].map((item, idx) => (
-                        <div key={idx} className="flex flex-col items-center cursor-pointer active:opacity-60" onClick={item.action}>
-                             <item.icon size={24} className="text-gray-600 mb-2" strokeWidth={1.5} />
-                            <span className="text-xs text-gray-600">{item.label}</span>
-                        </div>
-                    ))}
-                </div>
-            </div>
+          <div className="flex gap-3 text-gray-600">
+            <button onClick={() => onNavigate('service-center:message')}><MessageSquare size={20} /></button>
+            <button onClick={() => onNavigate('service-center:settings')}><Settings size={20} /></button>
+          </div>
         </div>
+
+        {/* Stats Overlay */}
+        <div className="flex justify-between text-gray-800 px-2">
+          {stats.map((stat, idx) => (
+            <div key={idx} className="flex flex-col items-center cursor-pointer" onClick={() => idx === 0 && onNavigate('asset-view')}>
+              <span className="text-lg font-bold mb-1">{stat.val}</span>
+              <span className="text-xs text-gray-500">{stat.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {error && (
+        <div className="mx-4 mt-4 bg-red-50 text-red-600 text-sm px-4 py-2 rounded-lg shadow-sm">
+          {error}
+        </div>
+      )}
+
+      <div className="px-4 -mt-8 relative z-10">
+        {/* My Assets Section - Explicit Entry */}
+        <div
+          className="bg-white rounded-xl p-4 shadow-sm mb-4 flex justify-between items-center cursor-pointer active:bg-gray-50 transition-colors"
+          onClick={() => onNavigate('asset-view')}
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center">
+              <Wallet size={20} strokeWidth={1.5} />
+            </div>
+            <div>
+              <div className="text-sm font-bold text-gray-800">我的资产</div>
+              <div className="text-xs text-gray-500">查看余额、积分与资金明细</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-gray-400">详情</span>
+            <ChevronRight size={16} className="text-gray-400" />
+          </div>
+        </div>
+
+        {/* Convenient Services */}
+        <div className="bg-white rounded-xl p-4 shadow-sm mb-4">
+          <div className="font-bold text-gray-800 text-sm mb-4 border-l-4 border-orange-300 pl-2">便捷服务</div>
+          <div className="grid grid-cols-4 gap-4">
+            {[
+              { label: '余额充值', icon: Wallet, color: 'text-orange-500', action: () => onNavigate('asset-view') },
+              { label: '余额提现', icon: Receipt, color: 'text-orange-500', action: () => onNavigate('asset-view') },
+              { label: '商品寄售', icon: Receipt, color: 'text-orange-500', action: () => onNavigate('order-list:transaction:0') },
+              { label: '积分兑换', icon: CoinsIcon, color: 'text-orange-500', action: () => onNavigate('market') }, // Link to Market for points exchange
+            ].map((item, idx) => (
+              <div key={idx} className="flex flex-col items-center cursor-pointer active:opacity-60" onClick={item.action}>
+                <item.icon size={24} className={`${item.color} mb-2`} strokeWidth={1.5} />
+                <span className="text-xs text-gray-600">{item.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Rights Management */}
+        <div className="bg-white rounded-xl p-4 shadow-sm mb-4">
+          <div className="font-bold text-gray-800 text-sm mb-4 border-l-4 border-orange-300 pl-2">权益管理</div>
+          <div className="grid grid-cols-4 gap-4">
+            {[
+              { label: '资产明细', icon: FileText, action: () => onNavigate('asset-view') },
+              { label: '累计权益', icon: ShieldCheck, action: () => { } },
+              { label: '寄售券', icon: Receipt, action: () => { } },
+            ].map((item, idx) => (
+              <div key={idx} className="flex flex-col items-center cursor-pointer active:opacity-60" onClick={item.action}>
+                <item.icon size={24} className="text-gray-600 mb-2" strokeWidth={1.5} />
+                <span className="text-xs text-gray-600">{item.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Service Management */}
+        <div className="bg-white rounded-xl p-4 shadow-sm mb-4">
+          <div className="font-bold text-gray-800 text-sm mb-4 border-l-4 border-orange-300 pl-2">服务管理</div>
+          <div className="grid grid-cols-4 gap-y-6 gap-x-4">
+            {[
+              { label: '实名认证', icon: UserCheck, action: () => onNavigate('real-name-auth') },
+              { label: '卡号管理', icon: CreditCard, action: () => onNavigate('card-management') },
+              { label: '收货地址', icon: MapPin, action: () => onNavigate('address-list') },
+              { label: '我的好友', icon: Users, action: () => onNavigate('my-friends') },
+              { label: '代理认证', icon: UserCheck, action: () => onNavigate('agent-auth') },
+              { label: '帮助中心', icon: HelpCircle, action: () => onNavigate('help-center') },
+              { label: '规则协议', icon: FileText, action: () => onNavigate('profile:user-agreement') },
+              { label: '用户问卷', icon: FileText, action: () => onNavigate('user-survey') },
+              { label: '在线客服', icon: HeadphonesIcon, action: () => onNavigate('online-service') },
+            ].map((item, idx) => (
+              <div key={idx} className="flex flex-col items-center cursor-pointer active:opacity-60" onClick={item.action}>
+                <item.icon size={24} className="text-gray-600 mb-2" strokeWidth={1.5} />
+                <span className="text-xs text-gray-600">{item.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

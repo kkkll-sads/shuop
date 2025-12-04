@@ -21,7 +21,7 @@ type PaymentAccountFormValues = {
   account_number: string;
   bank_branch: string;
   screenshot: File | null;
-   /** 是否设置为默认账户，仅在编辑模式下生效 */
+  /** 是否设置为默认账户，仅在编辑模式下生效 */
   is_default: boolean;
 };
 
@@ -103,7 +103,7 @@ const CardManagement: React.FC<CardManagementProps> = ({ onBack }) => {
         className="bg-white rounded-lg px-4 py-3 shadow-sm border border-gray-100 flex items-center justify-between"
       >
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center text-blue-500">
+          <div className="w-9 h-9 rounded-full bg-orange-50 flex items-center justify-center text-orange-500">
             <CreditCard size={18} strokeWidth={1.7} />
           </div>
           <div className="flex flex-col">
@@ -112,7 +112,7 @@ const CardManagement: React.FC<CardManagementProps> = ({ onBack }) => {
                 {typeText}
               </span>
               {isDefault && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-500 border border-blue-100">
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-orange-50 text-orange-500 border border-orange-100">
                   默认
                 </span>
               )}
@@ -132,7 +132,7 @@ const CardManagement: React.FC<CardManagementProps> = ({ onBack }) => {
         <div className="flex items-center gap-1.5">
           <button
             type="button"
-            className="p-1.5 rounded-full text-gray-400 hover:text-blue-500 hover:bg-blue-50 active:opacity-80"
+            className="p-1.5 rounded-full text-gray-400 hover:text-orange-500 hover:bg-orange-50 active:opacity-80"
             onClick={() => {
               if (!id) {
                 setNotice('该账户缺少 ID，无法编辑');
@@ -317,11 +317,10 @@ const CardManagement: React.FC<CardManagementProps> = ({ onBack }) => {
               <button
                 key={opt.value}
                 type="button"
-                className={`py-1.5 rounded-md text-xs border ${
-                  active
-                    ? 'bg-blue-50 text-blue-600 border-blue-300'
+                className={`py-1.5 rounded-md text-xs border ${active
+                    ? 'bg-orange-50 text-orange-600 border-orange-300'
                     : 'bg-white text-gray-600 border-gray-200'
-                } active:opacity-80`}
+                  } active:opacity-80`}
                 onClick={() => handleFormInputChange('type', opt.value)}
               >
                 {opt.label}
@@ -405,7 +404,7 @@ const CardManagement: React.FC<CardManagementProps> = ({ onBack }) => {
           <span className="mr-3">设为默认账户</span>
           <input
             type="checkbox"
-            className="w-4 h-4 accent-blue-500"
+            className="w-4 h-4 accent-orange-500"
             checked={formValues.is_default}
             onChange={(e) => handleFormInputChange('is_default', e.target.checked)}
           />
@@ -415,7 +414,7 @@ const CardManagement: React.FC<CardManagementProps> = ({ onBack }) => {
       <button
         type="submit"
         disabled={formLoading}
-        className="w-full bg-blue-500 text-white text-sm font-semibold py-2.5 rounded-md active:opacity-80 disabled:opacity-60"
+        className="w-full bg-orange-500 text-white text-sm font-semibold py-2.5 rounded-md active:opacity-80 disabled:opacity-60"
       >
         {formLoading ? '提交中...' : '提交'}
       </button>
@@ -474,7 +473,7 @@ const CardManagement: React.FC<CardManagementProps> = ({ onBack }) => {
               <CreditCard size={26} className="text-gray-300" />
             </div>
             <div>没有任何账户</div>
-        
+
           </div>
         )}
 
@@ -490,7 +489,7 @@ const CardManagement: React.FC<CardManagementProps> = ({ onBack }) => {
         <footer className="px-4 pb-5 pt-2 bg-gray-100">
           <button
             type="button"
-            className="w-full py-3 rounded-md text-sm font-semibold text-white bg-gradient-to-r from-blue-400 to-blue-600 shadow-md active:opacity-80"
+            className="w-full py-3 rounded-md text-sm font-semibold text-white bg-gradient-to-r from-orange-400 to-orange-600 shadow-md active:opacity-80"
             onClick={() => {
               setMode('add');
               setNotice(null);

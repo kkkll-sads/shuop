@@ -87,16 +87,16 @@ const TradingZone: React.FC<TradingZoneProps> = ({ onBack, onProductSelect }) =>
     try {
       setItemsLoading(true);
       setItemsError(null);
-      
+
       // 获取专场详情（可选）
       const detailResponse = await fetchCollectionSessionDetail(session.id);
-      
+
       // 获取该专场的商品列表
       const itemsResponse = await fetchCollectionItemsBySession(session.id, {
         page: 1,
         limit: 100, // 获取足够多的商品
       });
-      
+
       if (itemsResponse.code === 1 && itemsResponse.data?.list) {
         setTradingItems(itemsResponse.data.list);
         setSelectedSession(session);
@@ -129,7 +129,7 @@ const TradingZone: React.FC<TradingZoneProps> = ({ onBack, onProductSelect }) =>
     // If currently past the end time for today, it's ended
     // If we wanted to handle "tomorrow's session", we would check date logic, 
     // but for a daily trading view, "ended" is correct for the rest of the day.
-    
+
     if (now < startDate) {
       return { status: 'waiting', target: startDate };
     } else if (now >= startDate && now < endDate) {
@@ -152,18 +152,18 @@ const TradingZone: React.FC<TradingZoneProps> = ({ onBack, onProductSelect }) =>
     <div className="min-h-screen bg-gray-50 pb-safe">
       <header className="bg-white px-4 py-3 flex items-center sticky top-0 z-10 shadow-sm">
         <button onClick={handleBack} className="absolute left-4 p-1 text-gray-600">
-            <ArrowLeft size={20} />
+          <ArrowLeft size={20} />
         </button>
         <h1 className="text-lg font-bold text-gray-800 w-full text-center">
           {selectedSession ? `${selectedSession.title} · 专场详情` : '交易专区'}
         </h1>
       </header>
-      
+
       <div className="p-4 space-y-4">
         {selectedSession ? (
           <>
             {/* 顶部蓝色头部 + 倒计时（参考截图） */}
-            <div className="w-full rounded-xl overflow-hidden shadow-md bg-blue-500 text-white">
+            <div className="w-full rounded-xl overflow-hidden shadow-md bg-orange-500 text-white">
               <div className="px-4 pt-3 pb-3 flex items-center justify-between">
                 <div className="text-left">
                   <p className="text-xs opacity-90 mb-0.5">商品专区</p>
@@ -182,7 +182,7 @@ const TradingZone: React.FC<TradingZoneProps> = ({ onBack, onProductSelect }) =>
                     return (
                       <>
                         <span className="mb-1">距离本场次结束</span>
-                        <div className="flex items-center bg-white rounded-md px-1.5 py-0.5 text-blue-600 font-mono text-xs gap-0.5 shadow-sm">
+                        <div className="flex items-center bg-white rounded-md px-1.5 py-0.5 text-orange-600 font-mono text-xs gap-0.5 shadow-sm">
                           {display.split('').map((ch, idx) =>
                             ch === ':' ? (
                               <span key={idx} className="px-0.5">
@@ -191,7 +191,7 @@ const TradingZone: React.FC<TradingZoneProps> = ({ onBack, onProductSelect }) =>
                             ) : (
                               <span
                                 key={idx}
-                                className="w-4 h-5 rounded-[3px] bg-blue-500 text-white flex items-center justify-center text-[11px]"
+                                className="w-4 h-5 rounded-[3px] bg-orange-500 text-white flex items-center justify-center text-[11px]"
                               >
                                 {ch}
                               </span>
@@ -205,7 +205,7 @@ const TradingZone: React.FC<TradingZoneProps> = ({ onBack, onProductSelect }) =>
               </div>
 
               {/* 价格区间 Tabs */}
-              <div className="bg-blue-400/95 px-4 pb-2">
+              <div className="bg-orange-400/95 px-4 pb-2">
                 <div className="flex justify-between text-xs text-white/80">
                   {[
                     { id: 'all', label: '全部' },
@@ -219,9 +219,8 @@ const TradingZone: React.FC<TradingZoneProps> = ({ onBack, onProductSelect }) =>
                       <button
                         key={tab.id}
                         onClick={() => setPriceFilter(tab.id as any)}
-                        className={`flex-1 text-center py-1 mx-0.5 rounded-full border border-white/40 ${
-                          active ? 'bg-white text-blue-500 font-semibold' : 'bg-transparent'
-                        }`}
+                        className={`flex-1 text-center py-1 mx-0.5 rounded-full border border-white/40 ${active ? 'bg-white text-orange-500 font-semibold' : 'bg-transparent'
+                          }`}
                       >
                         {tab.label}
                       </button>
@@ -235,7 +234,7 @@ const TradingZone: React.FC<TradingZoneProps> = ({ onBack, onProductSelect }) =>
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3">
               <div className="flex justify-between items-center mb-2">
                 <div className="flex items-center gap-2">
-                  <div className="w-1 h-4 bg-blue-500 rounded-full" />
+                  <div className="w-1 h-4 bg-orange-500 rounded-full" />
                   <span className="text-sm font-bold text-gray-800">场内在售藏品</span>
                 </div>
                 <span className="text-[11px] text-gray-400">
@@ -283,7 +282,7 @@ const TradingZone: React.FC<TradingZoneProps> = ({ onBack, onProductSelect }) =>
                     >
                       {/* 顶部"交易开始"角标 */}
                       <div className="absolute top-0 left-0 z-10">
-                        <div className="bg-blue-500 text-[10px] text-white px-2 py-0.5 rounded-br-lg rounded-tl-none rounded-tr-none">
+                        <div className="bg-orange-500 text-[10px] text-white px-2 py-0.5 rounded-br-lg rounded-tl-none rounded-tr-none">
                           交易开始
                         </div>
                       </div>
@@ -314,15 +313,15 @@ const TradingZone: React.FC<TradingZoneProps> = ({ onBack, onProductSelect }) =>
         ) : (
           <>
             {/* Blue Banner */}
-            <div className="w-full h-40 rounded-xl overflow-hidden relative shadow-md bg-blue-600">
-              <img 
-                  src="https://picsum.photos/seed/banner1/800/400" 
-                  alt="Banner" 
-                  className="w-full h-full object-cover opacity-50 mix-blend-overlay"
+            <div className="w-full h-40 rounded-xl overflow-hidden relative shadow-md bg-orange-600">
+              <img
+                src="https://picsum.photos/seed/banner1/800/400"
+                alt="Banner"
+                className="w-full h-full object-cover opacity-50 mix-blend-overlay"
               />
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-900/80 to-transparent flex flex-col justify-center p-6">
-                  <h2 className="font-bold text-2xl text-white mb-2 shadow-black drop-shadow-md">文化商品数字化交易</h2>
-                  <p className="text-blue-100 text-xs">畅游万亿蓝海市场 共享无限行业空间</p>
+              <div className="absolute inset-0 bg-gradient-to-r from-orange-900/80 to-transparent flex flex-col justify-center p-6">
+                <h2 className="font-bold text-2xl text-white mb-2 shadow-black drop-shadow-md">文化商品数字化交易</h2>
+                <p className="text-orange-100 text-xs">畅游万亿蓝海市场 共享无限行业空间</p>
               </div>
             </div>
 
@@ -341,19 +340,19 @@ const TradingZone: React.FC<TradingZoneProps> = ({ onBack, onProductSelect }) =>
               </div>
             ) : (
               sessions.map((session) => {
-              const { status, target } = getSessionStatus(session);
-              
-              let timerDisplay = null;
-              if (target) {
-                const diff = target.getTime() - now.getTime();
-                timerDisplay = formatDuration(diff);
-              }
+                const { status, target } = getSessionStatus(session);
 
-              return (
-                <div key={session.id} className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100">
-                  <div className="relative h-40">
+                let timerDisplay = null;
+                if (target) {
+                  const diff = target.getTime() - now.getTime();
+                  timerDisplay = formatDuration(diff);
+                }
+
+                return (
+                  <div key={session.id} className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100">
+                    <div className="relative h-40">
                       <img src={session.image} className="w-full h-full object-cover" alt={session.title} />
-                      <div className="absolute top-3 left-0 bg-blue-500 text-white text-xs px-3 py-1 rounded-r-full">
+                      <div className="absolute top-3 left-0 bg-orange-500 text-white text-xs px-3 py-1 rounded-r-full">
                         交易时间: {session.startTime} - {session.endTime}
                       </div>
                       <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/60 to-transparent">
@@ -361,29 +360,29 @@ const TradingZone: React.FC<TradingZoneProps> = ({ onBack, onProductSelect }) =>
                           {session.title}
                         </div>
                       </div>
-                      
+
                       {/* Status Badge Overlay if Active */}
                       {status === 'active' && (
                         <div className="absolute top-3 right-3 bg-green-500 text-white text-xs px-2 py-1 rounded animate-pulse">
                           进行中
                         </div>
                       )}
-                  </div>
-                  
-                  <div className="p-3 flex justify-between items-center">
+                    </div>
+
+                    <div className="p-3 flex justify-between items-center">
                       <div className="flex items-center gap-1.5">
                         {status === 'waiting' && (
                           <>
-                            <Clock size={14} className="text-blue-500" />
-                            <div className="text-blue-500 text-sm font-medium">
+                            <Clock size={14} className="text-orange-500" />
+                            <div className="text-orange-500 text-sm font-medium">
                               距交易开始: <span className="font-mono font-bold">{timerDisplay}</span>
                             </div>
                           </>
                         )}
                         {status === 'active' && (
                           <>
-                             <Clock size={14} className="text-green-600" />
-                             <div className="text-green-600 text-sm font-medium">
+                            <Clock size={14} className="text-green-600" />
+                            <div className="text-green-600 text-sm font-medium">
                               距交易结束: <span className="font-mono font-bold">{timerDisplay}</span>
                             </div>
                           </>
@@ -414,10 +413,10 @@ const TradingZone: React.FC<TradingZoneProps> = ({ onBack, onProductSelect }) =>
                           交易结束
                         </button>
                       )}
+                    </div>
                   </div>
-                </div>
-              );
-            })
+                );
+              })
             )}
           </>
         )}

@@ -77,7 +77,7 @@ const BalanceRecharge: React.FC<BalanceRechargeProps> = ({ onBack }) => {
             </div>
           </div>
 
-        
+
         </div>
 
         <div className="bg-white rounded-xl p-4 shadow-sm space-y-3">
@@ -107,11 +107,10 @@ const BalanceRecharge: React.FC<BalanceRechargeProps> = ({ onBack }) => {
                 return (
                   <div
                     key={item.id}
-                    className={`border rounded-lg p-3 cursor-pointer transition-colors ${
-                      isSelected
-                        ? 'border-blue-500 bg-blue-50'
+                    className={`border rounded-lg p-3 cursor-pointer transition-colors ${isSelected
+                        ? 'border-orange-500 bg-orange-50'
                         : 'border-gray-100 bg-gray-50'
-                    }`}
+                      }`}
                     onClick={() =>
                       setSelectedAccount((prev) =>
                         prev?.id === item.id ? null : item,
@@ -124,7 +123,7 @@ const BalanceRecharge: React.FC<BalanceRechargeProps> = ({ onBack }) => {
                           <span className="text-sm font-medium text-gray-800">
                             {item.account_name || item.type_text}
                           </span>
-                          <span className="text-[11px] text-blue-600">
+                          <span className="text-[11px] text-orange-600">
                             {item.type_text}
                           </span>
                         </div>
@@ -194,50 +193,50 @@ const BalanceRecharge: React.FC<BalanceRechargeProps> = ({ onBack }) => {
                     </div>
                   </div>
                 ) : (
-                <div className="w-full space-y-3 text-sm">
-                  <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-500">支付方式：</span>
-                      <span className="font-medium text-gray-900">{selectedAccount.type_text}</span>
-                    </div>
-                    <div className="flex items-start justify-between">
-                      <span className="text-gray-500">收款账号：</span>
-                      <span className="font-medium text-gray-900 text-right break-all ml-4">
-                        {selectedAccount.account_number}
-                      </span>
-                    </div>
-                    {selectedAccount.account_name && (
+                  <div className="w-full space-y-3 text-sm">
+                    <div className="bg-gray-50 rounded-lg p-4 space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-gray-500">账户名称：</span>
-                        <span className="font-medium text-gray-900">{selectedAccount.account_name}</span>
+                        <span className="text-gray-500">支付方式：</span>
+                        <span className="font-medium text-gray-900">{selectedAccount.type_text}</span>
                       </div>
-                    )}
-                    {selectedAccount.bank_name && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-500">开户行：</span>
-                        <span className="font-medium text-gray-900">
-                          {selectedAccount.bank_name}
-                          {selectedAccount.bank_branch ? ` ${selectedAccount.bank_branch}` : ''}
-                        </span>
-                      </div>
-                    )}
-                    {selectedAccount.remark && (
                       <div className="flex items-start justify-between">
-                        <span className="text-gray-500">备注：</span>
+                        <span className="text-gray-500">收款账号：</span>
                         <span className="font-medium text-gray-900 text-right break-all ml-4">
-                          {selectedAccount.remark}
+                          {selectedAccount.account_number}
                         </span>
                       </div>
-                    )}
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-500">状态：</span>
-                      <span className="text-blue-600">{selectedAccount.status_text}</span>
+                      {selectedAccount.account_name && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-500">账户名称：</span>
+                          <span className="font-medium text-gray-900">{selectedAccount.account_name}</span>
+                        </div>
+                      )}
+                      {selectedAccount.bank_name && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-500">开户行：</span>
+                          <span className="font-medium text-gray-900">
+                            {selectedAccount.bank_name}
+                            {selectedAccount.bank_branch ? ` ${selectedAccount.bank_branch}` : ''}
+                          </span>
+                        </div>
+                      )}
+                      {selectedAccount.remark && (
+                        <div className="flex items-start justify-between">
+                          <span className="text-gray-500">备注：</span>
+                          <span className="font-medium text-gray-900 text-right break-all ml-4">
+                            {selectedAccount.remark}
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-500">状态：</span>
+                        <span className="text-orange-600">{selectedAccount.status_text}</span>
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-500 text-center">
+                      请按照以上信息进行转账充值
                     </div>
                   </div>
-                  <div className="text-xs text-gray-500 text-center">
-                    请按照以上信息进行转账充值
-                  </div>
-                </div>
                 )}
 
                 {/* 充值金额输入 */}
@@ -299,7 +298,7 @@ const BalanceRecharge: React.FC<BalanceRechargeProps> = ({ onBack }) => {
                   ) : (
                     <button
                       type="button"
-                      className="w-full border-2 border-dashed border-gray-300 rounded-lg p-4 flex flex-col items-center justify-center text-gray-500 hover:border-blue-500 hover:text-blue-500 transition-colors"
+                      className="w-full border-2 border-dashed border-gray-300 rounded-lg p-4 flex flex-col items-center justify-center text-gray-500 hover:border-orange-500 hover:text-orange-500 transition-colors"
                       onClick={() => fileInputRef.current?.click()}
                     >
                       <Upload size={24} className="mb-2" />
@@ -329,9 +328,8 @@ const BalanceRecharge: React.FC<BalanceRechargeProps> = ({ onBack }) => {
                   </button>
                   <button
                     type="button"
-                    className={`flex-1 bg-blue-600 text-white rounded-full py-2 text-sm font-medium active:bg-blue-700 ${
-                      submitting ? 'opacity-50 cursor-not-allowed' : ''
-                    }`}
+                    className={`flex-1 bg-orange-600 text-white rounded-full py-2 text-sm font-medium active:bg-orange-700 ${submitting ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
                     onClick={async () => {
                       if (!amount || parseFloat(amount) <= 0) {
                         setSubmitError('请输入有效的充值金额');
@@ -418,11 +416,10 @@ const BalanceRecharge: React.FC<BalanceRechargeProps> = ({ onBack }) => {
         </p>
 
         <button
-          className={`w-full rounded-full py-3 text-sm font-medium ${
-            selectedAccount
-              ? 'bg-blue-600 text-white active:bg-blue-700'
+          className={`w-full rounded-full py-3 text-sm font-medium ${selectedAccount
+              ? 'bg-orange-600 text-white active:bg-orange-700'
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-          }`}
+            }`}
           onClick={() => {
             if (selectedAccount) {
               setShowConfirmModal(true);

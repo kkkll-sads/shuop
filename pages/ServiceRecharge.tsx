@@ -40,7 +40,7 @@ const ServiceRecharge: React.FC<ServiceRechargeProps> = ({ onBack }) => {
           <div>
             <label className="block text-xs text-gray-500 mb-1">支付方式</label>
             <div className="grid grid-cols-2 gap-3">
-              <button className="border border-blue-500 text-blue-600 bg-blue-50 rounded-lg py-2 text-sm">
+              <button className="border border-orange-500 text-orange-600 bg-orange-50 rounded-lg py-2 text-sm">
                 余额支付
               </button>
               <button className="border border-gray-200 rounded-lg py-2 text-sm text-gray-700">
@@ -54,7 +54,7 @@ const ServiceRecharge: React.FC<ServiceRechargeProps> = ({ onBack }) => {
           完成充值即视为同意相关服务协议与费用说明。请在操作前仔细阅读平台公布的服务条款及风险提示。
         </p>
 
-        <button className="w-full bg-blue-600 text-white rounded-full py-3 text-sm font-medium active:bg-blue-700">
+        <button className="w-full bg-orange-600 text-white rounded-full py-3 text-sm font-medium active:bg-orange-700">
           确认充值
         </button>
       </div>

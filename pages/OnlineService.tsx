@@ -73,11 +73,10 @@ const OnlineService: React.FC<OnlineServiceProps> = ({ onBack }) => {
               className={`flex ${msg.from === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[75%] rounded-2xl px-3 py-2 text-xs leading-5 ${
-                  msg.from === 'user'
-                    ? 'bg-blue-500 text-white rounded-br-sm'
+                className={`max-w-[75%] rounded-2xl px-3 py-2 text-xs leading-5 ${msg.from === 'user'
+                    ? 'bg-orange-500 text-white rounded-br-sm'
                     : 'bg-white text-gray-800 border border-gray-100 rounded-bl-sm'
-                }`}
+                  }`}
               >
                 {msg.content}
               </div>
@@ -117,7 +116,7 @@ const OnlineService: React.FC<OnlineServiceProps> = ({ onBack }) => {
             }}
           />
           <button
-            className="px-3 py-1.5 rounded-full bg-blue-500 text-white text-xs font-medium active:opacity-80 disabled:opacity-40"
+            className="px-3 py-1.5 rounded-full bg-orange-500 text-white text-xs font-medium active:opacity-80 disabled:opacity-40"
             onClick={handleSend}
             disabled={!input.trim()}
           >

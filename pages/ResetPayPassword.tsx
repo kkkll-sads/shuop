@@ -74,7 +74,7 @@ const ResetPayPassword: React.FC<ResetPayPasswordProps> = ({ onBack }) => {
               <span className="mb-2 block font-medium">请输入旧支付密码</span>
               <input
                 type="password"
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none"
                 placeholder="请输入旧支付密码"
                 value={oldPassword}
                 onChange={(e) => setOldPassword(e.target.value)}
@@ -86,7 +86,7 @@ const ResetPayPassword: React.FC<ResetPayPasswordProps> = ({ onBack }) => {
               <span className="mb-2 block font-medium">请输入新支付密码</span>
               <input
                 type="password"
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none"
                 placeholder="请输入新支付密码"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
@@ -98,7 +98,7 @@ const ResetPayPassword: React.FC<ResetPayPasswordProps> = ({ onBack }) => {
               <span className="mb-2 block font-medium">再次输入新支付密码</span>
               <input
                 type="password"
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none"
                 placeholder="请再次输入新支付密码"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
@@ -114,7 +114,7 @@ const ResetPayPassword: React.FC<ResetPayPasswordProps> = ({ onBack }) => {
 
             <button
               type="submit"
-              className="mt-2 w-full rounded-lg bg-blue-500 py-3 text-sm font-semibold text-white active:opacity-80 disabled:opacity-50"
+              className="mt-2 w-full rounded-lg bg-orange-500 py-3 text-sm font-semibold text-white active:opacity-80 disabled:opacity-50"
               disabled={loading}
             >
               {loading ? '提交中...' : '确认修改'}

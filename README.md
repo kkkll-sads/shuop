@@ -31,6 +31,8 @@ This project is a React-based web application designed to simulate a mobile app 
 *   **Profile (我的)**:
     *   User dashboard with asset overview.
     *   Detailed asset view (Balance, Service Fees, Points).
+    *   **User Status Badges**: Distinct icons for New, Regular, and Trading users.
+    *   **Agent Badge**: Dedicated badge for verified agents.
 *   **Sub-pages**:
     *   **Artist Detail**: Bio, profile, and works gallery.
     *   **Artist/Masterpiece Showcases**: Grid views for browsing content.
@@ -80,6 +82,6 @@ This project is a React-based web application designed to simulate a mobile app 
 
 ## 🎨 Design System
 
-*   **Primary Color**: Blue (`blue-600`)
-*   **Background**: Light Gray (`gray-50`) for content, White for cards/headers.
+*   **Primary Color**: Orange (`orange-500` / `orange-600`)
+*   **Background**: Light Orange Gradient (`from-[#FFD6A5] to-gray-50`) for headers, White for content.
 *   **Typography**: Sans-serif, tailored for legibility on small screens.# Cultural

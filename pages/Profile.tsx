@@ -1,6 +1,6 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Settings, MessageSquare, ShieldCheck, CreditCard, MapPin, Users, UserCheck, HelpCircle, FileText, HeadphonesIcon, ChevronRight, Wallet, Receipt } from 'lucide-react';
+import { Settings, MessageSquare, ShieldCheck, CreditCard, MapPin, Users, UserCheck, HelpCircle, FileText, HeadphonesIcon, ChevronRight, Wallet, Receipt, Box } from 'lucide-react';
 import { AUTH_TOKEN_KEY, USER_INFO_KEY, fetchProfile, normalizeAssetUrl } from '../services/api';
 import { UserInfo } from '../types';
 
@@ -192,7 +192,7 @@ const Profile: React.FC<ProfileProps> = ({ onNavigate }) => {
                         {label: '余额充值', icon: Wallet, color: 'text-blue-500', action: () => onNavigate('asset-view')},
                         {label: '余额提现', icon: Receipt, color: 'text-blue-500', action: () => onNavigate('asset-view')},
                         {label: '商品寄售', icon: Receipt, color: 'text-blue-500', action: () => onNavigate('order-list:transaction:0')},
-                        {label: '积分兑换', icon: CoinsIcon, color: 'text-blue-500', action: () => onNavigate('market')}, // Link to Market for points exchange
+                        {label: '积分兑换', icon: CoinsIcon, color: 'text-blue-500', action: () => onNavigate('switch-to-market')}, // Switch to Market tab for points exchange
                     ].map((item, idx) => (
                         <div key={idx} className="flex flex-col items-center cursor-pointer active:opacity-60" onClick={item.action}>
                             <item.icon size={24} className={`${item.color} mb-2`} strokeWidth={1.5} />
@@ -208,8 +208,10 @@ const Profile: React.FC<ProfileProps> = ({ onNavigate }) => {
                 <div className="grid grid-cols-4 gap-4">
                     {[
                         {label: '资产明细', icon: FileText, action: () => onNavigate('asset-view')},
-                        {label: '累计权益', icon: ShieldCheck, action: () => {}},
-                        {label: '寄售券', icon: Receipt, action: () => {}},
+                        {label: '累计权益', icon: ShieldCheck, action: () => onNavigate('cumulative-rights')},
+                        {label: '寄售券', icon: Receipt, action: () => onNavigate('consignment-voucher')},
+
+                        {label: '我的藏品', icon: Box, action: () => onNavigate('my-collection')},
                     ].map((item, idx) => (
                         <div key={idx} className="flex flex-col items-center cursor-pointer active:opacity-60" onClick={item.action}>
                              <item.icon size={24} className="text-gray-600 mb-2" strokeWidth={1.5} />

@@ -155,6 +155,24 @@ export const API_ENDPOINTS = {
   shopOrder: {
     /** 创建订单 */
     create: '/shopOrder/create',
+    /** 购买商品（一步到位：创建订单并支付） */
+    buy: '/shopOrder/buy',
+    /** 待付款订单列表 */
+    pendingPay: '/shopOrder/pendingPay',
+    /** 待发货订单列表 */
+    pendingShip: '/shopOrder/pendingShip',
+    /** 待确认收货订单列表 */
+    pendingConfirm: '/shopOrder/pendingConfirm',
+    /** 已完成订单列表 */
+    completed: '/shopOrder/completed',
+    /** 确认收货 */
+    confirm: '/shopOrder/confirm',
+    /** 支付订单 */
+    pay: '/shopOrder/pay',
+    /** 订单详情 */
+    detail: '/shopOrder/detail',
+    /** 删除订单 */
+    delete: '/shopOrder/delete',
   },
   collectionSession: {
     /** 交易专场列表 */
@@ -169,16 +187,36 @@ export const API_ENDPOINTS = {
     bySession: '/collectionItem/bySession',
     /** 交易商品详情 */
     detail: '/collectionItem/detail',
+    /** 交易商品原始详情（下架也可查看） */
+    originalDetail: '/collectionItem/originalDetail',
     /** 购买藏品 */
     buy: '/collectionItem/buy',
     /** 获取购买记录列表 */
     purchaseRecords: '/collectionItem/purchaseRecords',
     /** 获取寄售商品列表 */
     consignmentList: '/collectionItem/consignmentList',
+    /** 获取我的寄售列表 */
+    myConsignmentList: '/collectionItem/myConsignmentList',
+    /** 获取寄售详情 */
+    consignmentDetail: '/collectionItem/consignmentDetail',
+    /** 取消寄售 */
+    cancelConsignment: '/collectionItem/cancelConsignment',
     /** 申请提货 */
     deliver: '/collectionItem/deliver',
     /** 申请寄售 */
     consign: '/collectionItem/consign',
+    /** 提货订单列表 */
+    deliveryList: '/collectionItem/deliveryList',
+  },
+  artist: {
+    /** 艺术家列表 */
+    index: '/artist/index',
+    /** 艺术家详情 */
+    detail: '/artist/detail',
+    /** 艺术家作品详情 */
+    workDetail: '/artist/workDetail',
+    /** 全部艺术家作品列表 */
+    allWorks: '/artist/allWorks',
   },
 } as const;
 
@@ -1647,6 +1685,105 @@ export async function createOrder(
 }
 
 /**
+ * 购买商品（一步到位：创建订单并支付）
+ * 对应后端: /shopOrder/buy
+ * 示例接口: http://18.166.211.131/index.php/api/shopOrder/buy
+ */
+export interface BuyShopOrderParams {
+  items: CreateOrderItem[];
+  pay_type: 'money' | 'score';
+  address_id?: number | null;
+  remark?: string;
+  token?: string;
+}
+
+export async function buyShopOrder(
+  params: BuyShopOrderParams,
+): Promise<ApiResponse> {
+  const token = params.token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+
+  if (!token) {
+    throw new Error('未找到用户登录信息，请先登录后再购买商品');
+  }
+
+  if (!params.items || params.items.length === 0) {
+    throw new Error('请选择要购买的商品');
+  }
+
+  if (!params.pay_type) {
+    throw new Error('请选择支付方式');
+  }
+
+  // 检查商品是否为实物商品，如果是实物商品，必须提供收货地址
+  // 先获取第一个商品的详情来判断是否为实物商品
+  let isPhysicalProduct = false;
+  if (params.items && params.items.length > 0) {
+    try {
+      const firstProductId = params.items[0].product_id;
+      const productDetailResponse = await fetchShopProductDetail(firstProductId);
+      if (productDetailResponse.code === 1 && productDetailResponse.data) {
+        // 检查是否为实物商品：is_physical === '1' 表示实物商品
+        isPhysicalProduct = productDetailResponse.data.is_physical === '1';
+      }
+    } catch (error) {
+      console.warn('获取商品详情失败，无法判断是否为实物商品:', error);
+      // 如果获取失败，假设是实物商品，要求必须提供地址
+      isPhysicalProduct = true;
+    }
+  }
+
+  // 如果没有指定 address_id，尝试获取默认收货地址
+  let addressId = params.address_id;
+  if (addressId === undefined || addressId === null) {
+    try {
+      const defaultAddressResponse = await fetchDefaultAddress(token);
+      if (defaultAddressResponse.code === 1 && defaultAddressResponse.data?.id) {
+        addressId = typeof defaultAddressResponse.data.id === 'string' 
+          ? parseInt(defaultAddressResponse.data.id, 10) 
+          : defaultAddressResponse.data.id;
+      }
+    } catch (error) {
+      // 如果是实物商品但没有获取到地址，抛出错误
+      if (isPhysicalProduct) {
+        throw new Error('实物商品必须填写收货地址，请先添加收货地址');
+      }
+      // 虚拟商品可以没有地址
+      console.warn('获取默认收货地址失败，将使用 null:', error);
+      addressId = null;
+    }
+  }
+
+  // 如果是实物商品但没有地址ID，抛出错误
+  if (isPhysicalProduct && (addressId === null || addressId === undefined)) {
+    throw new Error('实物商品必须填写收货地址，请先添加收货地址');
+  }
+
+  // 构建 JSON 请求体，按照后端要求的格式
+  const requestBody = {
+    items: params.items.map(item => ({
+      product_id: item.product_id,
+      quantity: item.quantity,
+    })),
+    pay_type: params.pay_type,
+    address_id: addressId ?? null,
+    remark: params.remark || '',
+  };
+
+  try {
+    const data = await apiFetch(API_ENDPOINTS.shopOrder.buy, {
+      method: 'POST',
+      body: JSON.stringify(requestBody),
+      token,
+    });
+    console.log('购买商品接口原始响应:', data);
+    return data;
+  } catch (error: any) {
+    console.error('购买商品失败:', error);
+    throw error;
+  }
+}
+
+/**
  * 充值公司账户列表
  * 对应后端: /Recharge/getCompanyAccountList?usage=recharge
  * 示例接口: http://18.166.211.131/index.php/api/Recharge/getCompanyAccountList?usage=recharge
@@ -2217,10 +2354,16 @@ export interface CollectionItemDetailData extends CollectionItem {
   description?: string;
   artist?: string;
   status?: string;
+  status_text?: string;
   sort?: number;
   create_time?: number;
   update_time?: number;
   [key: string]: any;
+}
+
+export interface CollectionItemOriginalDetailData
+  extends CollectionItemDetailData {
+  status_text?: string;
 }
 
 /**
@@ -2248,6 +2391,30 @@ export async function fetchCollectionItemDetail(
 }
 
 /**
+ * 获取交易商品原始详情（无论上下架状态均可查看）
+ * 示例接口: http://18.166.211.131/index.php/api/collectionItem/originalDetail?id=1
+ */
+export async function fetchCollectionItemOriginalDetail(
+  id: number | string,
+): Promise<ApiResponse<CollectionItemOriginalDetailData>> {
+  const search = new URLSearchParams();
+  search.set('id', String(id));
+
+  const path = `${API_ENDPOINTS.collectionItem.originalDetail}?${search.toString()}`;
+
+  try {
+    const data = await apiFetch<CollectionItemOriginalDetailData>(path, {
+      method: 'GET',
+    });
+    console.log('交易商品原始详情接口原始响应:', data);
+    return data;
+  } catch (error: any) {
+    console.error('获取交易商品原始详情失败:', error);
+    throw error;
+  }
+}
+
+/**
  * 购买藏品接口
  * 对应后端: /collectionItem/buy
  * 示例接口: http://18.166.211.131/index.php/api/collectionItem/buy
@@ -2255,6 +2422,8 @@ export async function fetchCollectionItemDetail(
 export interface BuyCollectionItemParams {
   /** 藏品ID */
   item_id: number | string;
+  /** 寄售ID（寄售商品必填） */
+  consignment_id?: number | string;
   /** 购买数量，默认1 */
   quantity?: number;
   /** 支付方式: money=余额, score=积分 */
@@ -2285,6 +2454,9 @@ export async function buyCollectionItem(
   formData.append('item_id', String(params.item_id));
   formData.append('quantity', String(params.quantity || 1));
   formData.append('pay_type', params.pay_type);
+  if (params.consignment_id) {
+    formData.append('consignment_id', String(params.consignment_id));
+  }
   if (params.product_id_record) {
     formData.append('product_id_record', params.product_id_record);
   }
@@ -2321,8 +2493,15 @@ export interface PurchaseRecordItem {
   quantity: number;
   subtotal: number;
   pay_time_text: string;
+  /** 主要状态文本（优先显示提货状态，如果已提货则显示提货订单状态，否则显示订单原始状态） */
   status_text: string;
   pay_type_text: string;
+  /** 提货状态文本（如果已提货：待发货/待收货/已签收，如果未提货：空） */
+  delivery_status?: string;
+  /** 订单原始状态 */
+  order_status?: string;
+  /** 订单原始状态文本 */
+  order_status_text?: string;
   [key: string]: any;
 }
 
@@ -2384,10 +2563,20 @@ export interface MyCollectionItem {
   price: string;
   buy_time: number;
   buy_time_text: string;
+  /** 订单号 */
+  order_no?: string;
+  /** 提货状态：1=已提货，0=未提货 */
   delivery_status: number;
+  /** 提货状态文本（如果已提货：待发货/待收货/已签收，如果未提货：未提货） */
   delivery_status_text: string;
   consignment_status: number;
   consignment_status_text: string;
+  /** 订单原始状态 */
+  order_status?: string;
+  /** 订单原始状态文本 */
+  order_status_text?: string;
+  /** 主要状态文本（优先显示提货状态，如果已提货则显示提货订单状态，否则显示订单原始状态） */
+  status_text?: string;
   original_record?: PurchaseRecordItem;
   [key: string]: any;
 }
@@ -2408,23 +2597,141 @@ export async function getMyCollection(
   params: GetMyCollectionParams = {},
 ): Promise<ApiResponse<MyCollectionListData>> {
   const response = await getPurchaseRecords(params);
+  const token = params.token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+
+  // 查询提货订单列表，用于匹配已提货的藏品
+  let deliveryOrdersMap: Map<number | string, { status: string; status_text: string }> = new Map();
+  try {
+    // 查询所有状态的提货订单
+    const deliveryResponse = await getDeliveryList({ page: 1, limit: 100, token });
+    if (deliveryResponse.code === 1 && deliveryResponse.data?.list) {
+      deliveryResponse.data.list.forEach((order: any) => {
+        if (order.user_collection_id) {
+          deliveryOrdersMap.set(order.user_collection_id, {
+            status: order.status,
+            status_text: order.status_text || (order.status === 'paid' ? '待发货' : order.status === 'shipped' ? '待收货' : '已签收'),
+          });
+        }
+      });
+    }
+  } catch (error) {
+    console.warn('查询提货订单列表失败，将使用API返回的delivery_status字段:', error);
+  }
 
   const mappedList: MyCollectionItem[] =
-    response.data?.list?.map((record) => ({
-      id: record.order_id,
-      user_collection_id: record.order_id,
-      item_id: record.item_id,
-      title: record.item_title,
-      image: record.item_image,
-      price: String(record.price ?? record.total_amount ?? 0),
-      buy_time: record.pay_time,
-      buy_time_text: record.pay_time_text,
-      delivery_status: 0,
-      delivery_status_text: '未提货',
-      consignment_status: 0,
-      consignment_status_text: '未寄售',
-      original_record: record,
-    })) || [];
+    response.data?.list?.map((record) => {
+      // 判断是否已提货：如果 delivery_status 字段存在且不为空，说明已提货
+      // delivery_status 可能是字符串（如"待发货"、"待收货"、"已签收"）或数字（1=已提货，0=未提货）
+      const deliveryStatusValue = record.delivery_status;
+      
+      // 检查 status_text 是否是提货状态（待发货/待收货/已签收）
+      const statusText = record.status_text || '';
+      const isDeliveryStatusText = statusText === '待发货' || statusText === '待收货' || statusText === '已签收';
+      
+      // 尝试从提货订单列表中查找
+      const userCollectionId = (record as any).user_collection_id ?? 
+                               (record as any).collection_id ?? 
+                               (record as any).id ?? 
+                               record.order_id;
+      const deliveryOrder = deliveryOrdersMap.get(userCollectionId);
+      
+      // 如果 delivery_status 不为空，或者 status_text 是提货状态，或者找到提货订单，说明已提货
+      const isDelivered = (deliveryStatusValue !== undefined && 
+                         deliveryStatusValue !== null && 
+                         deliveryStatusValue !== '' &&
+                         (typeof deliveryStatusValue === 'string' 
+                           ? deliveryStatusValue.trim() !== '' 
+                           : deliveryStatusValue === 1)) || isDeliveryStatusText || !!deliveryOrder;
+      
+      // delivery_status 为数字类型时，1 表示已提货，0 表示未提货
+      // 如果是字符串类型，说明已提货（包含提货状态文本）
+      const deliveryStatusNum = typeof deliveryStatusValue === 'number' 
+        ? deliveryStatusValue 
+        : (isDelivered ? 1 : 0);
+      
+      // 提货状态文本：如果已提货，优先使用 delivery_status，然后使用提货订单状态，最后使用 status_text（如果是提货状态），否则显示"未提货"
+      let deliveryStatusText = '未提货';
+      if (isDelivered) {
+        if (typeof deliveryStatusValue === 'string' && deliveryStatusValue.trim() !== '') {
+          deliveryStatusText = deliveryStatusValue.trim();
+        } else if (deliveryOrder) {
+          // 使用提货订单的状态文本
+          deliveryStatusText = deliveryOrder.status_text;
+        } else if (isDeliveryStatusText) {
+          deliveryStatusText = statusText;
+        } else {
+          deliveryStatusText = record.status_text || '已提货';
+        }
+      }
+      
+      return {
+        id: record.order_id,
+        // 优先使用响应中的 user_collection_id，如果没有则尝试从其他字段获取
+        user_collection_id: (record as any).user_collection_id ?? 
+                           (record as any).collection_id ?? 
+                           (record as any).id ?? 
+                           record.order_id,
+        item_id: record.item_id,
+        title: record.item_title,
+        image: record.item_image,
+        price: String(record.price ?? record.total_amount ?? 0),
+        buy_time: record.pay_time,
+        buy_time_text: record.pay_time_text,
+        order_no: record.order_no,
+        // 提货状态：1=已提货，0=未提货
+        delivery_status: deliveryStatusNum,
+        // 提货状态文本：如果已提货，使用 delivery_status（待发货/待收货/已签收），否则显示"未提货"
+        delivery_status_text: deliveryStatusText,
+        // 寄售状态：处理空字符串、null、undefined、字符串状态等情况，统一映射为数字
+        // 0=未寄售，1=待审核，2=寄售中，3=寄售失败，4=已售出
+        consignment_status: (() => {
+          const status = (record as any).consignment_status;
+          if (status === '' || status === null || status === undefined) {
+            return 0;
+          }
+          if (typeof status === 'number') {
+            return status;
+          }
+          // 处理字符串状态
+          if (typeof status === 'string') {
+            const statusStr = status.trim();
+            if (statusStr === '未寄售' || statusStr === '') {
+              return 0;
+            } else if (statusStr === '待审核') {
+              return 1;
+            } else if (statusStr === '寄售中') {
+              return 2;
+            } else if (statusStr === '寄售失败') {
+              return 3;
+            } else if (statusStr === '已售出') {
+              return 4;
+            }
+            // 如果是不认识的字符串，但有值，默认返回 2（寄售中）
+            return 2;
+          }
+          return 0;
+        })(),
+        // 寄售状态文本：优先使用 consignment_status（如果是字符串），否则使用 consignment_status_text
+        consignment_status_text: (() => {
+          const status = (record as any).consignment_status;
+          const statusText = (record as any).consignment_status_text;
+          // 如果 consignment_status 是字符串，直接使用
+          if (typeof status === 'string' && status.trim() !== '') {
+            return status.trim();
+          }
+          // 否则使用 consignment_status_text
+          return statusText ?? '未寄售';
+        })(),
+        // 保存订单原始状态信息
+        order_status: record.order_status ?? record.status,
+        // 如果未提货，order_status_text 应该保存订单原始状态；如果已提货，保存订单原始状态（如果有）
+        order_status_text: record.order_status_text ?? (isDelivered ? undefined : record.status_text),
+        // 保存主要状态文本（API 已优先显示提货状态，如果已提货则显示提货状态，否则显示订单状态）
+        // 如果已提货，status_text 是提货状态；如果未提货，status_text 是订单状态
+        status_text: record.status_text,
+        original_record: record,
+      };
+    }) || [];
 
   return {
     ...response,
@@ -2478,10 +2785,6 @@ export async function getConsignmentList(
   const page = params.page || 1;
   const limit = params.limit || 10;
 
-  if (!token) {
-    throw new Error('未找到用户登录信息，请先登录后再查看寄售列表');
-  }
-
   const search = new URLSearchParams();
   search.append('page', String(page));
   search.append('limit', String(limit));
@@ -2491,12 +2794,181 @@ export async function getConsignmentList(
   try {
     const data = await apiFetch<ConsignmentListData>(path, {
       method: 'GET',
-      token,
+      token: token || undefined,
     });
     console.log('获取寄售列表接口原始响应:', data);
     return data;
   } catch (error: any) {
     console.error('获取寄售列表失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 获取我的寄售列表
+ * 对应后端: /collectionItem/myConsignmentList
+ * 示例接口: http://18.166.211.131/index.php/api/collectionItem/myConsignmentList?page=1&limit=10&status=0
+ */
+export interface MyConsignmentItem {
+  consignment_id: number;
+  user_id: number;
+  user_collection_id: number;
+  item_id: number;
+  consignment_price: number;
+  consignment_status: number;
+  create_time: number;
+  update_time: number;
+  title: string;
+  image: string;
+  original_price: number;
+  session_id: number;
+  user_collection_status: number;
+  consignment_status_text: string;
+  create_time_text: string;
+  update_time_text: string;
+  days_passed: number;
+  can_force_delivery: boolean;
+}
+
+export interface MyConsignmentListData {
+  list: MyConsignmentItem[];
+  total: number;
+  per_page: number;
+  current_page: number;
+  last_page: number;
+  has_more: boolean;
+}
+
+export interface GetMyConsignmentListParams {
+  page?: number;
+  limit?: number;
+  /** 寄售状态: 0=全部, 1=寄售中, 2=已售出, 3=已取消 */
+  status?: number;
+  token?: string;
+}
+
+export async function getMyConsignmentList(
+  params: GetMyConsignmentListParams = {},
+): Promise<ApiResponse<MyConsignmentListData>> {
+  const token = params.token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+  const page = params.page || 1;
+  const limit = params.limit || 10;
+  const status = params.status !== undefined ? params.status : 0;
+
+  if (!token) {
+    throw new Error('未找到用户登录信息，请先登录后再查看我的寄售列表');
+  }
+
+  const search = new URLSearchParams();
+  search.append('page', String(page));
+  search.append('limit', String(limit));
+  if (status !== undefined) {
+    search.append('status', String(status));
+  }
+
+  const path = `${API_ENDPOINTS.collectionItem.myConsignmentList}?${search.toString()}`;
+
+  try {
+    const data = await apiFetch<MyConsignmentListData>(path, {
+      method: 'GET',
+      token,
+    });
+    return data;
+  } catch (error: any) {
+    console.error('获取我的寄售列表失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 获取寄售详情
+ * 对应后端: /collectionItem/consignmentDetail
+ * 示例接口: http://18.166.211.131/index.php/api/collectionItem/consignmentDetail?consignment_id=1
+ */
+export interface ConsignmentDetailData extends MyConsignmentItem {
+  description: string;
+  artist: string;
+  delivery_status: number;
+  remaining_days: number;
+  /** 买家用户ID（仅已售出时有值） */
+  buyer_id?: number;
+  /** 买家用户名（仅已售出时有值） */
+  buyer_username?: string;
+  /** 买家昵称（仅已售出时有值） */
+  buyer_nickname?: string;
+  /** 买家手机号（仅已售出时有值） */
+  buyer_mobile?: string;
+}
+
+export interface GetConsignmentDetailParams {
+  consignment_id: number;
+  token?: string;
+}
+
+export async function getConsignmentDetail(
+  params: GetConsignmentDetailParams,
+): Promise<ApiResponse<ConsignmentDetailData>> {
+  const token = params.token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+
+  if (!token) {
+    throw new Error('未找到用户登录信息，请先登录后再查看寄售详情');
+  }
+
+  if (!params.consignment_id) {
+    throw new Error('缺少寄售记录ID');
+  }
+
+  const search = new URLSearchParams();
+  search.append('consignment_id', String(params.consignment_id));
+
+  const path = `${API_ENDPOINTS.collectionItem.consignmentDetail}?${search.toString()}`;
+
+  try {
+    const data = await apiFetch<ConsignmentDetailData>(path, {
+      method: 'GET',
+      token,
+    });
+    return data;
+  } catch (error: any) {
+    console.error('获取寄售详情失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 取消寄售
+ * 对应后端: /collectionItem/cancelConsignment
+ * 示例接口: http://18.166.211.131/index.php/api/collectionItem/cancelConsignment
+ */
+export interface CancelConsignmentParams {
+  consignment_id: number;
+  token?: string;
+}
+
+export async function cancelConsignment(
+  params: CancelConsignmentParams,
+): Promise<ApiResponse> {
+  const token = params.token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+
+  if (!token) {
+    throw new Error('未找到用户登录信息，请先登录后再取消寄售');
+  }
+
+  if (!params.consignment_id) {
+    throw new Error('缺少寄售记录ID');
+  }
+
+  try {
+    const data = await apiFetch(API_ENDPOINTS.collectionItem.cancelConsignment, {
+      method: 'POST',
+      token,
+      body: JSON.stringify({
+        consignment_id: params.consignment_id,
+      }),
+    });
+    return data;
+  } catch (error: any) {
+    console.error('取消寄售失败:', error);
     throw error;
   }
 }
@@ -2524,9 +2996,31 @@ export async function deliverCollectionItem(
     throw new Error('缺少用户藏品 ID');
   }
 
+  // 如果 address_id 为 null，尝试获取默认收货地址
+  let addressId = params.address_id ?? null;
+  
+  if (!addressId || addressId === null) {
+    try {
+      const defaultAddressResponse = await fetchDefaultAddress(token);
+      if (defaultAddressResponse.code === 1 && defaultAddressResponse.data?.id) {
+        addressId = typeof defaultAddressResponse.data.id === 'string' 
+          ? parseInt(defaultAddressResponse.data.id, 10) 
+          : defaultAddressResponse.data.id;
+      }
+    } catch (error) {
+      // 如果没有默认地址，抛出错误提示用户
+      throw new Error('请先选择收货地址');
+    }
+    
+    // 再次检查，如果仍然没有地址ID，抛出错误
+    if (!addressId || addressId === null) {
+      throw new Error('请先选择收货地址');
+    }
+  }
+
   const body = {
     user_collection_id: params.user_collection_id,
-    address_id: params.address_id ?? null,
+    address_id: addressId,
   };
 
   try {
@@ -2585,6 +3079,735 @@ export async function consignCollectionItem(
     return data;
   } catch (error: any) {
     console.error('申请寄售失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 获取提货订单列表
+ * 对应后端: /collectionItem/deliveryList
+ * 订单状态: paid=待发货, shipped=已发货, completed=已完成
+ */
+export interface GetDeliveryListParams {
+  page?: number;
+  limit?: number;
+  status?: 'paid' | 'shipped' | 'completed';
+  token?: string;
+}
+
+export interface DeliveryOrderItem {
+  id: number;
+  order_no: string;
+  user_id: number;
+  total_amount: number;
+  total_score: number;
+  pay_type: 'money' | 'score';
+  status: 'paid' | 'shipped' | 'completed';
+  recipient_name: string;
+  recipient_phone: string;
+  recipient_address: string;
+  shipping_no: string;
+  shipping_company: string;
+  remark: string;
+  admin_remark: string;
+  pay_time: number;
+  ship_time: number;
+  complete_time: number;
+  create_time: number;
+  update_time: number;
+  user_collection_id: number;
+  collection_title: string;
+  collection_image: string;
+  collection_item_id: number;
+  status_text: string;
+  pay_time_text: string;
+  ship_time_text: string;
+  complete_time_text: string;
+}
+
+export interface DeliveryListData {
+  list: DeliveryOrderItem[];
+  total: number;
+  per_page: number;
+  current_page: number;
+  last_page: number;
+  has_more: boolean;
+}
+
+export async function getDeliveryList(
+  params: GetDeliveryListParams = {},
+): Promise<ApiResponse<ShopOrderListData>> {
+  const token = params.token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+  const page = params.page || 1;
+  const limit = params.limit || 10;
+
+  if (!token) {
+    throw new Error('未找到用户登录信息，请先登录后再查看提货订单');
+  }
+
+  const search = new URLSearchParams();
+  search.set('page', String(page));
+  search.set('limit', String(limit));
+  if (params.status) {
+    search.set('status', params.status);
+  }
+
+  const path = `${API_ENDPOINTS.collectionItem.deliveryList}?${search.toString()}`;
+
+  try {
+    const response = await apiFetch<DeliveryListData>(path, {
+      method: 'GET',
+      token,
+    });
+    console.log('提货订单列表接口原始响应:', response);
+
+    // Map delivery orders to ShopOrderItem format
+    const mappedList: ShopOrderItem[] =
+      response.data?.list?.map((item) => ({
+        id: item.id,
+        order_no: item.order_no,
+        user_id: item.user_id,
+        total_amount: item.total_amount,
+        total_score: item.total_score,
+        pay_type: item.pay_type,
+        status: item.status,
+        recipient_name: item.recipient_name,
+        recipient_phone: item.recipient_phone,
+        recipient_address: item.recipient_address,
+        shipping_no: item.shipping_no,
+        shipping_company: item.shipping_company,
+        remark: item.remark,
+        admin_remark: item.admin_remark,
+        pay_time: item.pay_time,
+        ship_time: item.ship_time,
+        complete_time: item.complete_time,
+        create_time: item.create_time,
+        update_time: item.update_time,
+        status_text: item.status_text,
+        pay_time_text: item.pay_time_text,
+        ship_time_text: item.ship_time_text,
+        complete_time_text: item.complete_time_text,
+        // Map collection fields to product fields for compatibility
+        product_name: item.collection_title,
+        product_image: item.collection_image,
+        thumbnail: item.collection_image,
+        quantity: 1,
+        // Store original delivery-specific fields
+        user_collection_id: item.user_collection_id,
+        collection_title: item.collection_title,
+        collection_image: item.collection_image,
+        collection_item_id: item.collection_item_id,
+      })) || [];
+
+    return {
+      ...response,
+      data: {
+        list: mappedList,
+        total: response.data?.total ?? mappedList.length,
+        page: response.data?.current_page ?? page,
+        limit: response.data?.per_page ?? limit,
+      },
+    };
+  } catch (error: any) {
+    console.error('获取提货订单列表失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 艺术家相关接口
+ * 对应后端:
+ * - 列表: /artist/index?page=1&limit=10
+ * - 详情: /artist/detail?id=1
+ * - 作品详情: /artist/workDetail?id=1
+ */
+
+export interface ArtistApiItem {
+  id: number;
+  name: string;
+  image: string;
+  title?: string;
+  bio?: string;
+  [key: string]: any;
+}
+
+export interface ArtistListData {
+  list: ArtistApiItem[];
+  total: number;
+  page?: number;
+  limit?: number;
+  [key: string]: any;
+}
+
+export interface FetchArtistsParams {
+  page?: number;
+  limit?: number;
+}
+
+/**
+ * 获取艺术家列表
+ * 示例: /artist/index?page=1&limit=10
+ */
+export async function fetchArtists(
+  params: FetchArtistsParams = {},
+): Promise<ApiResponse<ArtistListData>> {
+  const { page = 1, limit = 10 } = params;
+  const search = new URLSearchParams();
+  search.set('page', String(page));
+  search.set('limit', String(Math.min(limit, 50)));
+
+  const path = `${API_ENDPOINTS.artist.index}?${search.toString()}`;
+
+  try {
+    const data = await apiFetch<ArtistListData>(path, {
+      method: 'GET',
+    });
+    console.log('艺术家列表接口原始响应:', data);
+    return data;
+  } catch (error: any) {
+    console.error('获取艺术家列表失败:', error);
+    throw error;
+  }
+}
+
+export interface ArtistWorkItem {
+  id: number;
+  artist_id: number;
+  title: string;
+  image: string;
+  description?: string;
+  sort?: number;
+  status?: string;
+  [key: string]: any;
+}
+
+export interface ArtistDetailData extends ArtistApiItem {
+  works?: ArtistWorkItem[];
+}
+
+export interface ArtistAllWorkItem {
+  id: number;
+  artist_id: number;
+  artist_name: string;
+  artist_title?: string;
+  title: string;
+  image: string;
+  description?: string;
+  [key: string]: any;
+}
+
+export interface ArtistAllWorksListData {
+  list: ArtistAllWorkItem[];
+  total: number;
+  page?: number;
+  limit?: number;
+  [key: string]: any;
+}
+
+/**
+ * 获取艺术家详情
+ * 示例: /artist/detail?id=1
+ */
+export async function fetchArtistDetail(
+  id: number | string,
+): Promise<ApiResponse<ArtistDetailData>> {
+  const search = new URLSearchParams();
+  search.set('id', String(id));
+
+  const path = `${API_ENDPOINTS.artist.detail}?${search.toString()}`;
+
+  try {
+    const data = await apiFetch<ArtistDetailData>(path, {
+      method: 'GET',
+    });
+    console.log('艺术家详情接口原始响应:', data);
+    return data;
+  } catch (error: any) {
+    console.error('获取艺术家详情失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 获取艺术家作品详情
+ * 示例: /artist/workDetail?id=1
+ */
+export async function fetchArtistWorkDetail(
+  id: number | string,
+): Promise<ApiResponse<ArtistWorkItem>> {
+  const search = new URLSearchParams();
+  search.set('id', String(id));
+
+  const path = `${API_ENDPOINTS.artist.workDetail}?${search.toString()}`;
+
+  try {
+    const data = await apiFetch<ArtistWorkItem>(path, {
+      method: 'GET',
+    });
+    console.log('艺术家作品详情接口原始响应:', data);
+    return data;
+  } catch (error: any) {
+    console.error('获取艺术家作品详情失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 获取全部艺术家作品列表
+ * 示例: /artist/allWorks?page=1&limit=10
+ */
+export interface FetchArtistAllWorksParams {
+  page?: number;
+  limit?: number;
+}
+
+export async function fetchArtistAllWorks(
+  params: FetchArtistAllWorksParams = {},
+): Promise<ApiResponse<ArtistAllWorksListData>> {
+  const { page = 1, limit = 20 } = params;
+  const search = new URLSearchParams();
+  search.set('page', String(page));
+  search.set('limit', String(Math.min(limit, 50)));
+
+  const path = `${API_ENDPOINTS.artist.allWorks}?${search.toString()}`;
+
+  try {
+    const data = await apiFetch<ArtistAllWorksListData>(path, {
+      method: 'GET',
+    });
+    console.log('全部艺术家作品列表接口原始响应:', data);
+    return data;
+  } catch (error: any) {
+    console.error('获取全部艺术家作品列表失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 积分订单相关接口
+ * 对应后端:
+ * - 待付款: /shopOrder/pendingPay
+ * - 待发货: /shopOrder/pendingShip
+ * - 待确认收货: /shopOrder/pendingConfirm
+ * - 已完成: /shopOrder/completed
+ * - 确认收货: /shopOrder/confirm
+ */
+
+export interface ShopOrderItemDetail {
+  id: number;
+  order_id: number;
+  product_id: number;
+  product_name: string;
+  product_thumbnail: string;
+  price: number;
+  score_price: number;
+  quantity: number;
+  subtotal: number;
+  subtotal_score: number;
+  create_time: number;
+  is_physical: string;
+  is_card_product: string;
+  [key: string]: any;
+}
+
+export interface ShopOrderItem {
+  id: number | string;
+  order_no?: string;
+  user_id?: number;
+  total_amount?: number | string;
+  total_score?: number | string;
+  pay_type?: 'money' | 'score' | string;
+  status?: number | string;
+  recipient_name?: string;
+  recipient_phone?: string;
+  recipient_address?: string;
+  shipping_no?: string;
+  shipping_company?: string;
+  remark?: string;
+  admin_remark?: string;
+  pay_time?: number | string;
+  ship_time?: number | string;
+  complete_time?: number | string;
+  create_time?: number | string;
+  update_time?: number | string;
+  items?: ShopOrderItemDetail[];
+  product_type?: string;
+  product_type_text?: string;
+  status_text?: string;
+  pay_type_text?: string;
+  create_time_text?: string;
+  pay_time_text?: string;
+  ship_time_text?: string;
+  complete_time_text?: string;
+  // Legacy fields for backward compatibility
+  product_id?: number;
+  product_name?: string;
+  product_image?: string;
+  thumbnail?: string;
+  quantity?: number;
+  price?: number | string;
+  [key: string]: any;
+}
+
+export interface ShopOrderListData {
+  list: ShopOrderItem[];
+  total: number;
+  page: number;
+  limit: number;
+  [key: string]: any;
+}
+
+export interface FetchShopOrdersParams {
+  page?: number;
+  limit?: number;
+  token?: string;
+}
+
+/**
+ * 获取待付款订单列表
+ * 示例接口: http://18.166.211.131/index.php/api/shopOrder/pendingPay?page=1&limit=10
+ */
+export async function fetchPendingPayOrders(
+  params: FetchShopOrdersParams = {},
+): Promise<ApiResponse<ShopOrderListData>> {
+  const token = params.token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+  const page = params.page || 1;
+  const limit = params.limit || 10;
+
+  if (!token) {
+    throw new Error('未找到用户登录信息，请先登录后再查看订单');
+  }
+
+  const search = new URLSearchParams();
+  search.append('page', String(page));
+  search.append('limit', String(limit));
+
+  const path = `${API_ENDPOINTS.shopOrder.pendingPay}?${search.toString()}`;
+
+  try {
+    const data = await apiFetch<ShopOrderListData>(path, {
+      method: 'GET',
+      token,
+    });
+    console.log('获取待付款订单列表接口原始响应:', data);
+    return data;
+  } catch (error: any) {
+    console.error('获取待付款订单列表失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 获取待发货订单列表
+ * 示例接口: http://18.166.211.131/index.php/api/shopOrder/pendingShip?page=1&limit=10
+ */
+export async function fetchPendingShipOrders(
+  params: FetchShopOrdersParams = {},
+): Promise<ApiResponse<ShopOrderListData>> {
+  const token = params.token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+  const page = params.page || 1;
+  const limit = params.limit || 10;
+
+  if (!token) {
+    throw new Error('未找到用户登录信息，请先登录后再查看订单');
+  }
+
+  const search = new URLSearchParams();
+  search.append('page', String(page));
+  search.append('limit', String(limit));
+
+  const path = `${API_ENDPOINTS.shopOrder.pendingShip}?${search.toString()}`;
+
+  try {
+    const data = await apiFetch<ShopOrderListData>(path, {
+      method: 'GET',
+      token,
+    });
+    console.log('获取待发货订单列表接口原始响应:', data);
+    return data;
+  } catch (error: any) {
+    console.error('获取待发货订单列表失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 获取待确认收货订单列表
+ * 示例接口: http://18.166.211.131/index.php/api/shopOrder/pendingConfirm?page=1&limit=10
+ */
+export async function fetchPendingConfirmOrders(
+  params: FetchShopOrdersParams = {},
+): Promise<ApiResponse<ShopOrderListData>> {
+  const token = params.token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+  const page = params.page || 1;
+  const limit = params.limit || 10;
+
+  if (!token) {
+    throw new Error('未找到用户登录信息，请先登录后再查看订单');
+  }
+
+  const search = new URLSearchParams();
+  search.append('page', String(page));
+  search.append('limit', String(limit));
+
+  const path = `${API_ENDPOINTS.shopOrder.pendingConfirm}?${search.toString()}`;
+
+  try {
+    const data = await apiFetch<ShopOrderListData>(path, {
+      method: 'GET',
+      token,
+    });
+    console.log('获取待确认收货订单列表接口原始响应:', data);
+    return data;
+  } catch (error: any) {
+    console.error('获取待确认收货订单列表失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 获取已完成订单列表
+ * 示例接口: http://18.166.211.131/index.php/api/shopOrder/completed?page=1&limit=10
+ */
+export async function fetchCompletedOrders(
+  params: FetchShopOrdersParams = {},
+): Promise<ApiResponse<ShopOrderListData>> {
+  const token = params.token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+  const page = params.page || 1;
+  const limit = params.limit || 10;
+
+  if (!token) {
+    throw new Error('未找到用户登录信息，请先登录后再查看订单');
+  }
+
+  const search = new URLSearchParams();
+  search.append('page', String(page));
+  search.append('limit', String(limit));
+
+  const path = `${API_ENDPOINTS.shopOrder.completed}?${search.toString()}`;
+
+  try {
+    const data = await apiFetch<ShopOrderListData>(path, {
+      method: 'GET',
+      token,
+    });
+    console.log('获取已完成订单列表接口原始响应:', data);
+    return data;
+  } catch (error: any) {
+    console.error('获取已完成订单列表失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 确认收货
+ * 对应后端: /shopOrder/confirm
+ * 示例接口: http://18.166.211.131/index.php/api/shopOrder/confirm
+ */
+export interface ConfirmOrderParams {
+  id: number | string | null;
+  token?: string;
+}
+
+export async function confirmOrder(
+  params: ConfirmOrderParams,
+): Promise<ApiResponse> {
+  const token = params.token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+
+  if (!token) {
+    throw new Error('未找到用户登录信息，请先登录后再确认收货');
+  }
+
+  if (params.id === null || params.id === undefined || params.id === '') {
+    throw new Error('缺少订单ID');
+  }
+
+  const body = {
+    id: params.id,
+  };
+
+  try {
+    const data = await apiFetch(API_ENDPOINTS.shopOrder.confirm, {
+      method: 'POST',
+      body: JSON.stringify(body),
+      token,
+    });
+    console.log('确认收货接口原始响应:', data);
+    return data;
+  } catch (error: any) {
+    console.error('确认收货失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 获取订单详情
+ * 对应后端: /shopOrder/detail
+ * 示例接口: http://18.166.211.131/index.php/api/shopOrder/detail?id=31
+ */
+export interface GetOrderDetailParams {
+  id: number | string;
+  token?: string;
+}
+
+export async function getOrderDetail(
+  params: GetOrderDetailParams,
+): Promise<ApiResponse<ShopOrderItem>> {
+  const token = params.token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+
+  if (!token) {
+    throw new Error('未找到用户登录信息，请先登录后再查看订单详情');
+  }
+
+  if (params.id === null || params.id === undefined || params.id === '') {
+    throw new Error('缺少订单ID');
+  }
+
+  const search = new URLSearchParams();
+  search.append('id', String(params.id));
+
+  const path = `${API_ENDPOINTS.shopOrder.detail}?${search.toString()}`;
+
+  try {
+    const data = await apiFetch<ShopOrderItem>(path, {
+      method: 'GET',
+      token,
+    });
+    console.log('获取订单详情接口原始响应:', data);
+    return data;
+  } catch (error: any) {
+    console.error('获取订单详情失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 支付订单
+ * 对应后端: /shopOrder/buy
+ * 示例接口: http://18.166.211.131/index.php/api/shopOrder/buy
+ * 
+ * 注意：此接口需要订单的完整信息（items, pay_type等），
+ * 如果只提供订单ID，需要先获取订单详情
+ */
+export interface PayOrderParams {
+  id: number | string;
+  token?: string;
+}
+
+export async function payOrder(
+  params: PayOrderParams,
+): Promise<ApiResponse> {
+  const token = params.token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+
+  if (!token) {
+    throw new Error('未找到用户登录信息，请先登录后再支付订单');
+  }
+
+  if (params.id === null || params.id === undefined || params.id === '') {
+    throw new Error('缺少订单ID');
+  }
+
+  // 由于 /shopOrder/buy 需要完整的订单信息，先获取订单详情
+  try {
+    const orderDetailResponse = await getOrderDetail({ id: params.id, token });
+    
+    if (orderDetailResponse.code !== 1 || !orderDetailResponse.data) {
+      throw new Error(orderDetailResponse.msg || '获取订单详情失败');
+    }
+
+    const order = orderDetailResponse.data;
+
+    // 构建 buy 接口需要的参数
+    if (!order.items || order.items.length === 0) {
+      throw new Error('订单中没有商品信息');
+    }
+
+    // 判断是否为实物商品
+    const isPhysicalProduct = order.product_type === 'physical' || 
+                             (order.items && order.items.some(item => item.is_physical === '1'));
+
+    // 获取地址ID：如果订单有收货地址信息，说明创建时已有地址，尝试从订单中获取或使用默认地址
+    // 注意：订单详情可能不包含 address_id 字段，需要从收货地址信息推断或使用默认地址
+    let addressId = (order as any).address_id || null;
+    
+    if (isPhysicalProduct && (!addressId || addressId === null)) {
+      try {
+        const defaultAddressResponse = await fetchDefaultAddress(token);
+        if (defaultAddressResponse.code === 1 && defaultAddressResponse.data?.id) {
+          addressId = typeof defaultAddressResponse.data.id === 'string' 
+            ? parseInt(defaultAddressResponse.data.id, 10) 
+            : defaultAddressResponse.data.id;
+        }
+      } catch (error) {
+        // 如果是实物商品但没有地址，抛出错误
+        throw new Error('实物商品必须填写收货地址，请先添加收货地址');
+      }
+      
+      // 再次检查，如果是实物商品但仍然没有地址ID，抛出错误
+      if (!addressId || addressId === null) {
+        throw new Error('实物商品必须填写收货地址，请先添加收货地址');
+      }
+    }
+
+    const requestBody = {
+      items: order.items.map(item => ({
+        product_id: item.product_id,
+        quantity: item.quantity,
+      })),
+      pay_type: order.pay_type || 'score',
+      address_id: addressId ?? null,
+      remark: order.remark || '',
+    };
+
+    const data = await apiFetch(API_ENDPOINTS.shopOrder.buy, {
+      method: 'POST',
+      body: JSON.stringify(requestBody),
+      token,
+    });
+    console.log('支付订单接口原始响应:', data);
+    return data;
+  } catch (error: any) {
+    console.error('支付订单失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 删除订单
+ * 对应后端: /shopOrder/delete
+ * 示例接口: http://18.166.211.131/index.php/api/shopOrder/delete
+ */
+export interface DeleteOrderParams {
+  id: number | string;
+  token?: string;
+}
+
+export async function deleteOrder(
+  params: DeleteOrderParams,
+): Promise<ApiResponse> {
+  const token = params.token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+
+  if (!token) {
+    throw new Error('未找到用户登录信息，请先登录后再删除订单');
+  }
+
+  if (params.id === null || params.id === undefined || params.id === '') {
+    throw new Error('缺少订单ID');
+  }
+
+  const formData = new FormData();
+  formData.append('order_id', String(params.id));
+
+  try {
+    const data = await apiFetch(API_ENDPOINTS.shopOrder.delete, {
+      method: 'POST',
+      body: formData,
+      token,
+    });
+    console.log('删除订单接口原始响应:', data);
+    return data;
+  } catch (error: any) {
+    console.error('删除订单失败:', error);
     throw error;
   }
 }

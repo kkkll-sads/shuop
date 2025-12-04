@@ -1,49 +1,83 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
-import { Artist, Product } from '../types';
+import { Artist } from '../types';
 import {
-  fetchShopProducts,
   normalizeAssetUrl,
-  ShopProductItem,
+  fetchArtistDetail,
+  fetchArtists,
+  ArtistDetailData,
+  ArtistWorkItem,
+  ArtistListData,
 } from '../services/api';
 
 interface ArtistDetailProps {
-  artist: Artist;
+  artistId: string;
   onBack: () => void;
-  onProductSelect?: (product: Product) => void;
 }
 
-const ArtistDetail: React.FC<ArtistDetailProps> = ({ artist, onBack, onProductSelect }) => {
-  const [works, setWorks] = useState<Product[]>([]);
+const ArtistDetail: React.FC<ArtistDetailProps> = ({ artistId, onBack }) => {
+  const [artist, setArtist] = useState<Artist | null>(null);
+  const [works, setWorks] = useState<ArtistWorkItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
     const load = async () => {
       try {
-        const res = await fetchShopProducts({ page: 1, limit: 20 });
+        setLoading(true);
+        setError(null);
+        let targetId: string | number | undefined = artistId;
+
+        // 兜底：如果没有传入 artistId，则从列表接口中取第一个艺术家
+        if (!targetId) {
+          try {
+            const listRes = await fetchArtists({ page: 1, limit: 1 });
+            const data: ArtistListData | undefined = listRes.data;
+            const first = data?.list?.[0];
+            if (first) {
+              targetId = first.id;
+            } else {
+              setError('未找到任何艺术家数据');
+              return;
+            }
+          } catch (e) {
+            console.error('兜底获取艺术家列表失败:', e);
+            setError('未找到有效的艺术家ID');
+            return;
+          }
+        }
+
+        const res = await fetchArtistDetail(targetId);
         if (!isMounted) return;
-        const list = res.data?.list ?? [];
-
-        const mapped: Product[] = list.map((item: ShopProductItem) => ({
-          id: String(item.id),
-          title: item.name,
-          // 暂无真实艺术家字段，使用分类名占位
-          artist: item.category || artist.name,
-          price: item.score_price || item.price || 0,
-          image: normalizeAssetUrl(item.thumbnail),
-          category: item.category || '其他',
-        }));
-
-        setWorks(mapped.slice(0, 8));
-      } catch (e) {
-        console.error('加载艺术家代表作品失败:', e);
+        if (res.code !== 1 || !res.data) {
+          setError(res.msg || '艺术家数据加载失败');
+          return;
+        }
+        const data: ArtistDetailData = res.data;
+        setArtist({
+          id: String(data.id),
+          name: data.name,
+          image: normalizeAssetUrl(data.image),
+          title: data.title,
+          bio: data.bio,
+        });
+        setWorks((data.works || []).map((w) => ({
+          ...w,
+          image: normalizeAssetUrl(w.image),
+        })));
+      } catch (e: any) {
+        console.error('加载艺术家详情失败:', e);
+        setError(e?.message || '加载艺术家详情失败');
+      } finally {
+        if (isMounted) setLoading(false);
       }
     };
     load();
     return () => {
       isMounted = false;
     };
-  }, [artist.name]);
+  }, [artistId]);
 
   return (
     <div className="min-h-screen bg-gray-50 pb-safe">
@@ -58,6 +92,14 @@ const ArtistDetail: React.FC<ArtistDetailProps> = ({ artist, onBack, onProductSe
       </header>
 
       <div className="p-4">
+        {loading && !artist && (
+          <div className="text-center text-xs text-gray-400 py-8">加载中...</div>
+        )}
+        {error && !artist && (
+          <div className="text-center text-xs text-red-400 py-8">{error}</div>
+        )}
+        {artist && (
+        <>
         {/* Profile Section */}
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex flex-col items-center text-center mb-4">
             <div className="w-24 h-24 rounded-full overflow-hidden mb-4 border-4 border-gray-50 shadow-inner">
@@ -79,7 +121,10 @@ const ArtistDetail: React.FC<ArtistDetailProps> = ({ artist, onBack, onProductSe
                 </p>
             </div>
         </div>
-
+        </>
+        )}
+        {artist && (
+        <>
         {/* Works Section */}
         <div className="mb-4">
             <div className="flex items-center mb-3 px-1">
@@ -91,21 +136,29 @@ const ArtistDetail: React.FC<ArtistDetailProps> = ({ artist, onBack, onProductSe
                     <div 
                         key={work.id} 
                         className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-100 active:scale-[0.99] transition-transform"
-                        onClick={() => onProductSelect && onProductSelect(work)}
                     >
                         <div className="aspect-square bg-gray-100 relative">
                             <img src={work.image} alt={work.title} className="w-full h-full object-cover" />
                         </div>
                         <div className="p-2">
                             <div className="text-sm text-gray-800 font-medium truncate">{work.title}</div>
-                            <div className="text-red-500 text-sm font-bold mt-1">
-                                {work.price.toFixed(2)} <span className="text-[10px] font-normal text-gray-400">积分</span>
-                            </div>
+                            {work.description && (
+                              <div className="text-[11px] text-gray-500 mt-1 line-clamp-2">
+                                {work.description}
+                              </div>
+                            )}
                         </div>
                     </div>
                 ))}
             </div>
+            {!works.length && (
+              <div className="text-center text-xs text-gray-400 py-6">
+                暂无代表作品数据
+              </div>
+            )}
         </div>
+        </>
+        )}
       </div>
     </div>
   );

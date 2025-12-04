@@ -4,6 +4,7 @@ import { Product } from '../types';
 import ProductSpecSheet from '../components/ProductSpecSheet';
 import {
   fetchCollectionItemDetail,
+  fetchCollectionItemOriginalDetail,
   fetchShopProductDetail,
   CollectionItemDetailData,
   ShopProductDetailData,
@@ -39,7 +40,16 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, onBack }) => {
           response = await fetchShopProductDetail(product.id);
         } else {
           // 藏品商城商品
-          response = await fetchCollectionItemDetail(product.id);
+          try {
+            response = await fetchCollectionItemDetail(product.id);
+            if (response.code !== 1 || !response.data) {
+              console.warn('交易商品详情返回异常，尝试获取原始详情:', response);
+              response = await fetchCollectionItemOriginalDetail(product.id);
+            }
+          } catch (detailError) {
+            console.warn('交易商品详情接口异常，尝试原始详情:', detailError);
+            response = await fetchCollectionItemOriginalDetail(product.id);
+          }
         }
         
         if (response.code === 1 && response.data) {
@@ -149,6 +159,11 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, onBack }) => {
                 <span className="text-red-500 text-xs">
                   {isShopProduct ? '积分' : '元'}
                 </span>
+                {!isShopProduct && (detailData as any)?.status_text && (
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+                    {(detailData as any).status_text}
+                  </span>
+                )}
             </div>
             
             <h2 className="text-lg font-bold text-gray-800 mb-1">

@@ -8,6 +8,8 @@ import {
   fetchCollectionItemsBySession,
   CollectionSessionItem,
   CollectionItem,
+  getConsignmentList,
+  ConsignmentItem,
 } from '../services/api';
 
 interface TradingZoneProps {
@@ -23,6 +25,19 @@ interface TradingSession {
   endTime: string;   // HH:mm
 }
 
+type TradingDisplayItem = CollectionItem & {
+  source?: 'collection' | 'consignment';
+  consignment_id?: number;
+  displayKey: string;
+  hasStockInfo?: boolean;
+};
+
+type ConsignmentRecord = ConsignmentItem & {
+  consignment_id?: number;
+  consignment_price?: number;
+  session_id?: number | string;
+};
+
 
 const TradingZone: React.FC<TradingZoneProps> = ({ onBack, onProductSelect }) => {
   const [now, setNow] = useState(new Date());
@@ -31,9 +46,54 @@ const TradingZone: React.FC<TradingZoneProps> = ({ onBack, onProductSelect }) =>
   const [sessions, setSessions] = useState<TradingSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [tradingItems, setTradingItems] = useState<CollectionItem[]>([]);
+  const [tradingItems, setTradingItems] = useState<TradingDisplayItem[]>([]);
   const [itemsLoading, setItemsLoading] = useState(false);
   const [itemsError, setItemsError] = useState<string | null>(null);
+
+  const mapCollectionItems = (items: CollectionItem[] = []): TradingDisplayItem[] =>
+    items.map((item) => ({
+      ...item,
+      price: typeof item.price === 'number' ? item.price : Number(item.price) || 0,
+      stock: typeof item.stock === 'number' ? item.stock : 0,
+      source: 'collection',
+      displayKey: `collection-${item.id}`,
+      hasStockInfo: true,
+    }));
+
+  const mapConsignmentItems = (items: ConsignmentRecord[] = [], sessionId: string): TradingDisplayItem[] =>
+    items
+      .filter((item) => String(item.session_id ?? '') === sessionId)
+      .map((item) => {
+        const resolvedId =
+          typeof item.item_id === 'number'
+            ? item.item_id
+            : typeof item.id === 'number'
+            ? item.id
+            : Number(item.item_id ?? item.id ?? item.consignment_id ?? Date.now());
+        const resolvedPrice =
+          typeof item.consignment_price === 'number'
+            ? item.consignment_price
+            : typeof item.price === 'number'
+            ? item.price
+            : Number(item.consignment_price ?? item.price ?? 0) || 0;
+
+        const hasStockInfo = typeof (item as any).stock === 'number';
+        const resolvedStock = hasStockInfo ? Number((item as any).stock) : 1; // 默认视为可售 1 件
+
+        return {
+          id: resolvedId,
+          session_id: Number(item.session_id ?? sessionId),
+          title: item.title,
+          image: item.image,
+          price: resolvedPrice,
+          stock: resolvedStock,
+          sales: Number((item as any).sales ?? 0),
+          source: 'consignment',
+          consignment_id: (item as any).consignment_id ?? resolvedId,
+          displayKey: `consignment-${(item as any).consignment_id ?? resolvedId}`,
+          hasStockInfo,
+        };
+      });
 
   // 获取专场列表
   useEffect(() => {
@@ -87,29 +147,67 @@ const TradingZone: React.FC<TradingZoneProps> = ({ onBack, onProductSelect }) =>
     try {
       setItemsLoading(true);
       setItemsError(null);
-      
-      // 获取专场详情（可选）
-      const detailResponse = await fetchCollectionSessionDetail(session.id);
-      
-      // 获取该专场的商品列表
-      const itemsResponse = await fetchCollectionItemsBySession(session.id, {
-        page: 1,
-        limit: 100, // 获取足够多的商品
-      });
-      
-      if (itemsResponse.code === 1 && itemsResponse.data?.list) {
-        setTradingItems(itemsResponse.data.list);
-        setSelectedSession(session);
+
+      const [_, itemsResult, consignmentResult] = await Promise.allSettled([
+        fetchCollectionSessionDetail(session.id),
+        fetchCollectionItemsBySession(session.id, {
+          page: 1,
+          limit: 100,
+        }),
+        getConsignmentList({
+          page: 1,
+          limit: 100,
+        }),
+      ]);
+
+      const combinedItems: TradingDisplayItem[] = [];
+      const tempErrors: string[] = [];
+
+      if (itemsResult.status === 'fulfilled') {
+        const response = itemsResult.value;
+        if (response.code === 1 && response.data?.list) {
+          combinedItems.push(...mapCollectionItems(response.data.list));
+        } else {
+          tempErrors.push(response.msg || '获取商品列表失败');
+        }
+      } else if (itemsResult.reason) {
+        const message =
+          itemsResult.reason?.msg ||
+          itemsResult.reason?.message ||
+          (typeof itemsResult.reason === 'string' ? itemsResult.reason : '');
+        tempErrors.push(message || '获取商品列表失败');
+      }
+
+      if (consignmentResult.status === 'fulfilled') {
+        const response = consignmentResult.value;
+        if (response.code === 1 && response.data?.list) {
+          combinedItems.push(...mapConsignmentItems(response.data.list as ConsignmentRecord[], session.id));
+        } else if (response.msg) {
+          tempErrors.push(response.msg);
+        }
+      } else if (consignmentResult.reason) {
+        const message =
+          consignmentResult.reason?.msg ||
+          consignmentResult.reason?.message ||
+          (typeof consignmentResult.reason === 'string' ? consignmentResult.reason : '');
+        if (message && /登录/.test(message)) {
+          console.warn('获取寄售列表失败（未登录或无权限）:', message);
+        } else if (message) {
+          tempErrors.push(message);
+        }
+      }
+
+      setTradingItems(combinedItems);
+      setSelectedSession(session);
+
+      if (!combinedItems.length && tempErrors.length) {
+        setItemsError(tempErrors.join('；'));
       } else {
-        setItemsError(itemsResponse.msg || '获取商品列表失败');
-        // 即使获取商品失败，仍然进入专场页面
-        setSelectedSession(session);
+        setItemsError(null);
       }
     } catch (err: any) {
       console.error('获取专场数据失败:', err);
-      // 优先使用接口返回的错误消息
       setItemsError(err?.msg || err?.response?.msg || err?.message || '加载专场数据失败，请稍后重试');
-      // 即使获取失败，仍然使用列表数据进入专场
       setSelectedSession(session);
     } finally {
       setItemsLoading(false);
@@ -147,6 +245,15 @@ const TradingZone: React.FC<TradingZoneProps> = ({ onBack, onProductSelect }) =>
     const s = totalSeconds % 60;
     return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
+
+  const filteredTradingItems = tradingItems.filter((item) => {
+    const priceValue = typeof item.price === 'number' ? item.price : Number(item.price) || 0;
+    if (priceFilter === 'all') return true;
+    if (priceFilter === '0-1k') return priceValue < 1000;
+    if (priceFilter === '1-4k') return priceValue >= 1000 && priceValue < 4000;
+    if (priceFilter === '4-8k') return priceValue >= 4000 && priceValue < 8000;
+    return priceValue >= 8000;
+  });
 
   return (
     <div className="min-h-screen bg-gray-50 pb-safe">
@@ -251,62 +358,81 @@ const TradingZone: React.FC<TradingZoneProps> = ({ onBack, onProductSelect }) =>
                 <div className="py-8 text-center text-red-500 text-sm">
                   {itemsError}
                 </div>
-              ) : tradingItems.length === 0 ? (
+              ) : filteredTradingItems.length === 0 ? (
                 <div className="py-8 text-center text-gray-500 text-sm">
                   暂无商品
                 </div>
               ) : (
                 <div className="grid grid-cols-3 gap-3">
-                  {tradingItems.filter((item) => {
-                    if (priceFilter === 'all') return true;
-                    if (priceFilter === '0-1k') return item.price < 1000;
-                    if (priceFilter === '1-4k') return item.price >= 1000 && item.price < 4000;
-                    if (priceFilter === '4-8k') return item.price >= 4000 && item.price < 8000;
-                    return item.price >= 8000;
-                  }).map((item) => (
-                    <div
-                      key={item.id}
-                      className="bg-gray-50 rounded-lg overflow-hidden shadow-[0_1px_3px_rgba(15,23,42,0.08)] active:scale-[0.97] transition-transform cursor-pointer flex flex-col relative"
-                      onClick={() => {
-                        if (!onProductSelect) return;
-                        const product: Product = {
-                          id: String(item.id),
-                          title: item.title,
-                          artist: selectedSession ? selectedSession.title : '交易专区',
-                          price: item.price,
-                          image: item.image,
-                          category: '交易专区',
-                          productType: 'collection', // 标记为藏品商城商品
-                        };
-                        onProductSelect(product);
-                      }}
-                    >
-                      {/* 顶部"交易开始"角标 */}
-                      <div className="absolute top-0 left-0 z-10">
-                        <div className="bg-blue-500 text-[10px] text-white px-2 py-0.5 rounded-br-lg rounded-tl-none rounded-tr-none">
-                          交易开始
+                  {filteredTradingItems.map((item) => {
+                    const priceValue = typeof item.price === 'number' ? item.price : Number(item.price) || 0;
+                    const stockValue = typeof item.stock === 'number' ? item.stock : null;
+                    const showStock = (item.hasStockInfo ?? (stockValue !== null)) && stockValue !== null;
+                    const isSoldOut = showStock && stockValue <= 0;
+                    const itemKey =
+                      item.displayKey || `${item.source ?? 'collection'}-${item.consignment_id ?? item.id}`;
+                    return (
+                      <div
+                        key={itemKey}
+                        className={`bg-gray-50 rounded-lg overflow-hidden shadow-[0_1px_3px_rgba(15,23,42,0.08)] active:scale-[0.97] transition-transform flex flex-col relative ${
+                          isSoldOut ? 'opacity-60 pointer-events-none' : 'cursor-pointer'
+                        }`}
+                        onClick={() => {
+                          if (!onProductSelect || isSoldOut) return;
+                          const product: Product = {
+                            id: String(item.id),
+                            title: item.title,
+                            artist: selectedSession ? selectedSession.title : '交易专区',
+                            price: priceValue,
+                            image: item.image,
+                            category: '交易专区',
+                            productType: 'collection', // 标记为藏品商城商品
+                            consignmentId: item.source === 'consignment' ? item.consignment_id : undefined,
+                          };
+                          onProductSelect(product);
+                        }}
+                      >
+                        {/* 顶部"交易开始"角标 */}
+                        <div className="absolute top-0 left-0 z-10">
+                          <div className="bg-blue-500 text-[10px] text-white px-2 py-0.5 rounded-br-lg rounded-tl-none rounded-tr-none">
+                            交易开始
+                          </div>
+                        </div>
+                        {isSoldOut && (
+                          <div className="absolute inset-0 z-20 flex items-center justify-center">
+                            <span className="bg-black/60 text-white text-xs px-3 py-1.5 rounded-full">
+                              已售罄
+                            </span>
+                          </div>
+                        )}
+                        <div className="w-full aspect-[3/4] bg-gray-100">
+                          <img
+                            src={item.image}
+                            alt={item.title}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="px-1.5 pt-1.5 pb-2 flex-1 flex flex-col justify-between">
+                          <div className="h-8 mb-1">
+                            <p className="text-[11px] text-gray-800 font-medium line-clamp-2 leading-4">
+                              {item.title}
+                            </p>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div className="text-[11px] text-red-500 font-bold">
+                              <span className="text-[9px] mr-0.5">¥</span>
+                              {priceValue.toFixed(2)}
+                            </div>
+                            {showStock && (
+                              <div className="text-[10px] text-gray-500">
+                                库存 {Math.max(stockValue, 0)}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
-                      <div className="w-full aspect-[3/4] bg-gray-100">
-                        <img
-                          src={item.image}
-                          alt={item.title}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <div className="px-1.5 pt-1.5 pb-2 flex-1 flex flex-col justify-between">
-                        <div className="h-8 mb-1">
-                          <p className="text-[11px] text-gray-800 font-medium line-clamp-2 leading-4">
-                            {item.title}
-                          </p>
-                        </div>
-                        <div className="text-[11px] text-red-500 font-bold">
-                          <span className="text-[9px] mr-0.5">¥</span>
-                          {item.price.toFixed(2)}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

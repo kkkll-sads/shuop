@@ -1,87 +1,38 @@
-
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Wallet, Receipt, CreditCard, FileText, Loader2, ShoppingBag, Package, ArrowRight, X, AlertCircle, CheckCircle } from 'lucide-react';
+import { Loader2, FileText, ShoppingBag, ArrowRight, X, AlertCircle, CheckCircle } from 'lucide-react';
+import SubPageLayout from '../components/SubPageLayout';
 import {
-  getBalanceLog,
-  getMyOrderList,
-  getMyWithdrawList,
   getMyCollection,
   deliverCollectionItem,
   consignCollectionItem,
   fetchProfile,
-  BalanceLogItem,
-  RechargeOrderItem,
-  WithdrawOrderItem,
   MyCollectionItem,
   AUTH_TOKEN_KEY,
   USER_INFO_KEY,
   normalizeAssetUrl,
 } from '../services/api';
-import { Product, UserInfo } from '../types';
+import { UserInfo } from '../types';
 
-interface AssetViewProps {
+interface MyCollectionProps {
   onBack: () => void;
-  onNavigate: (page: string) => void;
-  onProductSelect?: (product: Product) => void;
-  initialTab?: number; // 初始标签页索引
 }
 
-const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSelect, initialTab = 0 }) => {
-  const [activeTab, setActiveTab] = useState<number>(initialTab);
+const MyCollection: React.FC<MyCollectionProps> = ({ onBack }) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  
-  // Data states
-  const [balanceLogs, setBalanceLogs] = useState<BalanceLogItem[]>([]);
-  const [rechargeOrders, setRechargeOrders] = useState<RechargeOrderItem[]>([]);
-  const [withdrawOrders, setWithdrawOrders] = useState<WithdrawOrderItem[]>([]);
   const [myCollections, setMyCollections] = useState<MyCollectionItem[]>([]);
-  
   const [page, setPage] = useState<number>(1);
   const [hasMore, setHasMore] = useState<boolean>(false);
+  const [consignmentTicketCount, setConsignmentTicketCount] = useState<number>(0);
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
 
   // 弹窗状态
   const [showActionModal, setShowActionModal] = useState<boolean>(false);
   const [selectedItem, setSelectedItem] = useState<MyCollectionItem | null>(null);
   const [actionTab, setActionTab] = useState<'delivery' | 'consignment'>('delivery');
-  
-  // 用户信息
-  const [userInfo, setUserInfo] = useState<UserInfo | null>(() => {
-    try {
-      const cached = localStorage.getItem(USER_INFO_KEY);
-      return cached ? JSON.parse(cached) : null;
-    } catch (error) {
-      console.warn('解析本地用户信息失败:', error);
-      return null;
-    }
-  });
-
-  // 寄售券数量
-  const [consignmentTicketCount, setConsignmentTicketCount] = useState<number>(0);
-  
-  // 48小时倒计时
   const [countdown, setCountdown] = useState<{ hours: number; minutes: number; seconds: number } | null>(null);
-  // 寄售价格
-  const [consignPrice, setConsignPrice] = useState<string>('');
-  // 操作错误提示
   const [actionError, setActionError] = useState<string | null>(null);
-  // 操作提交状态
   const [actionLoading, setActionLoading] = useState<boolean>(false);
-
-  const tabs = ['余额明细', '拓展明细', '服务费明细', '我的藏品'];
-
-  // Reset page when tab changes
-  useEffect(() => {
-    setPage(1);
-    setBalanceLogs([]);
-    setRechargeOrders([]);
-    setWithdrawOrders([]);
-    setMyCollections([]);
-  }, [activeTab]);
-
-  useEffect(() => {
-    loadData();
-  }, [activeTab, page]);
 
   // 加载用户信息和寄售券数量
   useEffect(() => {
@@ -90,7 +41,6 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
       if (!token) return;
 
       try {
-        // 从本地存储读取用户信息
         const cached = localStorage.getItem(USER_INFO_KEY);
         if (cached) {
           try {
@@ -101,14 +51,12 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
           }
         }
 
-        // 获取最新的用户信息
         const response = await fetchProfile(token);
         if (response.code === 1 && response.data?.userInfo) {
           setUserInfo(response.data.userInfo);
           localStorage.setItem(USER_INFO_KEY, JSON.stringify(response.data.userInfo));
         }
 
-        // 获取寄售券数量
         const collectionRes = await getMyCollection({ page: 1, limit: 1, token });
         if (collectionRes.code === 1 && collectionRes.data) {
           const count = collectionRes.data.consignment_coupon ?? 0;
@@ -122,10 +70,15 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
     loadUserInfo();
   }, []);
 
+  useEffect(() => {
+    loadData();
+  }, [page]);
+
   const loadData = async () => {
     const token = localStorage.getItem(AUTH_TOKEN_KEY);
     if (!token) {
       setError('请先登录');
+      setLoading(false);
       return;
     }
 
@@ -133,62 +86,20 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
     setError(null);
 
     try {
-      if (activeTab === 0) {
-        // 余额明细
-        const res = await getBalanceLog({ page, limit: 10, token });
-        if (res.code === 1 && res.data) {
-          if (page === 1) {
-            setBalanceLogs(res.data.list || []);
-          } else {
-            setBalanceLogs(prev => [...prev, ...(res.data?.list || [])]);
-          }
-          setHasMore((res.data.list?.length || 0) >= 10);
+      const res = await getMyCollection({ page, limit: 10, token });
+      if (res.code === 1 && res.data) {
+        const list = res.data.list || [];
+        if (page === 1) {
+          setMyCollections(list);
         } else {
-          setError(res.msg || '获取余额明细失败');
+          setMyCollections(prev => [...prev, ...list]);
         }
-      } else if (activeTab === 1) {
-        // 拓展明细 (提现记录)
-        const res = await getMyWithdrawList({ page, limit: 10, token });
-        if (res.code === 1 && res.data) {
-          if (page === 1) {
-            setWithdrawOrders(res.data.data || []);
-          } else {
-            setWithdrawOrders(prev => [...prev, ...(res.data?.data || [])]);
-          }
-          setHasMore(res.data.has_more || false);
-        } else {
-          setError(res.msg || '获取拓展明细失败');
+        setHasMore((list.length || 0) >= 10 && res.data.has_more !== false);
+        if (typeof res.data.consignment_coupon === 'number') {
+          setConsignmentTicketCount(res.data.consignment_coupon);
         }
-      } else if (activeTab === 2) {
-        // 服务费明细 (充值订单)
-        const res = await getMyOrderList({ page, limit: 10, token });
-        if (res.code === 1 && res.data) {
-          if (page === 1) {
-            setRechargeOrders(res.data.data || []);
-          } else {
-            setRechargeOrders(prev => [...prev, ...(res.data?.data || [])]);
-          }
-          setHasMore(res.data.has_more || false);
-        } else {
-          setError(res.msg || '获取服务费明细失败');
-        }
-      } else if (activeTab === 3) {
-        // 我的藏品
-        const res = await getMyCollection({ page, limit: 10, token });
-        if (res.code === 1 && res.data) {
-          const list = res.data.list || [];
-          if (page === 1) {
-            setMyCollections(list);
-          } else {
-            setMyCollections(prev => [...prev, ...list]);
-          }
-          setHasMore((list.length || 0) >= 10 && res.data.has_more !== false);
-          if (typeof res.data.consignment_coupon === 'number') {
-            setConsignmentTicketCount(res.data.consignment_coupon);
-          }
-        } else {
-          setError(res.msg || '获取我的藏品失败');
-        }
+      } else {
+        setError(res.msg || '获取我的藏品失败');
       }
     } catch (e: any) {
       setError(e?.message || '加载数据失败');
@@ -196,103 +107,6 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
       setLoading(false);
     }
   };
-
-  const handleTabChange = (idx: number) => {
-    setActiveTab(idx);
-  };
-
-  const formatTime = (timestamp: number | string | null): string => {
-    if (!timestamp) return '';
-    const date = new Date(typeof timestamp === 'string' ? parseInt(timestamp) * 1000 : timestamp * 1000);
-    return date.toLocaleString('zh-CN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
-  const renderBalanceLogItem = (item: BalanceLogItem) => (
-    <div key={item.id} className="bg-white rounded-lg p-4 mb-3 shadow-sm">
-      <div className="flex justify-between items-start mb-2">
-        <div className="flex-1">
-          <div className="text-sm font-medium text-gray-800 mb-1">{item.memo}</div>
-          <div className="text-xs text-gray-500">{formatTime(item.create_time)}</div>
-        </div>
-        <div className={`text-lg font-bold ${parseFloat(item.money) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-          {parseFloat(item.money) >= 0 ? '+' : ''}{item.money}
-        </div>
-      </div>
-      <div className="text-xs text-gray-400">
-        余额: {item.before} → {item.after}
-      </div>
-    </div>
-  );
-
-  const renderRechargeOrderItem = (item: RechargeOrderItem) => (
-    <div key={item.id} className="bg-white rounded-lg p-4 mb-3 shadow-sm">
-      <div className="flex justify-between items-start mb-2">
-        <div className="flex-1">
-          <div className="text-sm font-medium text-gray-800 mb-1">充值订单</div>
-          <div className="text-xs text-gray-500">{item.order_no}</div>
-        </div>
-        <div className="text-right">
-          <div className="text-lg font-bold text-green-600">+{item.amount}</div>
-          <div className={`text-xs mt-1 ${
-            item.status === 1 ? 'text-green-600' : 
-            item.status === 2 ? 'text-red-600' : 
-            'text-yellow-600'
-          }`}>
-            {item.status_text}
-          </div>
-        </div>
-      </div>
-      <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-100">
-        <div className="text-xs text-gray-500">
-          <div>支付方式: {item.payment_type_text}</div>
-          <div className="mt-1">创建时间: {item.create_time_text}</div>
-          {item.audit_time_text && (
-            <div className="mt-1">审核时间: {item.audit_time_text}</div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderWithdrawOrderItem = (item: WithdrawOrderItem) => (
-    <div key={item.id} className="bg-white rounded-lg p-4 mb-3 shadow-sm">
-      <div className="flex justify-between items-start mb-2">
-        <div className="flex-1">
-          <div className="text-sm font-medium text-gray-800 mb-1">提现申请</div>
-          <div className="text-xs text-gray-500">{item.account_type_text}</div>
-        </div>
-        <div className="text-right">
-          <div className="text-lg font-bold text-red-600">-{item.amount}</div>
-          <div className={`text-xs mt-1 ${
-            item.status === 1 ? 'text-green-600' : 
-            item.status === 2 ? 'text-red-600' : 
-            'text-yellow-600'
-          }`}>
-            {item.status_text}
-          </div>
-        </div>
-      </div>
-      <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-100">
-        <div className="text-xs text-gray-500">
-          <div>账户: {item.account_name}</div>
-          <div className="mt-1">账号: {item.account_number}</div>
-          <div className="mt-1">创建时间: {item.create_time_text}</div>
-          {item.audit_time_text && (
-            <div className="mt-1">审核时间: {item.audit_time_text}</div>
-          )}
-          {item.audit_reason && (
-            <div className="mt-1 text-red-500">审核原因: {item.audit_reason}</div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
 
   // 检查是否满足48小时
   const check48Hours = (buyTime: number): { passed: boolean; hoursLeft: number } => {
@@ -305,10 +119,9 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
     };
   };
 
-  // 获取寄售券数量（模拟，实际应从API获取）
+  // 获取寄售券数量
   const getConsignmentTicketCount = (): number => {
-    // TODO: 从API获取用户寄售券数量
-    return consignmentTicketCount; // 模拟：返回状态中的数量
+    return consignmentTicketCount;
   };
 
   // 检查是否有寄售券
@@ -323,7 +136,7 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
     const totalSeconds = 48 * 3600 - elapsed;
     
     if (totalSeconds <= 0) {
-      return null; // 已超过48小时
+      return null;
     }
     
     const hours = Math.floor(totalSeconds / 3600);
@@ -346,11 +159,9 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
       return;
     }
 
-    // 立即计算一次
     const initialCountdown = calculateCountdown(selectedItem.buy_time);
     setCountdown(initialCountdown);
 
-    // 每秒更新一次
     const interval = setInterval(() => {
       const newCountdown = calculateCountdown(selectedItem.buy_time);
       if (newCountdown) {
@@ -364,18 +175,9 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
     return () => clearInterval(interval);
   }, [showActionModal, selectedItem, actionTab]);
 
-  // formatAmount 函数
-  const formatAmount = (value?: string | number) => {
-    if (value === undefined || value === null) return '0.00';
-    const num = Number(value);
-    if (Number.isNaN(num)) return String(value);
-    return num.toFixed(2);
-  };
-
   // 如果曾经寄售过，强制切换到提货标签
   useEffect(() => {
     if (showActionModal && selectedItem) {
-      // 如果正在寄售中、已寄售成功、或曾经寄售过，强制切换到提货标签
       if (isConsigning(selectedItem) || hasConsignedSuccessfully(selectedItem) || hasConsignedBefore(selectedItem)) {
         if (actionTab === 'consignment') {
           setActionTab('delivery');
@@ -384,19 +186,11 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
     }
   }, [showActionModal, selectedItem]);
 
-  // 当切换标签或选择的藏品变化时，重置寄售价格与错误信息
+  // 当切换标签或选择的藏品变化时，重置错误信息
   useEffect(() => {
     if (!showActionModal || !selectedItem) {
-      setConsignPrice('');
       setActionError(null);
       return;
-    }
-
-    if (actionTab === 'consignment') {
-      const priceValue = selectedItem.price
-        ? Number(selectedItem.price)
-        : 0;
-      setConsignPrice(priceValue > 0 ? priceValue.toFixed(2) : '');
     }
 
     setActionError(null);
@@ -404,25 +198,24 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
 
   // 检查是否曾经寄售过
   const hasConsignedBefore = (item: MyCollectionItem): boolean => {
-    // 如果寄售状态不是0（未寄售），说明曾经寄售过
-    return item.consignment_status !== 0;
+    // 只有 consignment_status 明确不为 0 时，才认为曾经寄售过
+    // 0 = 未寄售，1 = 待审核，2 = 寄售中，3 = 寄售失败，4 = 已售出
+    const status = item.consignment_status;
+    return typeof status === 'number' && status !== 0;
   };
 
   // 检查是否已经寄售成功（已售出）
   const hasConsignedSuccessfully = (item: MyCollectionItem): boolean => {
-    // 寄售状态为4表示已售出（寄售成功）
     return item.consignment_status === 4;
   };
 
   // 检查是否正在寄售中
   const isConsigning = (item: MyCollectionItem): boolean => {
-    // 寄售状态为2表示寄售中
     return item.consignment_status === 2;
   };
 
   // 检查是否已提货
   const isDelivered = (item: MyCollectionItem): boolean => {
-    // 提货状态为1表示已提货
     return item.delivery_status === 1;
   };
 
@@ -439,19 +232,16 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
 
   const handleItemClick = (item: MyCollectionItem) => {
     setSelectedItem(item);
-    // 根据状态设置默认标签
-    // 如果曾经寄售过、正在寄售中、或已寄售成功，只显示提货标签
     if (isConsigning(item) || hasConsignedSuccessfully(item) || hasConsignedBefore(item)) {
-      setActionTab('delivery'); // 只显示提货
+      setActionTab('delivery');
     } else if (item.delivery_status === 0) {
-      setActionTab('delivery'); // 未提货，默认显示提货
+      setActionTab('delivery');
     } else if (item.consignment_status === 0) {
-      setActionTab('consignment'); // 已提货且未寄售，默认显示寄售
+      setActionTab('consignment');
     } else {
-      setActionTab('delivery'); // 其他情况默认显示提货
+      setActionTab('delivery');
     }
     setActionError(null);
-    setConsignPrice('');
     setShowActionModal(true);
   };
 
@@ -459,34 +249,29 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
   const canPerformAction = (): boolean => {
     if (!selectedItem) return false;
 
-    // 如果正在寄售中，不能提货也不能寄售
     if (isConsigning(selectedItem)) {
       return false;
     }
 
-    // 如果已经寄售成功（已售出），不能提货也不能寄售
     if (hasConsignedSuccessfully(selectedItem)) {
       return false;
     }
 
     const collectionId = resolveCollectionId(selectedItem);
     if (collectionId === undefined || collectionId === null) {
-      alert('无法获取藏品ID，无法继续操作');
-      return;
+      return false;
     }
 
     if (actionTab === 'delivery') {
-      // 如果已提货，不能再提货
       if (isDelivered(selectedItem)) {
         return false;
       }
       const timeCheck = check48Hours(selectedItem.buy_time);
-      return timeCheck.passed; // 提货只需要满足48小时
+      return timeCheck.passed;
     } else {
-      // 寄售不需要先提货，提货和寄售可以独立选择
       const timeCheck = check48Hours(selectedItem.buy_time);
       const hasTicket = checkConsignmentTicket();
-      return timeCheck.passed && hasTicket; // 寄售需要满足48小时且有寄售券
+      return timeCheck.passed && hasTicket;
     }
   };
 
@@ -511,20 +296,16 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
     }
 
     if (actionTab === 'delivery') {
-      // 提货逻辑
-      // 检查是否正在寄售中
       if (isConsigning(selectedItem)) {
         alert('该藏品正在寄售中，无法提货');
         return;
       }
 
-      // 检查是否已经寄售成功（已售出）
       if (hasConsignedSuccessfully(selectedItem)) {
         alert('该藏品已经寄售成功（已售出），无法提货');
         return;
       }
 
-      // 检查是否已提货
       if (isDelivered(selectedItem)) {
         alert('该藏品已经提货，无法再次提货');
         return;
@@ -538,7 +319,6 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
 
       const hasConsigned = hasConsignedBefore(selectedItem);
       if (hasConsigned) {
-        // 如果寄售过（但不是已售出），强制提货
         if (confirm('该藏品曾经寄售过，确定要强制提货吗？')) {
           setActionLoading(true);
           deliverCollectionItem({
@@ -576,14 +356,11 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
           .finally(() => setActionLoading(false));
       }
     } else {
-      // 寄售逻辑
-      // 检查是否正在寄售中
       if (isConsigning(selectedItem)) {
         alert('该藏品正在寄售中，无法再次寄售');
         return;
       }
 
-      // 检查是否已经寄售成功（已售出）
       if (hasConsignedSuccessfully(selectedItem)) {
         alert('该藏品已经寄售成功（已售出），无法再次寄售');
         return;
@@ -601,9 +378,10 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
         return;
       }
 
-      const priceValue = parseFloat(consignPrice || '0');
+      // 使用藏品原价作为寄售价格
+      const priceValue = parseFloat(selectedItem.price || '0');
       if (Number.isNaN(priceValue) || priceValue <= 0) {
-        setActionError('请输入有效的寄售价格');
+        setActionError('藏品价格无效，无法进行寄售');
         return;
       }
 
@@ -649,32 +427,54 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
             <div className="text-sm font-medium text-gray-800 flex-1">{item.title}</div>
             <ArrowRight size={16} className="text-gray-400 ml-2 flex-shrink-0" />
           </div>
+          {item.order_no && (
+            <div className="text-xs text-gray-400 mb-1">订单号: {item.order_no}</div>
+          )}
           <div className="text-xs text-gray-500 mb-2">购买时间: {item.buy_time_text}</div>
           <div className="text-sm font-bold text-gray-900 mb-2">¥ {item.price}</div>
           
           <div className="flex gap-2 flex-wrap">
-            {/* 如果已售出，只显示"已售出"标签 */}
             {item.consignment_status === 4 ? (
               <div className="text-xs px-2 py-1 rounded-full bg-green-50 text-green-600 border border-green-200">
                 已售出
               </div>
             ) : item.consignment_status === 2 ? (
-              /* 如果正在寄售中，只显示"寄售中"标签 */
               <div className="text-xs px-2 py-1 rounded-full bg-blue-50 text-blue-600 border border-blue-200">
                 寄售中
               </div>
             ) : item.delivery_status === 1 ? (
-              /* 如果已提货且未寄售，只显示"已提货"标签 */
-              <div className="text-xs px-2 py-1 rounded-full bg-green-50 text-green-600 border border-green-200">
-                ✓ 已提货
+              // 已提货：显示提货订单状态（待发货/待收货/已签收）
+              <div className={`text-xs px-2 py-1 rounded-full ${
+                item.delivery_status_text === '待发货'
+                  ? 'bg-blue-50 text-blue-600 border border-blue-200'
+                  : item.delivery_status_text === '待收货'
+                  ? 'bg-yellow-50 text-yellow-600 border border-yellow-200'
+                  : item.delivery_status_text === '已签收'
+                  ? 'bg-green-50 text-green-600 border border-green-200'
+                  : 'bg-green-50 text-green-600 border border-green-200'
+              }`}>
+                {item.delivery_status_text || '已提货'}
               </div>
             ) : hasConsignedBefore(item) ? (
-              /* 如果曾经寄售过（需要强制提货），只显示"待提货"标签 */
-              <div className="text-xs px-2 py-1 rounded-full bg-orange-50 text-orange-600 border border-orange-200">
-                待提货
-              </div>
+              // 待提货：显示"待提货"和"待寄售"标签
+              <>
+                <div className="text-xs px-2 py-1 rounded-full bg-orange-50 text-orange-600 border border-orange-200">
+                  待提货
+                </div>
+                <div className={`text-xs px-2 py-1 rounded-full ${
+                  item.consignment_status === 0 
+                    ? 'bg-gray-50 text-gray-600 border border-gray-200'
+                    : item.consignment_status === 1
+                    ? 'bg-yellow-50 text-yellow-600 border border-yellow-200'
+                    : item.consignment_status === 3
+                    ? 'bg-red-50 text-red-600 border border-red-200'
+                    : 'bg-green-50 text-green-600 border border-green-200'
+                }`}>
+                  {item.consignment_status_text || '待寄售'}
+                </div>
+              </>
             ) : (
-              /* 未提货且未寄售过，显示提货状态和寄售状态 */
+              // 未提货：显示"未提货"和寄售状态
               <>
                 <div className="text-xs px-2 py-1 rounded-full bg-orange-50 text-orange-600 border border-orange-200">
                   ○ 未提货
@@ -698,215 +498,42 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
     </div>
   );
 
-  const renderContent = () => {
-    if (loading && page === 1) {
-      return (
-        <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-          <Loader2 size={32} className="animate-spin mb-4" />
-          <span className="text-xs">加载中...</span>
-        </div>
-      );
-    }
-
-    if (error) {
-      return (
-        <div className="flex flex-col items-center justify-center py-12 text-red-400">
-          <div className="w-16 h-16 mb-4 border-2 border-red-200 rounded-lg flex items-center justify-center">
-            <FileText size={32} className="opacity-50" />
-          </div>
-          <span className="text-xs">{error}</span>
-        </div>
-      );
-    }
-
-    if (activeTab === 0) {
-      // 余额明细
-      if (balanceLogs.length === 0) {
-        return (
+  return (
+    <SubPageLayout title="我的藏品" onBack={onBack}>
+      <div className="p-4">
+        {loading && page === 1 ? (
           <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-            <div className="w-16 h-16 mb-4 border-2 border-gray-200 rounded-lg flex items-center justify-center">
+            <Loader2 size={32} className="animate-spin mb-4" />
+            <span className="text-xs">加载中...</span>
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center py-12 text-red-400">
+            <div className="w-16 h-16 mb-4 border-2 border-red-200 rounded-lg flex items-center justify-center">
               <FileText size={32} className="opacity-50" />
             </div>
-            <span className="text-xs">暂无数据</span>
+            <span className="text-xs">{error}</span>
           </div>
-        );
-      }
-      return (
-        <div>
-          {balanceLogs.map(renderBalanceLogItem)}
-          {hasMore && (
-            <button
-              onClick={() => setPage(prev => prev + 1)}
-              disabled={loading}
-              className="w-full py-2 text-sm text-blue-600 disabled:opacity-50"
-            >
-              {loading ? '加载中...' : '加载更多'}
-            </button>
-          )}
-        </div>
-      );
-    } else if (activeTab === 1) {
-      // 拓展明细
-      if (withdrawOrders.length === 0) {
-        return (
-          <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-            <div className="w-16 h-16 mb-4 border-2 border-gray-200 rounded-lg flex items-center justify-center">
-              <FileText size={32} className="opacity-50" />
-            </div>
-            <span className="text-xs">暂无数据</span>
-          </div>
-        );
-      }
-      return (
-        <div>
-          {withdrawOrders.map(renderWithdrawOrderItem)}
-          {hasMore && (
-            <button
-              onClick={() => setPage(prev => prev + 1)}
-              disabled={loading}
-              className="w-full py-2 text-sm text-blue-600 disabled:opacity-50"
-            >
-              {loading ? '加载中...' : '加载更多'}
-            </button>
-          )}
-        </div>
-      );
-    } else if (activeTab === 2) {
-      // 服务费明细
-      if (rechargeOrders.length === 0) {
-        return (
-          <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-            <div className="w-16 h-16 mb-4 border-2 border-gray-200 rounded-lg flex items-center justify-center">
-              <FileText size={32} className="opacity-50" />
-            </div>
-            <span className="text-xs">暂无数据</span>
-          </div>
-        );
-      }
-      return (
-        <div>
-          {rechargeOrders.map(renderRechargeOrderItem)}
-          {hasMore && (
-            <button
-              onClick={() => setPage(prev => prev + 1)}
-              disabled={loading}
-              className="w-full py-2 text-sm text-blue-600 disabled:opacity-50"
-            >
-              {loading ? '加载中...' : '加载更多'}
-            </button>
-          )}
-        </div>
-      );
-    } else {
-      // 我的藏品（activeTab === 3）
-      if (myCollections.length === 0) {
-        return (
+        ) : myCollections.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-gray-400">
             <div className="w-16 h-16 mb-4 border-2 border-gray-200 rounded-lg flex items-center justify-center">
               <ShoppingBag size={32} className="opacity-50" />
             </div>
             <span className="text-xs">暂无藏品</span>
           </div>
-        );
-      }
-      return (
-        <div>
-          {myCollections.map(renderCollectionItem)}
-          {hasMore && (
-            <button
-              onClick={() => setPage(prev => prev + 1)}
-              disabled={loading}
-              className="w-full py-2 text-sm text-blue-600 disabled:opacity-50"
-            >
-              {loading ? '加载中...' : '加载更多'}
-            </button>
-          )}
-        </div>
-      );
-    }
-  };
-  return (
-    <div className="min-h-screen bg-gray-50 pb-24">
-      <header className="bg-white px-4 py-3 flex items-center sticky top-0 z-10">
-          <button onClick={onBack} className="absolute left-4 p-1"><ArrowLeft size={20} /></button>
-          <h1 className="text-lg font-bold text-gray-800 w-full text-center">我的资产</h1>
-          <button 
-            onClick={() => onNavigate('asset-history')} 
-            className="absolute right-4 text-sm text-blue-600"
-          >
-            历史记录
-          </button>
-      </header>
-      <div className="p-4">
-           {/* Asset Card */}
-           <div className="bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl p-6 text-white shadow-lg mb-6 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
-              <div className="relative z-10">
-                  <div className="text-sm opacity-90 mb-1">可用余额 (元)</div>
-                  <div className="text-4xl font-bold mb-6">¥ {formatAmount(userInfo?.money)}</div>
-                  
-                  <div className="w-full h-px bg-white opacity-20 mb-4"></div>
-                  
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                          <div className="opacity-70 text-xs mb-1">寄售券</div>
-                          <div className="font-medium">{consignmentTicketCount} 张</div>
-                      </div>
-                      <div>
-                          <div className="opacity-70 text-xs mb-1">积分</div>
-                          <div className="font-medium">{userInfo?.score ?? 0}</div>
-                      </div>
-                      <div>
-                          <div className="opacity-70 text-xs mb-1">提现余额</div>
-                          <div className="font-medium">¥ {formatAmount(userInfo?.withdrawable_money)}</div>
-                      </div>
-                      <div>
-                          <div className="opacity-70 text-xs mb-1">服务费金额</div>
-                          <div className="font-medium">¥ {formatAmount(userInfo?.withdrawable_money)}</div>
-                      </div>
-                  </div>
-              </div>
-          </div>
-
-         {/* Actions */}
-         <div className="grid grid-cols-4 gap-4 mb-8">
-             {[
-                 {label: '余额充值', icon: Wallet, page: 'asset:balance-recharge'},
-                 {label: '余额提现', icon: Receipt, page: 'asset:balance-withdraw'},
-                 {label: '拓展提现', icon: Receipt, page: 'asset:extension-withdraw'},
-                 {label: '服务充值', icon: CreditCard, page: 'asset:service-recharge'}
-             ].map((item, idx) => (
-                 <button
-                   key={idx}
-                   type="button"
-                   onClick={() => onNavigate(item.page)}
-                   className="flex flex-col items-center focus:outline-none active:opacity-80"
-                 >
-                     <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center mb-2 text-gray-700">
-                         <item.icon size={20} />
-                     </div>
-                     <span className="text-xs text-gray-600">{item.label}</span>
-                 </button>
-             ))}
-         </div>
-
-          {/* Tabs */}
-          <div className="flex justify-between bg-white p-1 rounded-full mb-8">
-              {tabs.map((tab, idx) => (
-                  <button 
-                    key={idx} 
-                    onClick={() => handleTabChange(idx)}
-                    className={`flex-1 py-2 text-xs rounded-full transition-colors ${
-                      idx === activeTab ? 'bg-blue-100 text-blue-600 font-bold' : 'text-gray-500'
-                    }`}
-                  >
-                      {tab}
-                  </button>
-              ))}
-          </div>
-
-          {/* Content */}
-          {renderContent()}
+        ) : (
+          <>
+            {myCollections.map(renderCollectionItem)}
+            {hasMore && (
+              <button
+                onClick={() => setPage(prev => prev + 1)}
+                disabled={loading}
+                className="w-full py-2 text-sm text-blue-600 disabled:opacity-50"
+              >
+                {loading ? '加载中...' : '加载更多'}
+              </button>
+            )}
+          </>
+        )}
       </div>
 
       {/* 操作弹窗 */}
@@ -919,7 +546,6 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
             className="bg-white rounded-xl p-6 max-w-sm w-full relative"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* 关闭按钮 */}
             <button
               type="button"
               className="absolute top-4 right-4 p-1 text-gray-400 hover:text-gray-600"
@@ -928,7 +554,6 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
               <X size={20} />
             </button>
 
-            {/* 藏品信息 */}
             <div className="flex gap-3 mb-4">
               <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                 <img 
@@ -942,14 +567,49 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
               </div>
               <div className="flex-1">
                 <div className="text-sm font-medium text-gray-800 mb-1">{selectedItem.title}</div>
+                {selectedItem.order_no && (
+                  <div className="text-xs text-gray-400 mb-1">订单号: {selectedItem.order_no}</div>
+                )}
                 <div className="text-xs text-gray-500">购买时间: {selectedItem.buy_time_text}</div>
                 <div className="text-sm font-bold text-gray-900 mt-1">¥ {selectedItem.price}</div>
               </div>
             </div>
 
-            {/* 标签切换 */}
+            {/* 订单详情 */}
+            {selectedItem.order_no && (
+              <div className="bg-gray-50 rounded-lg p-3 mb-4 border border-gray-100">
+                <div className="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                  <FileText size={14} />
+                  订单详情
+                </div>
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-gray-500">订单号：</span>
+                    <span className="text-gray-800 font-mono">{selectedItem.order_no}</span>
+                  </div>
+                  {selectedItem.order_status_text && (
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-500">订单状态：</span>
+                      <span className="text-gray-800">{selectedItem.order_status_text}</span>
+                    </div>
+                  )}
+                  {selectedItem.original_record?.pay_type_text && (
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-500">支付方式：</span>
+                      <span className="text-gray-800">{selectedItem.original_record.pay_type_text}</span>
+                    </div>
+                  )}
+                  {selectedItem.original_record?.quantity && (
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-500">购买数量：</span>
+                      <span className="text-gray-800">{selectedItem.original_record.quantity}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {(() => {
-              // 如果正在寄售中、已寄售成功、已提货、或曾经寄售过，不显示任何标签
               if (isConsigning(selectedItem) || 
                   hasConsignedSuccessfully(selectedItem) || 
                   isDelivered(selectedItem) || 
@@ -957,7 +617,6 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
                 return null;
               }
               
-              // 显示提货和寄售两个标签
               return (
                 <div className="flex bg-gray-100 p-1 rounded-lg mb-4">
                   <button
@@ -984,11 +643,9 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
               );
             })()}
 
-            {/* 检查信息显示 */}
             <div className="space-y-3 mb-4">
               {actionTab === 'delivery' ? (
                 <>
-                  {/* 寄售中检查（优先级最高） */}
                   {isConsigning(selectedItem) && (
                     <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 px-3 py-2 rounded-lg">
                       <AlertCircle size={16} />
@@ -996,7 +653,6 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
                     </div>
                   )}
 
-                  {/* 已寄售成功检查 */}
                   {!isConsigning(selectedItem) && hasConsignedSuccessfully(selectedItem) && (
                     <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 px-3 py-2 rounded-lg">
                       <AlertCircle size={16} />
@@ -1004,7 +660,6 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
                     </div>
                   )}
 
-                  {/* 已提货检查 */}
                   {!isConsigning(selectedItem) && !hasConsignedSuccessfully(selectedItem) && isDelivered(selectedItem) && (
                     <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 px-3 py-2 rounded-lg">
                       <AlertCircle size={16} />
@@ -1012,7 +667,6 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
                     </div>
                   )}
 
-                  {/* 48小时检查 */}
                   {!isConsigning(selectedItem) && !hasConsignedSuccessfully(selectedItem) && !isDelivered(selectedItem) && (() => {
                     const timeCheck = check48Hours(selectedItem.buy_time);
                     return timeCheck.passed ? (
@@ -1028,7 +682,6 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
                     );
                   })()}
 
-                  {/* 寄售历史检查 */}
                   {!isConsigning(selectedItem) && !hasConsignedSuccessfully(selectedItem) && !isDelivered(selectedItem) && hasConsignedBefore(selectedItem) && (
                     <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 px-3 py-2 rounded-lg">
                       <AlertCircle size={16} />
@@ -1038,7 +691,6 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
                 </>
               ) : (
                 <>
-                  {/* 寄售中检查（优先级最高） */}
                   {isConsigning(selectedItem) && (
                     <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 px-3 py-2 rounded-lg">
                       <AlertCircle size={16} />
@@ -1046,7 +698,6 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
                     </div>
                   )}
 
-                  {/* 已寄售成功检查 */}
                   {!isConsigning(selectedItem) && hasConsignedSuccessfully(selectedItem) && (
                     <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 px-3 py-2 rounded-lg">
                       <AlertCircle size={16} />
@@ -1054,7 +705,6 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
                     </div>
                   )}
 
-                  {/* 48小时倒计时 */}
                   {!isConsigning(selectedItem) && !hasConsignedSuccessfully(selectedItem) && (() => {
                     const timeCheck = check48Hours(selectedItem.buy_time);
                     if (timeCheck.passed) {
@@ -1087,7 +737,6 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
                     }
                   })()}
 
-                  {/* 寄售券数量显示 */}
                   {!isConsigning(selectedItem) && !hasConsignedSuccessfully(selectedItem) && (
                     <div className="bg-blue-50 px-3 py-2 rounded-lg">
                       <div className="flex items-center justify-between">
@@ -1110,12 +759,10 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
               )}
             </div>
 
-           
             {actionError && (
               <div className="text-xs text-red-600 mb-2">{actionError}</div>
             )}
 
-            {/* 确认按钮 */}
             <button
               onClick={handleConfirmAction}
               disabled={actionLoading || !canPerformAction()}
@@ -1136,8 +783,9 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
           </div>
         </div>
       )}
-    </div>
+    </SubPageLayout>
   );
 };
 
-export default AssetView;
+export default MyCollection;
+

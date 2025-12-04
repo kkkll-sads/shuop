@@ -136,7 +136,7 @@ const RealNameAuth: React.FC<RealNameAuthProps> = ({ onBack }) => {
       setError(null);
 
       const token = localStorage.getItem(AUTH_TOKEN_KEY) || '';
-      await submitRealName({
+      const res = await submitRealName({
         real_name: realName,
         id_card: idCard,
         id_card_front: idCardFront,
@@ -144,7 +144,13 @@ const RealNameAuth: React.FC<RealNameAuthProps> = ({ onBack }) => {
         token,
       });
 
-      alert('提交成功，请等待审核');
+      const success = res?.code === 1 || typeof res?.code === 'undefined';
+      const message = res?.msg || (success ? '提交成功，请等待审核' : '提交实名认证失败，请稍后重试');
+      alert(message);
+
+      if (!success) {
+        return;
+      }
 
       try {
         const res = await fetchRealNameStatus(token);

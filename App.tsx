@@ -16,7 +16,7 @@ import AnnouncementDetail from './pages/AnnouncementDetail';
 import AboutUs from './pages/AboutUs';
 import ArtistShowcase from './pages/ArtistShowcase';
 import ArtistDetail from './pages/ArtistDetail';
-import MasterpieceShowcase from './pages/MasterpieceShowcase';
+import ArtistWorksShowcase from './pages/ArtistWorksShowcase';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import UserAgreement from './pages/UserAgreement';
 import ProductDetail from './pages/ProductDetail';
@@ -39,8 +39,11 @@ import BalanceWithdraw from './pages/BalanceWithdraw';
 import ExtensionWithdraw from './pages/ExtensionWithdraw';
 import ServiceRecharge from './pages/ServiceRecharge';
 import AssetHistory from './pages/AssetHistory';
+import CumulativeRights from './pages/CumulativeRights';
+import ConsignmentVoucher from './pages/ConsignmentVoucher';
+import MessageCenter from './pages/MessageCenter';
+import MyCollection from './pages/MyCollection';
 import { Tab, Product, NewsItem, LoginSuccessPayload } from './types';
-import { ARTISTS } from './constants';
 import { AUTH_TOKEN_KEY, USER_INFO_KEY, fetchAnnouncements, AnnouncementItem } from './services/api';
 
 const STORAGE_KEY = 'cat_read_news_ids';
@@ -195,6 +198,14 @@ const App: React.FC = () => {
     }
   }, [subPage]);
 
+  // Handle special navigation: switch to market tab
+  useEffect(() => {
+    if (subPage === 'switch-to-market') {
+      setActiveTab('market');
+      setSubPage(null);
+    }
+  }, [subPage]);
+
   // Authentication Gate
   if (!isLoggedIn) {
       if (subPage === 'register') {
@@ -277,13 +288,11 @@ const App: React.FC = () => {
     // Handle Artist Detail Page: "artist-detail:ID"
     if (subPage?.startsWith('artist-detail:')) {
         const artistId = subPage.split(':')[1];
-        const artist = ARTISTS.find(a => a.id === artistId);
-        if (artist) {
+        if (artistId) {
             return (
                 <ArtistDetail 
-                    artist={artist} 
+                    artistId={artistId}
                     onBack={() => setSubPage(null)}
-                    onProductSelect={(product) => handleProductSelect(product, 'artist')}
                 />
             );
         }
@@ -353,7 +362,12 @@ const App: React.FC = () => {
             />
         );
       case 'masterpiece-showcase':
-        return <MasterpieceShowcase onBack={() => setSubPage(null)} />;
+        return (
+          <ArtistWorksShowcase
+            onBack={() => setSubPage(null)}
+            onNavigateToArtist={(artistId) => setSubPage(`artist-detail:${artistId}`)}
+          />
+        );
       case 'asset-view':
         return (
           <AssetView
@@ -362,6 +376,8 @@ const App: React.FC = () => {
             onProductSelect={(product) => handleProductSelect(product, 'market')}
           />
         );
+      case 'my-collection':
+        return <MyCollection onBack={() => setSubPage(null)} />;
       case 'address-list':
         return <AddressList onBack={() => setSubPage(null)} />;
       case 'real-name-auth':
@@ -397,6 +413,17 @@ const App: React.FC = () => {
             onBack={() => setSubPage('asset-view')}
           />
         );
+      case 'cumulative-rights':
+        return <CumulativeRights onBack={() => setSubPage(null)} />;
+      case 'consignment-voucher':
+        return <ConsignmentVoucher onBack={() => setSubPage(null)} />;
+      case 'service-center:message':
+        return <MessageCenter onBack={() => setSubPage(null)} />;
+    }
+
+    // Handle special navigation: switch to market tab
+    if (subPage === 'switch-to-market') {
+      return null; // Will be handled by useEffect below
     }
 
     // Tab Routing

@@ -1,7 +1,8 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import SubPageLayout from '../components/SubPageLayout';
-import { ARTISTS } from '../constants';
+import { Artist } from '../types';
+import { ArtistApiItem, fetchArtists, normalizeAssetUrl } from '../services/api';
 
 interface ArtistShowcaseProps {
   onBack: () => void;
@@ -9,11 +10,46 @@ interface ArtistShowcaseProps {
 }
 
 const ArtistShowcase: React.FC<ArtistShowcaseProps> = ({ onBack, onArtistSelect }) => {
+  const [artists, setArtists] = useState<Artist[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    const load = async () => {
+      try {
+        setLoading(true);
+        const res = await fetchArtists({ page: 1, limit: 50 });
+        if (!isMounted) return;
+        const list: ArtistApiItem[] = res.data?.list ?? [];
+        const mapped: Artist[] = list.map((a) => ({
+          id: String(a.id),
+          name: a.name,
+          image: normalizeAssetUrl(a.image),
+          title: a.title,
+          bio: a.bio,
+        }));
+        setArtists(mapped);
+      } catch (e) {
+        console.error('加载艺术家列表失败:', e);
+        setArtists([]);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+    load();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   return (
     <SubPageLayout title="艺术家风采" onBack={onBack}>
       <div className="p-4">
-        <div className="grid grid-cols-2 gap-4">
-          {ARTISTS.map((artist) => (
+        {loading && !artists.length ? (
+          <div className="text-center text-xs text-gray-400 py-8">加载中...</div>
+        ) : (
+          <div className="grid grid-cols-2 gap-4">
+          {artists.map((artist) => (
             <div 
                 key={artist.id} 
                 className="flex flex-col bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 active:scale-95 transition-all duration-200 cursor-pointer group"
@@ -44,7 +80,13 @@ const ArtistShowcase: React.FC<ArtistShowcaseProps> = ({ onBack, onArtistSelect 
               </div>
             </div>
           ))}
-        </div>
+          {!artists.length && (
+            <div className="col-span-2 text-center text-xs text-gray-400 py-8">
+              暂无艺术家数据
+            </div>
+          )}
+          </div>
+        )}
       </div>
     </SubPageLayout>
   );

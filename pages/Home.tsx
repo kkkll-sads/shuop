@@ -1,8 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronRight, Building2, Newspaper, Palette, Trophy } from 'lucide-react';
-import { ARTISTS } from '../constants';
-import { Tab, NewsItem, Banner } from '../types';
-import { fetchBanners, normalizeAssetUrl } from '../services/api';
+import { Tab, NewsItem, Banner, Artist } from '../types';
+import {
+  fetchBanners,
+  normalizeAssetUrl,
+  fetchArtists,
+  ArtistApiItem,
+} from '../services/api';
 
 interface HomeProps {
   onNavigate: (page: string) => void;
@@ -14,6 +18,7 @@ const Home: React.FC<HomeProps> = ({ onNavigate, onSwitchTab, announcements = []
   const [currentBanner, setCurrentBanner] = useState(0);
   const [noticeIndex, setNoticeIndex] = useState(0);
   const [banners, setBanners] = useState<Banner[]>([]);
+  const [artists, setArtists] = useState<Artist[]>([]);
   
   const touchStartRef = useRef(0);
   const touchEndRef = useRef(0);
@@ -64,32 +69,50 @@ const Home: React.FC<HomeProps> = ({ onNavigate, onSwitchTab, announcements = []
     };
   }, [banners.length]);
 
-  // 加载轮播图数据
+  // 加载轮播图与艺术家数据
   useEffect(() => {
-    const loadBanners = async () => {
+    const load = async () => {
       try {
-        const res = await fetchBanners({ page: 1, limit: 10 });
-        if (res.code === 1 && res.data?.list?.length) {
-          const mapped: Banner[] = res.data.list.map((item) => ({
+        // 并行请求，提高首屏速度
+        const [bannerRes, artistRes] = await Promise.all([
+          fetchBanners({ page: 1, limit: 10 }),
+          fetchArtists({ page: 1, limit: 4 }),
+        ]);
+
+        // 轮播图
+        if (bannerRes.code === 1 && bannerRes.data?.list?.length) {
+          const mappedBanners: Banner[] = bannerRes.data.list.map((item) => ({
             id: String(item.id),
             image: normalizeAssetUrl(item.image),
             tag: item.description || '',
             title: item.title || '',
           }));
-          setBanners(mapped);
+          setBanners(mappedBanners);
           setCurrentBanner(0);
         } else {
           setBanners([]);
           setCurrentBanner(0);
         }
+
+        // 首页展示前四位艺术家
+        const artistList: ArtistApiItem[] = artistRes.data?.list ?? [];
+        const mappedArtists: Artist[] = artistList.slice(0, 4).map((a) => ({
+          id: String(a.id),
+          name: a.name,
+          image: normalizeAssetUrl(a.image),
+          title: a.title,
+          bio: a.bio,
+        }));
+        setArtists(mappedArtists);
       } catch (error) {
-        console.error('加载轮播图失败:', error);
+        console.error('加载首页数据失败:', error);
         setBanners([]);
         setCurrentBanner(0);
+        setArtists([]);
       }
     };
 
-    loadBanners();
+    load();
   }, []);
 
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -285,7 +308,7 @@ const Home: React.FC<HomeProps> = ({ onNavigate, onSwitchTab, announcements = []
           </button>
         </div>
         <div className="grid grid-cols-2 gap-4">
-            {ARTISTS.slice(0, 4).map((artist) => (
+            {artists.map((artist) => (
                 <div 
                   key={artist.id} 
                   className="flex flex-col items-center active:scale-95 transition-transform cursor-pointer"

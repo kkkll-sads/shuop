@@ -9,6 +9,8 @@ export interface Product {
   category: string;
   /** 商品类型：'shop' 为积分商城商品，'collection' 为藏品商城商品 */
   productType?: 'shop' | 'collection';
+  /** 寄售商品对应的 consignment_id，用于购买接口 */
+  consignmentId?: number | string;
 }
 
 export interface Artist {

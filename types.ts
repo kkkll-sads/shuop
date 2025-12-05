@@ -83,6 +83,8 @@ export interface UserInfo {
   user_type: number;
   token: string;
   refresh_token: string;
+  /** 代理商审核状态(-1=未申请,0=待审核,1=已通过,2=已拒绝) */
+  agent_review_status?: number;
 }
 
 export interface ProfileResponse {
@@ -93,4 +95,38 @@ export interface ProfileResponse {
 export interface LoginSuccessPayload {
   token?: string;
   userInfo?: UserInfo | null;
+}
+
+export interface PromotionCardUserInfo {
+  id: number;
+  username: string;
+  nickname: string;
+  avatar: string;
+  mobile: string;
+}
+
+export interface PromotionCardData {
+  user_info: PromotionCardUserInfo;
+  invite_code: string;
+  invite_link: string;
+  qrcode_url: string;
+  team_count: number;
+  total_performance: number;
+}
+
+export interface TeamMember {
+  id: number;
+  username: string;
+  nickname: string;
+  avatar: string;
+  mobile: string;
+  join_time?: number;
+  join_date?: string;
+}
+
+export interface TeamMembersListData {
+  total: number;
+  page: number;
+  page_size: number;
+  list: TeamMember[];
 }

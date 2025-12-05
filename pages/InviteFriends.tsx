@@ -1,14 +1,48 @@
-import React, { useState } from 'react';
-import { ChevronLeft, Copy, Share2, QrCode } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Copy, Share2 } from 'lucide-react';
 import SubPageLayout from '../components/SubPageLayout';
+import { fetchPromotionCard } from '../services/api';
 
 interface InviteFriendsProps {
     onBack: () => void;
 }
 
 const InviteFriends: React.FC<InviteFriendsProps> = ({ onBack }) => {
-    const [inviteCode] = useState('888888'); // Mock invite code
-    const [inviteLink] = useState('https://cultural-asset.com/register?code=888888'); // Mock link
+    const [inviteCode, setInviteCode] = useState('');
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    // 根据邀请码构建注册链接
+    const buildInviteLink = (code: string) => {
+        if (!code) return '';
+        const origin = typeof window !== 'undefined' ? window.location.origin : '';
+        return `${origin}/register?invite_code=${encodeURIComponent(code)}`;
+    };
+
+    useEffect(() => {
+        const loadPromotionCard = async () => {
+            try {
+                setLoading(true);
+                setError(null);
+                const response = await fetchPromotionCard();
+                if (response.code === 0 && response.data) {
+                    setInviteCode(response.data.invite_code);
+                } else {
+                    setError(response.msg || '获取推广卡信息失败');
+                }
+            } catch (err: any) {
+                console.error('加载推广卡信息失败:', err);
+                setError(err.message || '获取推广卡信息失败，请稍后重试');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadPromotionCard();
+    }, []);
+
+    // 根据邀请码生成邀请链接
+    const inviteLink = buildInviteLink(inviteCode);
 
     const copyToClipboard = async (text: string, type: 'code' | 'link') => {
         try {
@@ -31,6 +65,32 @@ const InviteFriends: React.FC<InviteFriendsProps> = ({ onBack }) => {
         }
     };
 
+    if (loading) {
+        return (
+            <SubPageLayout title="邀请好友" onBack={onBack} bgColor="bg-gray-50">
+                <div className="relative min-h-[80vh] flex flex-col items-center justify-center pt-8 px-6">
+                    <div className="text-gray-500">加载中...</div>
+                </div>
+            </SubPageLayout>
+        );
+    }
+
+    if (error) {
+        return (
+            <SubPageLayout title="邀请好友" onBack={onBack} bgColor="bg-gray-50">
+                <div className="relative min-h-[80vh] flex flex-col items-center justify-center pt-8 px-6">
+                    <div className="text-red-500 text-center px-4">{error}</div>
+                    <button
+                        onClick={() => window.location.reload()}
+                        className="mt-4 px-6 py-2 bg-orange-500 text-white rounded-lg"
+                    >
+                        重试
+                    </button>
+                </div>
+            </SubPageLayout>
+        );
+    }
+
     return (
         <SubPageLayout title="邀请好友" onBack={onBack} bgColor="bg-gray-50">
             <div className="relative min-h-[80vh] flex flex-col items-center pt-8 px-6">
@@ -41,11 +101,13 @@ const InviteFriends: React.FC<InviteFriendsProps> = ({ onBack }) => {
                 {/* QR Code Section */}
                 <div className="relative bg-white p-8 rounded-3xl shadow-xl flex flex-col items-center w-full max-w-xs mb-8 z-10 border border-orange-100">
                     <div className="w-56 h-56 bg-orange-50 rounded-2xl flex items-center justify-center mb-6 overflow-hidden p-2">
-                        <img
-                            src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(inviteLink)}`}
-                            alt="邀请二维码"
-                            className="w-full h-full object-cover rounded-xl mix-blend-multiply"
-                        />
+                        {inviteLink && (
+                            <img
+                                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(inviteLink)}`}
+                                alt="邀请二维码"
+                                className="w-full h-full object-cover rounded-xl mix-blend-multiply"
+                            />
+                        )}
                     </div>
                     <p className="text-gray-500 text-sm text-center font-medium">
                         扫码注册，加入我们
@@ -66,8 +128,15 @@ const InviteFriends: React.FC<InviteFriendsProps> = ({ onBack }) => {
 
                 {/* Share Button */}
                 <button
-                    onClick={() => copyToClipboard(inviteLink, 'link')}
-                    className="w-full max-w-xs bg-gradient-to-r from-orange-500 to-orange-600 text-white py-4 rounded-2xl font-bold text-lg shadow-lg shadow-orange-200 flex items-center justify-center gap-3 active:scale-95 transition-transform z-10"
+                    onClick={() => {
+                        if (inviteLink) {
+                            copyToClipboard(inviteLink, 'link');
+                        } else {
+                            alert('邀请码加载中，请稍后再试');
+                        }
+                    }}
+                    disabled={!inviteLink}
+                    className="w-full max-w-xs bg-gradient-to-r from-orange-500 to-orange-600 text-white py-4 rounded-2xl font-bold text-lg shadow-lg shadow-orange-200 flex items-center justify-center gap-3 active:scale-95 transition-transform z-10 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     <Share2 size={22} />
                     <span>分享链接</span>

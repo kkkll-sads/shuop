@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronLeft, XCircle, User, Lock, Smartphone, CreditCard, ShieldCheck, Check } from 'lucide-react';
 import { register, RegisterParams } from '../services/api';
 
@@ -15,6 +15,13 @@ const Register: React.FC<RegisterProps> = ({
   onNavigateUserAgreement,
   onNavigatePrivacyPolicy,
 }) => {
+  // 从URL参数中获取邀请码
+  const getInviteCodeFromUrl = () => {
+    if (typeof window === 'undefined') return '';
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('invite_code') || '';
+  };
+
   const [inviteCode, setInviteCode] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -22,6 +29,14 @@ const Register: React.FC<RegisterProps> = ({
   const [verifyCode, setVerifyCode] = useState('888888');
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // 组件加载时，从URL参数中读取邀请码并自动填充
+  useEffect(() => {
+    const urlInviteCode = getInviteCodeFromUrl();
+    if (urlInviteCode) {
+      setInviteCode(urlInviteCode);
+    }
+  }, []);
 
   const handleRegister = async () => {
     if (!phone || !password || !payPassword || !verifyCode) {

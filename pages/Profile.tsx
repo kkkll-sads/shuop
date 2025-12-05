@@ -156,13 +156,45 @@ const Profile: React.FC<ProfileProps> = ({ onNavigate }) => {
                   <span className="text-xs font-bold text-orange-600">{displayId}</span>
                 </div>
 
-                {/* Agent Badge (Placeholder Logic) */}
-                <div className="flex items-center bg-white border border-red-200 rounded-full p-0.5 pr-3 shadow-sm inline-flex">
-                  <div className="w-5 h-5 rounded-full bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center mr-1.5 shadow-inner">
-                    <Award size={12} className="text-white fill-white" />
-                  </div>
-                  <span className="text-xs font-bold text-red-600">代理</span>
-                </div>
+                {/* Agent Badge - 根据 agent_review_status 显示 */}
+                {(() => {
+                  const agentStatus = userInfo?.agent_review_status;
+                  // 只有已通过(1)时才显示代理标签
+                  if (agentStatus === 1) {
+                    return (
+                      <div className="flex items-center bg-white border border-red-200 rounded-full p-0.5 pr-3 shadow-sm inline-flex">
+                        <div className="w-5 h-5 rounded-full bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center mr-1.5 shadow-inner">
+                          <Award size={12} className="text-white fill-white" />
+                        </div>
+                        <span className="text-xs font-bold text-red-600">代理</span>
+                      </div>
+                    );
+                  }
+                  // 待审核(0)时显示待审核标签
+                  if (agentStatus === 0) {
+                    return (
+                      <div className="flex items-center bg-white border border-yellow-200 rounded-full p-0.5 pr-3 shadow-sm inline-flex">
+                        <div className="w-5 h-5 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center mr-1.5 shadow-inner">
+                          <Award size={12} className="text-white fill-white" />
+                        </div>
+                        <span className="text-xs font-bold text-yellow-600">待审核</span>
+                      </div>
+                    );
+                  }
+                  // 已拒绝(2)时显示已拒绝标签
+                  if (agentStatus === 2) {
+                    return (
+                      <div className="flex items-center bg-white border border-gray-200 rounded-full p-0.5 pr-3 shadow-sm inline-flex">
+                        <div className="w-5 h-5 rounded-full bg-gradient-to-br from-gray-400 to-gray-600 flex items-center justify-center mr-1.5 shadow-inner">
+                          <Award size={12} className="text-white fill-white" />
+                        </div>
+                        <span className="text-xs font-bold text-gray-600">已拒绝</span>
+                      </div>
+                    );
+                  }
+                  // 未申请(-1)或其他情况不显示
+                  return null;
+                })()}
               </div>
 
             </div>

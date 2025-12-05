@@ -208,6 +208,17 @@ const App: React.FC = () => {
     }
   }, [subPage]);
 
+  // Handle URL-based routing: detect /register path and navigate to register page
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const path = window.location.pathname;
+      // If URL path is /register, navigate to register page
+      if (path === '/register') {
+        setSubPage('register');
+      }
+    }
+  }, []); // Only run once on mount to handle direct URL access
+
   // Authentication Gate
   if (!isLoggedIn) {
     if (subPage === 'register') {

@@ -1,4 +1,4 @@
-import { ProfileResponse } from '../types';
+import { ProfileResponse, PromotionCardData, TeamMembersListData } from '../types';
 
 // 统一 API 前缀，与 vite.config.ts 中的代理前缀保持一致
 const API_PREFIX = '/api';
@@ -217,6 +217,24 @@ export const API_ENDPOINTS = {
     workDetail: '/artist/workDetail',
     /** 全部艺术家作品列表 */
     allWorks: '/artist/allWorks',
+  },
+  signIn: {
+    /** 获取签到活动规则 */
+    rules: '/SignIn/rules',
+    /** 获取签到信息 */
+    info: '/SignIn/info',
+    /** 执行签到 */
+    do: '/SignIn/do',
+    /** 获取签到记录 */
+    records: '/SignIn/records',
+    /** 获取提现进度 */
+    progress: '/SignIn/progress',
+  },
+  team: {
+    /** 获取推广卡信息 */
+    promotionCard: '/Team/promotionCard',
+    /** 获取团队成员列表 */
+    members: '/Team/members',
   },
 } as const;
 
@@ -3808,6 +3826,350 @@ export async function deleteOrder(
     return data;
   } catch (error: any) {
     console.error('删除订单失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 签到相关接口
+ * 对应后端:
+ * - 活动规则: /SignIn/rules
+ * - 签到信息: /SignIn/info
+ * - 执行签到: /SignIn/do
+ * - 签到记录: /SignIn/records
+ */
+
+/**
+ * 签到活动配置
+ */
+export interface SignInConfig {
+  daily_reward: number;
+  referrer_reward: number;
+  calendar_range_months: number;
+  calendar_start: string;
+  calendar_end: string;
+}
+
+/**
+ * 签到活动信息
+ */
+export interface SignInActivity {
+  id: number;
+  name: string;
+  start_time: string;
+  end_time: string;
+  register_reward: number;
+  sign_reward_min: number;
+  sign_reward_max: number;
+  invite_reward_min: number;
+  invite_reward_max: number;
+  withdraw_min_amount: number;
+  withdraw_daily_limit: number;
+  withdraw_audit_hours: number;
+}
+
+/**
+ * 签到规则项
+ */
+export interface SignInRule {
+  key: string;
+  title: string;
+  description: string;
+}
+
+/**
+ * 签到规则数据
+ */
+export interface SignInRulesData {
+  config: SignInConfig;
+  activity: SignInActivity;
+  rules: SignInRule[];
+}
+
+/**
+ * 获取签到活动规则
+ * 示例接口: http://18.166.211.131/index.php/api/SignIn/rules
+ */
+export async function fetchSignInRules(): Promise<ApiResponse<SignInRulesData>> {
+  try {
+    const data = await apiFetch<SignInRulesData>(API_ENDPOINTS.signIn.rules, {
+      method: 'GET',
+    });
+    console.log('获取签到规则接口原始响应:', data);
+    return data;
+  } catch (error: any) {
+    console.error('获取签到规则失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 签到日历数据
+ */
+export interface SignInCalendar {
+  start: string;
+  end: string;
+  signed_dates: string[];
+  records: Array<{
+    date: string;
+    reward_score: number;
+    record_id: number;
+  }>;
+}
+
+/**
+ * 签到记录项
+ */
+export interface SignInRecordItem {
+  id: number;
+  sign_date: string;
+  reward_score: number;
+  reward_money: number;
+  reward_type: string;
+  create_time: number;
+  config?: {
+    daily_reward: number;
+    referrer_reward: number;
+  };
+}
+
+/**
+ * 签到信息数据
+ */
+export interface SignInInfoData {
+  today_signed: boolean;
+  today_reward: number;
+  daily_reward: number;
+  total_reward: number;
+  sign_days: number;
+  streak: number;
+  calendar: SignInCalendar;
+  recent_records: SignInRecordItem[];
+  config: {
+    daily_reward: number;
+    referrer_reward: number;
+  };
+  activity: SignInActivity;
+  reward_type: string;
+}
+
+/**
+ * 获取签到信息
+ * 示例接口: http://18.166.211.131/index.php/api/SignIn/info
+ */
+export async function fetchSignInInfo(
+  token: string = localStorage.getItem(AUTH_TOKEN_KEY) || '',
+): Promise<ApiResponse<SignInInfoData>> {
+  if (!token) {
+    throw new Error('未找到用户登录信息，请先登录后再查看签到信息');
+  }
+
+  try {
+    const data = await apiFetch<SignInInfoData>(API_ENDPOINTS.signIn.info, {
+      method: 'GET',
+      token,
+    });
+    console.log('获取签到信息接口原始响应:', data);
+    return data;
+  } catch (error: any) {
+    console.error('获取签到信息失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 执行签到响应数据
+ */
+export interface SignInDoData extends SignInInfoData {
+  sign_record_id: number;
+  sign_date: string;
+  referrer_reward: number;
+  message: string;
+}
+
+/**
+ * 执行签到
+ * 示例接口: http://18.166.211.131/index.php/api/SignIn/do
+ */
+export async function doSignIn(
+  token: string = localStorage.getItem(AUTH_TOKEN_KEY) || '',
+): Promise<ApiResponse<SignInDoData>> {
+  if (!token) {
+    throw new Error('未找到用户登录信息，请先登录后再签到');
+  }
+
+  try {
+    const data = await apiFetch<SignInDoData>(API_ENDPOINTS.signIn.do, {
+      method: 'POST',
+      body: JSON.stringify({}),
+      token,
+    });
+    console.log('执行签到接口原始响应:', data);
+    return data;
+  } catch (error: any) {
+    console.error('执行签到失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 签到记录列表数据
+ */
+export interface SignInRecordsData {
+  total: number;
+  page: number;
+  page_size: number;
+  total_score: number;
+  total_money: number;
+  is_today_signed: boolean;
+  lucky_draw_info?: {
+    current_draw_count: number;
+    daily_limit: number;
+    used_today: number;
+    remaining_count: number;
+  };
+  lucky_draw_rules?: string;
+  records: SignInRecordItem[];
+}
+
+/**
+ * 获取签到记录
+ * 示例接口: http://18.166.211.131/index.php/api/SignIn/records
+ */
+export interface GetSignInRecordsParams {
+  page?: number;
+  limit?: number;
+  token?: string;
+}
+
+export async function getSignInRecords(
+  params: GetSignInRecordsParams = {},
+): Promise<ApiResponse<SignInRecordsData>> {
+  const token = params.token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+  const page = params.page || 1;
+  const limit = params.limit || 10;
+
+  if (!token) {
+    throw new Error('未找到用户登录信息，请先登录后再查看签到记录');
+  }
+
+  try {
+    const data = await apiFetch<SignInRecordsData>(API_ENDPOINTS.signIn.records, {
+      method: 'POST',
+      body: JSON.stringify({}),
+      token,
+    });
+    console.log('获取签到记录接口原始响应:', data);
+    return data;
+  } catch (error: any) {
+    console.error('获取签到记录失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 签到提现进度数据
+ */
+export interface SignInProgressData {
+  withdrawable_money: number;
+  withdraw_min_amount: number;
+  progress: number;
+  remaining_amount: number;
+  can_withdraw: boolean;
+  total_money: number;
+  activity: {
+    id: number;
+    name: string;
+    withdraw_min_amount: number;
+    withdraw_daily_limit: number;
+    withdraw_audit_hours: number;
+  };
+}
+
+/**
+ * 获取签到提现进度
+ * 示例接口: http://18.166.211.131/index.php/api/SignIn/progress
+ */
+export async function fetchSignInProgress(
+  token: string = localStorage.getItem(AUTH_TOKEN_KEY) || '',
+): Promise<ApiResponse<SignInProgressData>> {
+  if (!token) {
+    throw new Error('未找到用户登录信息，请先登录后再查看提现进度');
+  }
+
+  try {
+    const data = await apiFetch<SignInProgressData>(API_ENDPOINTS.signIn.progress, {
+      method: 'GET',
+      token,
+    });
+    console.log('获取签到提现进度接口原始响应:', data);
+    return data;
+  } catch (error: any) {
+    console.error('获取签到提现进度失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 获取推广卡信息
+ * @param token 用户 Token
+ */
+export async function fetchPromotionCard(
+  token: string = localStorage.getItem(AUTH_TOKEN_KEY) || '',
+): Promise<ApiResponse<PromotionCardData>> {
+  if (!token) {
+    throw new Error('未找到用户登录信息，请先登录后再查看推广卡');
+  }
+
+  try {
+    const data = await apiFetch<PromotionCardData>(API_ENDPOINTS.team.promotionCard, {
+      method: 'GET',
+      token,
+    });
+    console.log('获取推广卡信息接口原始响应:', data);
+    return data;
+  } catch (error: any) {
+    console.error('获取推广卡信息失败:', error);
+    throw error;
+  }
+}
+
+export interface FetchTeamMembersParams {
+  page?: number;
+  page_size?: number;
+  token?: string;
+}
+
+/**
+ * 获取团队成员列表
+ * @param params 查询参数
+ */
+export async function fetchTeamMembers(
+  params: FetchTeamMembersParams = {},
+): Promise<ApiResponse<TeamMembersListData>> {
+  const token = params.token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+  if (!token) {
+    throw new Error('未找到用户登录信息，请先登录后再查看团队成员');
+  }
+
+  const page = params.page || 1;
+  const page_size = params.page_size || 10;
+
+  const search = new URLSearchParams();
+  search.set('page', String(page));
+  search.set('page_size', String(page_size));
+
+  const path = `${API_ENDPOINTS.team.members}?${search.toString()}`;
+
+  try {
+    const data = await apiFetch<TeamMembersListData>(path, {
+      method: 'GET',
+      token,
+    });
+    console.log('获取团队成员列表接口原始响应:', data);
+    return data;
+  } catch (error: any) {
+    console.error('获取团队成员列表失败:', error);
     throw error;
   }
 }

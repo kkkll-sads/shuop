@@ -5,9 +5,10 @@ import SubPageLayout from '../components/SubPageLayout';
 
 interface MyFriendsProps {
   onBack: () => void;
+  onNavigate?: (page: string) => void;
 }
 
-const MyFriends: React.FC<MyFriendsProps> = ({ onBack }) => {
+const MyFriends: React.FC<MyFriendsProps> = ({ onBack, onNavigate }) => {
   const friends = [
     { id: 1, name: '张三', date: '2023-11-01', avatar: 'https://picsum.photos/seed/u1/100' },
     { id: 2, name: '李四', date: '2023-10-24', avatar: 'https://picsum.photos/seed/u2/100' },
@@ -17,7 +18,10 @@ const MyFriends: React.FC<MyFriendsProps> = ({ onBack }) => {
   return (
     <SubPageLayout title="我的好友" onBack={onBack}>
       <div className="p-4">
-        <div className="bg-white rounded-xl p-4 flex items-center justify-between shadow-sm border border-gray-100 mb-4">
+        <div
+          onClick={() => onNavigate?.('invite-friends')}
+          className="bg-white rounded-xl p-4 flex items-center justify-between shadow-sm border border-gray-100 mb-4 active:bg-gray-50 transition-colors cursor-pointer"
+        >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center">
               <UserPlus size={20} />

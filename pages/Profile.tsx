@@ -1,6 +1,6 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Settings, MessageSquare, ShieldCheck, CreditCard, MapPin, Users, UserCheck, HelpCircle, FileText, HeadphonesIcon, ChevronRight, Wallet, Receipt, Gem, Sprout, Award } from 'lucide-react';
+import { Settings, MessageSquare, ShieldCheck, CreditCard, MapPin, Users, UserCheck, HelpCircle, FileText, HeadphonesIcon, ChevronRight, Wallet, Receipt, Gem, Sprout, Award, CalendarCheck } from 'lucide-react';
 import { AUTH_TOKEN_KEY, USER_INFO_KEY, fetchProfile, normalizeAssetUrl } from '../services/api';
 import { UserInfo } from '../types';
 
@@ -217,6 +217,7 @@ const Profile: React.FC<ProfileProps> = ({ onNavigate }) => {
           <div className="grid grid-cols-4 gap-4">
             {[
               { label: '余额充值', icon: Wallet, color: 'text-orange-500', action: () => onNavigate('asset-view') },
+              { label: '每日签到', icon: CalendarCheck, color: 'text-red-500', action: () => onNavigate('sign-in') },
               { label: '余额提现', icon: Receipt, color: 'text-orange-500', action: () => onNavigate('asset-view') },
               { label: '商品寄售', icon: Receipt, color: 'text-orange-500', action: () => onNavigate('order-list:transaction:0') },
               { label: '积分兑换', icon: CoinsIcon, color: 'text-orange-500', action: () => onNavigate('market') }, // Link to Market for points exchange

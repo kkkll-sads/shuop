@@ -184,7 +184,7 @@ const Profile: React.FC<ProfileProps> = ({ onNavigate }) => {
         </div>
       </div>
 
-      {error && (
+      {error && !userInfo && !error.includes('登录态过期') && (
         <div className="mx-4 mt-4 bg-red-50 text-red-600 text-sm px-4 py-2 rounded-lg shadow-sm">
           {error}
         </div>

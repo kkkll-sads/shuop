@@ -15,7 +15,7 @@ interface AssetHistoryProps {
   onBack: () => void;
 }
 
-type HistoryItem = 
+type HistoryItem =
   | { type: 'balance'; data: BalanceLogItem }
   | { type: 'recharge'; data: RechargeOrderItem }
   | { type: 'withdraw'; data: WithdrawOrderItem };
@@ -24,11 +24,11 @@ const AssetHistory: React.FC<AssetHistoryProps> = ({ onBack }) => {
   const [activeTab, setActiveTab] = useState<number>(0); // 0: 全部, 1: 余额明细, 2: 充值订单, 3: 提现记录
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   const [balanceLogs, setBalanceLogs] = useState<BalanceLogItem[]>([]);
   const [rechargeOrders, setRechargeOrders] = useState<RechargeOrderItem[]>([]);
   const [withdrawOrders, setWithdrawOrders] = useState<WithdrawOrderItem[]>([]);
-  
+
   const [page, setPage] = useState<number>(1);
   const [hasMore, setHasMore] = useState<boolean>(false);
   const [allItems, setAllItems] = useState<HistoryItem[]>([]);
@@ -191,8 +191,8 @@ const AssetHistory: React.FC<AssetHistoryProps> = ({ onBack }) => {
     <div key={`balance-${item.id}`} className="bg-white rounded-lg p-4 mb-3 shadow-sm">
       <div className="flex justify-between items-start mb-2 gap-3">
         <div className="flex items-start flex-1 min-w-0">
-          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-3 flex-shrink-0">
-            <Wallet size={20} className="text-blue-600" />
+          <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center mr-3 flex-shrink-0">
+            <Wallet size={20} className="text-orange-600" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-sm font-medium text-gray-800 mb-1 break-words">{item.memo}</div>
@@ -223,11 +223,10 @@ const AssetHistory: React.FC<AssetHistoryProps> = ({ onBack }) => {
         </div>
         <div className="text-right flex-shrink-0">
           <div className="text-lg font-bold text-green-600 whitespace-nowrap">+{item.amount}</div>
-          <div className={`text-xs mt-1 ${
-            item.status === 1 ? 'text-green-600' : 
-            item.status === 2 ? 'text-red-600' : 
-            'text-yellow-600'
-          }`}>
+          <div className={`text-xs mt-1 ${item.status === 1 ? 'text-green-600' :
+              item.status === 2 ? 'text-red-600' :
+                'text-yellow-600'
+            }`}>
             {item.status_text}
           </div>
         </div>
@@ -258,11 +257,10 @@ const AssetHistory: React.FC<AssetHistoryProps> = ({ onBack }) => {
         </div>
         <div className="text-right flex-shrink-0">
           <div className="text-lg font-bold text-red-600 whitespace-nowrap">-{item.amount}</div>
-          <div className={`text-xs mt-1 ${
-            item.status === 1 ? 'text-green-600' : 
-            item.status === 2 ? 'text-red-600' : 
-            'text-yellow-600'
-          }`}>
+          <div className={`text-xs mt-1 ${item.status === 1 ? 'text-green-600' :
+              item.status === 2 ? 'text-red-600' :
+                'text-yellow-600'
+            }`}>
             {item.status_text}
           </div>
         </div>
@@ -336,7 +334,7 @@ const AssetHistory: React.FC<AssetHistoryProps> = ({ onBack }) => {
             <button
               onClick={() => setPage(prev => prev + 1)}
               disabled={loading}
-              className="w-full py-2 text-sm text-blue-600 disabled:opacity-50"
+              className="w-full py-2 text-sm text-orange-600 disabled:opacity-50"
             >
               {loading ? '加载中...' : '加载更多'}
             </button>
@@ -362,7 +360,7 @@ const AssetHistory: React.FC<AssetHistoryProps> = ({ onBack }) => {
             <button
               onClick={() => setPage(prev => prev + 1)}
               disabled={loading}
-              className="w-full py-2 text-sm text-blue-600 disabled:opacity-50"
+              className="w-full py-2 text-sm text-orange-600 disabled:opacity-50"
             >
               {loading ? '加载中...' : '加载更多'}
             </button>
@@ -388,7 +386,7 @@ const AssetHistory: React.FC<AssetHistoryProps> = ({ onBack }) => {
             <button
               onClick={() => setPage(prev => prev + 1)}
               disabled={loading}
-              className="w-full py-2 text-sm text-blue-600 disabled:opacity-50"
+              className="w-full py-2 text-sm text-orange-600 disabled:opacity-50"
             >
               {loading ? '加载中...' : '加载更多'}
             </button>
@@ -414,7 +412,7 @@ const AssetHistory: React.FC<AssetHistoryProps> = ({ onBack }) => {
             <button
               onClick={() => setPage(prev => prev + 1)}
               disabled={loading}
-              className="w-full py-2 text-sm text-blue-600 disabled:opacity-50"
+              className="w-full py-2 text-sm text-orange-600 disabled:opacity-50"
             >
               {loading ? '加载中...' : '加载更多'}
             </button>
@@ -434,7 +432,7 @@ const AssetHistory: React.FC<AssetHistoryProps> = ({ onBack }) => {
         </button>
         <h1 className="text-lg font-bold text-gray-800 w-full text-center">历史记录</h1>
       </header>
-      
+
       <div className="p-4">
         {/* Tabs */}
         <div className="flex justify-between bg-white p-1 rounded-full mb-4">
@@ -442,9 +440,8 @@ const AssetHistory: React.FC<AssetHistoryProps> = ({ onBack }) => {
             <button
               key={idx}
               onClick={() => handleTabChange(idx)}
-              className={`flex-1 py-2 text-xs rounded-full transition-colors ${
-                idx === activeTab ? 'bg-blue-100 text-blue-600 font-bold' : 'text-gray-500'
-              }`}
+              className={`flex-1 py-2 text-xs rounded-full transition-colors ${idx === activeTab ? 'bg-orange-100 text-orange-600 font-bold' : 'text-gray-500'
+                }`}
             >
               {tab}
             </button>

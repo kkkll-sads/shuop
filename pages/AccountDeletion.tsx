@@ -112,7 +112,7 @@ const AccountDeletion: React.FC<AccountDeletionProps> = ({ onBack }) => {
                 <span className="mb-2 block font-medium">请输入登录密码</span>
                 <input
                   type="password"
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none"
                   placeholder="请输入登录密码"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -124,7 +124,7 @@ const AccountDeletion: React.FC<AccountDeletionProps> = ({ onBack }) => {
                 <span className="mb-2 block font-medium">再次输入密码确认注销</span>
                 <input
                   type="password"
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none"
                   placeholder="请再次输入登录密码"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
@@ -135,7 +135,7 @@ const AccountDeletion: React.FC<AccountDeletionProps> = ({ onBack }) => {
               <label className="text-sm text-gray-800">
                 <span className="mb-2 block font-medium">注销原因（选填）</span>
                 <textarea
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none"
                   placeholder="请输入注销原因，我们将用于优化体验"
                   rows={3}
                   value={reason}
@@ -156,7 +156,7 @@ const AccountDeletion: React.FC<AccountDeletionProps> = ({ onBack }) => {
         <div className="px-4 pt-6 pb-6">
           <button
             type="submit"
-            className="w-full rounded-lg bg-blue-500 py-3 text-sm font-semibold text-white shadow-sm active:opacity-80 disabled:opacity-50"
+            className="w-full rounded-lg bg-orange-500 py-3 text-sm font-semibold text-white shadow-sm active:opacity-80 disabled:opacity-50"
             disabled={loading}
           >
             {loading ? '提交中...' : '确认注销'}

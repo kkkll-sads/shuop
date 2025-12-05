@@ -26,9 +26,8 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) => {
             <button
               key={item.id}
               onClick={() => onTabChange(item.id as Tab)}
-              className={`flex flex-col items-center justify-center w-14 transition-colors duration-200 ${
-                isActive ? 'text-blue-600' : 'text-gray-400'
-              }`}
+              className={`flex flex-col items-center justify-center w-14 transition-colors duration-200 ${isActive ? 'text-orange-600' : 'text-gray-400'
+                }`}
             >
               <Icon size={24} strokeWidth={isActive ? 2.5 : 2} />
               <span className="text-[10px] mt-1 font-medium">{item.label}</span>

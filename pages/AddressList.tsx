@@ -174,8 +174,8 @@ const AddressList: React.FC<AddressListProps> = ({ onBack }) => {
         mode === 'add'
           ? '新增收货地址'
           : mode === 'edit'
-          ? '编辑收货地址'
-          : '收货地址'
+            ? '编辑收货地址'
+            : '收货地址'
       }
       onBack={() => {
         if (mode === 'add' || mode === 'edit') {
@@ -285,7 +285,7 @@ const AddressList: React.FC<AddressListProps> = ({ onBack }) => {
               <span className="mr-3">设为默认地址</span>
               <input
                 type="checkbox"
-                className="w-4 h-4 accent-blue-500"
+                className="w-4 h-4 accent-orange-500"
                 checked={formValues.is_default}
                 onChange={(e) =>
                   handleFormInputChange('is_default', e.target.checked)
@@ -302,7 +302,7 @@ const AddressList: React.FC<AddressListProps> = ({ onBack }) => {
             <button
               type="submit"
               disabled={formLoading}
-              className="w-full bg-blue-600 text-white text-sm font-semibold py-2.5 rounded-md active:opacity-80 disabled:opacity-60 flex items-center justify-center gap-2"
+              className="w-full bg-orange-600 text-white text-sm font-semibold py-2.5 rounded-md active:opacity-80 disabled:opacity-60 flex items-center justify-center gap-2"
             >
               {formLoading && <Loader2 size={16} className="animate-spin" />}
               {formLoading ? '提交中...' : '保存地址'}
@@ -312,80 +312,79 @@ const AddressList: React.FC<AddressListProps> = ({ onBack }) => {
 
         {mode === 'list' && (
           <>
-        {error && (
-          <div className="bg-red-50 text-red-600 text-xs px-3 py-2 rounded-lg">
-            {error}
-          </div>
-        )}
-
-        {loading && (
-          <div className="text-center text-xs text-gray-400 py-4">
-            正在加载收货地址...
-          </div>
-        )}
-
-        {!loading && !addresses.length && !error && (
-          <div className="text-center text-xs text-gray-400 py-8">
-            暂无收货地址，请点击下方按钮新增
-          </div>
-        )}
-
-        {addresses.map((addr) => (
-          <div key={addr.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-            <div className="flex justify-between items-start mb-2">
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-gray-900">{addr.name}</span>
-                <span className="text-gray-500 text-sm">{addr.phone}</span>
-                {isDefault(addr) && (
-                  <span className="bg-red-50 text-red-500 text-[10px] px-2 py-0.5 rounded-full">默认</span>
-                )}
+            {error && (
+              <div className="bg-red-50 text-red-600 text-xs px-3 py-2 rounded-lg">
+                {error}
               </div>
-              <button
-                className="text-gray-400 p-1"
-                onClick={() => {
-                  setEditingId(addr.id ?? null);
-                  setFormValues({
-                    name: addr.name || '',
-                    phone: addr.phone || '',
-                    province: addr.province || '',
-                    city: addr.city || '',
-                    district: addr.district || '',
-                    address: addr.address || '',
-                    is_default: isDefault(addr),
-                  });
-                  setFormError(null);
-                  setNotice(null);
-                  setMode('edit');
-                }}
-              >
-                <Pencil size={16} />
-              </button>
-            </div>
-            <div className="flex items-start gap-2 text-sm text-gray-600 leading-relaxed pr-8 mb-3">
-              <MapPin size={14} className="mt-0.5 text-gray-400" />
-              <span>{formatFullAddress(addr)}</span>
-            </div>
-            <div className="border-t border-gray-50 pt-3 flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <div
-                  className={`w-4 h-4 rounded-full border ${
-                    isDefault(addr)
-                      ? 'border-red-500 bg-red-500'
-                      : 'border-gray-300'
-                  }`}
-                ></div>
-                <span className="text-xs text-gray-500">默认地址</span>
+            )}
+
+            {loading && (
+              <div className="text-center text-xs text-gray-400 py-4">
+                正在加载收货地址...
               </div>
-              <button
-                className="flex items-center gap-1 text-xs text-gray-500"
-                onClick={() => handleDelete(addr.id)}
-              >
-                <Trash2 size={14} />
-                删除
-              </button>
-            </div>
-          </div>
-        ))}
+            )}
+
+            {!loading && !addresses.length && !error && (
+              <div className="text-center text-xs text-gray-400 py-8">
+                暂无收货地址，请点击下方按钮新增
+              </div>
+            )}
+
+            {addresses.map((addr) => (
+              <div key={addr.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                <div className="flex justify-between items-start mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-gray-900">{addr.name}</span>
+                    <span className="text-gray-500 text-sm">{addr.phone}</span>
+                    {isDefault(addr) && (
+                      <span className="bg-red-50 text-red-500 text-[10px] px-2 py-0.5 rounded-full">默认</span>
+                    )}
+                  </div>
+                  <button
+                    className="text-gray-400 p-1"
+                    onClick={() => {
+                      setEditingId(addr.id ?? null);
+                      setFormValues({
+                        name: addr.name || '',
+                        phone: addr.phone || '',
+                        province: addr.province || '',
+                        city: addr.city || '',
+                        district: addr.district || '',
+                        address: addr.address || '',
+                        is_default: isDefault(addr),
+                      });
+                      setFormError(null);
+                      setNotice(null);
+                      setMode('edit');
+                    }}
+                  >
+                    <Pencil size={16} />
+                  </button>
+                </div>
+                <div className="flex items-start gap-2 text-sm text-gray-600 leading-relaxed pr-8 mb-3">
+                  <MapPin size={14} className="mt-0.5 text-gray-400" />
+                  <span>{formatFullAddress(addr)}</span>
+                </div>
+                <div className="border-t border-gray-50 pt-3 flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className={`w-4 h-4 rounded-full border ${isDefault(addr)
+                          ? 'border-red-500 bg-red-500'
+                          : 'border-gray-300'
+                        }`}
+                    ></div>
+                    <span className="text-xs text-gray-500">默认地址</span>
+                  </div>
+                  <button
+                    className="flex items-center gap-1 text-xs text-gray-500"
+                    onClick={() => handleDelete(addr.id)}
+                  >
+                    <Trash2 size={14} />
+                    删除
+                  </button>
+                </div>
+              </div>
+            ))}
           </>
         )}
       </div>
@@ -393,7 +392,7 @@ const AddressList: React.FC<AddressListProps> = ({ onBack }) => {
       {mode === 'list' && (
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 pb-safe max-w-md mx-auto">
           <button
-            className="w-full bg-blue-600 text-white font-bold py-3 rounded-full flex items-center justify-center gap-2 active:scale-[0.99] transition-transform shadow-lg shadow-blue-100"
+            className="w-full bg-orange-600 text-white font-bold py-3 rounded-full flex items-center justify-center gap-2 active:scale-[0.99] transition-transform shadow-lg shadow-orange-100"
             onClick={() => {
               resetForm();
               setNotice(null);

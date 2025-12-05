@@ -70,7 +70,7 @@ const BalanceWithdraw: React.FC<BalanceWithdrawProps> = ({ onBack, onNavigate })
 
       setLoadingBalance(true);
       try {
- 
+
         // 从服务器获取最新余额
         const response = await fetchProfile(token);
         if (response.code === 1 && response.data?.userInfo) {
@@ -199,7 +199,7 @@ const BalanceWithdraw: React.FC<BalanceWithdrawProps> = ({ onBack, onNavigate })
                 }}
               />
               <button
-                className="ml-2 text-xs text-blue-600"
+                className="ml-2 text-xs text-orange-600"
                 onClick={handleWithdrawAll}
                 disabled={parseFloat(balance) <= 0}
               >
@@ -215,7 +215,7 @@ const BalanceWithdraw: React.FC<BalanceWithdrawProps> = ({ onBack, onNavigate })
                 <div className="text-sm text-gray-500 mb-1">暂无绑定的收款账户</div>
                 {onNavigate && (
                   <button
-                    className="text-xs text-blue-600"
+                    className="text-xs text-orange-600"
                     onClick={() => onNavigate('cardManagement')}
                   >
                     去管理页面添加账户 →
@@ -238,7 +238,7 @@ const BalanceWithdraw: React.FC<BalanceWithdrawProps> = ({ onBack, onNavigate })
                     ? `${selectedAccount.account_name || selectedAccount.type_text || ''} - ${selectedAccount.account || ''}`
                     : '请选择绑定的收款账户'}
                 </span>
-                <span className="text-xs text-blue-600">
+                <span className="text-xs text-orange-600">
                   {accounts.length > 0 ? '选择' : '去管理'}
                 </span>
               </button>
@@ -279,11 +279,10 @@ const BalanceWithdraw: React.FC<BalanceWithdrawProps> = ({ onBack, onNavigate })
         </p>
 
         <button
-          className={`w-full rounded-full py-3 text-sm font-medium ${
-            submitting
+          className={`w-full rounded-full py-3 text-sm font-medium ${submitting
               ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
-              : 'bg-blue-600 text-white active:bg-blue-700'
-          }`}
+              : 'bg-orange-600 text-white active:bg-orange-700'
+            }`}
           onClick={handleSubmit}
           disabled={submitting}
         >
@@ -326,7 +325,7 @@ const BalanceWithdraw: React.FC<BalanceWithdrawProps> = ({ onBack, onNavigate })
                 <div className="text-gray-400 text-sm">暂无绑定的收款账户</div>
                 {onNavigate && (
                   <button
-                    className="text-sm text-blue-600 bg-blue-50 px-4 py-2 rounded-lg active:bg-blue-100"
+                    className="text-sm text-orange-600 bg-orange-50 px-4 py-2 rounded-lg active:bg-orange-100"
                     onClick={() => {
                       setShowAccountModal(false);
                       onNavigate('cardManagement');
@@ -354,11 +353,10 @@ const BalanceWithdraw: React.FC<BalanceWithdrawProps> = ({ onBack, onNavigate })
                   return (
                     <div
                       key={itemId || `${typeText}-${account}`}
-                      className={`border rounded-lg p-3 cursor-pointer transition-colors ${
-                        isSelected
-                          ? 'border-blue-500 bg-blue-50'
+                      className={`border rounded-lg p-3 cursor-pointer transition-colors ${isSelected
+                          ? 'border-orange-500 bg-orange-50'
                           : 'border-gray-100 bg-gray-50'
-                      }`}
+                        }`}
                       onClick={() => {
                         setSelectedAccount(item);
                         setShowAccountModal(false);
@@ -372,11 +370,11 @@ const BalanceWithdraw: React.FC<BalanceWithdrawProps> = ({ onBack, onNavigate })
                             </span>
                             <div className="flex items-center gap-2">
                               {isDefault && (
-                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-500 border border-blue-100">
+                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-orange-50 text-orange-500 border border-orange-100">
                                   默认
                                 </span>
                               )}
-                              <span className="text-[11px] text-blue-600">{typeText}</span>
+                              <span className="text-[11px] text-orange-600">{typeText}</span>
                             </div>
                           </div>
                           <div className="text-xs text-gray-600 break-all">

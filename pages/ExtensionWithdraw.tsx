@@ -36,7 +36,7 @@ const ExtensionWithdraw: React.FC<ExtensionWithdrawProps> = ({ onBack }) => {
                 placeholder="请输入提现金额"
                 className="flex-1 bg-transparent outline-none text-gray-900 text-sm"
               />
-              <button className="ml-2 text-xs text-blue-600">全部提现</button>
+              <button className="ml-2 text-xs text-orange-600">全部提现</button>
             </div>
           </div>
 
@@ -44,7 +44,7 @@ const ExtensionWithdraw: React.FC<ExtensionWithdrawProps> = ({ onBack }) => {
             <label className="block text-xs text-gray-500 mb-1">收款账户</label>
             <button className="w-full flex justify-between items-center border rounded-lg px-3 py-2 bg-gray-50 text-sm text-gray-700">
               <span>请选择收款账户</span>
-              <span className="text-xs text-blue-600">去设置</span>
+              <span className="text-xs text-orange-600">去设置</span>
             </button>
           </div>
         </div>
@@ -53,7 +53,7 @@ const ExtensionWithdraw: React.FC<ExtensionWithdrawProps> = ({ onBack }) => {
           为保障资金安全，平台可能会对部分高频或大额提现订单进行人工或电话核实，请您留意来电与站内消息。
         </p>
 
-        <button className="w-full bg-blue-600 text-white rounded-full py-3 text-sm font-medium active:bg-blue-700">
+        <button className="w-full bg-orange-600 text-white rounded-full py-3 text-sm font-medium active:bg-orange-700">
           提交提现申请
         </button>
       </div>

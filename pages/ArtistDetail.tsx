@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
-import { Artist } from '../types';
+import { Artist, Product } from '../types';
 import {
   normalizeAssetUrl,
   fetchArtistDetail,
@@ -13,9 +13,10 @@ import {
 interface ArtistDetailProps {
   artistId: string;
   onBack: () => void;
+  onProductSelect?: (product: Product) => void;
 }
 
-const ArtistDetail: React.FC<ArtistDetailProps> = ({ artistId, onBack }) => {
+const ArtistDetail: React.FC<ArtistDetailProps> = ({ artistId, onBack, onProductSelect }) => {
   const [artist, setArtist] = useState<Artist | null>(null);
   const [works, setWorks] = useState<ArtistWorkItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -82,11 +83,11 @@ const ArtistDetail: React.FC<ArtistDetailProps> = ({ artistId, onBack }) => {
   return (
     <div className="min-h-screen bg-gray-50 pb-safe">
       <header className="bg-white px-4 py-3 flex items-center sticky top-0 z-30 shadow-sm">
-        <button 
-          onClick={onBack} 
+        <button
+          onClick={onBack}
           className="absolute left-4 p-1 text-gray-600 active:bg-gray-100 rounded-full"
         >
-            <ArrowLeft size={20} />
+          <ArrowLeft size={20} />
         </button>
         <h1 className="text-lg font-bold text-gray-800 w-full text-center">艺术家详情</h1>
       </header>
@@ -102,24 +103,24 @@ const ArtistDetail: React.FC<ArtistDetailProps> = ({ artistId, onBack }) => {
         <>
         {/* Profile Section */}
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex flex-col items-center text-center mb-4">
-            <div className="w-24 h-24 rounded-full overflow-hidden mb-4 border-4 border-gray-50 shadow-inner">
-                <img src={artist.image} alt={artist.name} className="w-full h-full object-cover" />
-            </div>
-            <h2 className="text-xl font-bold text-gray-900 mb-1">{artist.name}</h2>
-            {artist.title && (
-                <span className="inline-block bg-blue-50 text-blue-600 text-xs px-3 py-1 rounded-full font-medium mb-4">
-                    {artist.title}
-                </span>
-            )}
-            
-            <div className="w-full h-px bg-gray-100 mb-4"></div>
-            
-            <div className="text-left w-full">
-                <h3 className="font-bold text-sm text-gray-800 mb-2 border-l-4 border-blue-500 pl-2">艺术家简介</h3>
-                <p className="text-sm text-gray-600 leading-relaxed text-justify">
-                    {artist.bio || "暂无简介"}
-                </p>
-            </div>
+          <div className="w-24 h-24 rounded-full overflow-hidden mb-4 border-4 border-gray-50 shadow-inner">
+            <img src={artist.image} alt={artist.name} className="w-full h-full object-cover" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 mb-1">{artist.name}</h2>
+          {artist.title && (
+            <span className="inline-block bg-orange-50 text-orange-600 text-xs px-3 py-1 rounded-full font-medium mb-4">
+              {artist.title}
+            </span>
+          )}
+
+          <div className="w-full h-px bg-gray-100 mb-4"></div>
+
+          <div className="text-left w-full">
+            <h3 className="font-bold text-sm text-gray-800 mb-2 border-l-4 border-orange-500 pl-2">艺术家简介</h3>
+            <p className="text-sm text-gray-600 leading-relaxed text-justify">
+              {artist.bio || "暂无简介"}
+            </p>
+          </div>
         </div>
         </>
         )}
@@ -127,35 +128,52 @@ const ArtistDetail: React.FC<ArtistDetailProps> = ({ artistId, onBack }) => {
         <>
         {/* Works Section */}
         <div className="mb-4">
-            <div className="flex items-center mb-3 px-1">
-                <h3 className="font-bold text-gray-800 text-base border-l-4 border-blue-500 pl-2">代表作品</h3>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-3">
-                {works.map((work) => (
-                    <div 
-                        key={work.id} 
-                        className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-100 active:scale-[0.99] transition-transform"
-                    >
-                        <div className="aspect-square bg-gray-100 relative">
-                            <img src={work.image} alt={work.title} className="w-full h-full object-cover" />
-                        </div>
-                        <div className="p-2">
-                            <div className="text-sm text-gray-800 font-medium truncate">{work.title}</div>
-                            {work.description && (
-                              <div className="text-[11px] text-gray-500 mt-1 line-clamp-2">
-                                {work.description}
-                              </div>
-                            )}
-                        </div>
+          <div className="flex items-center mb-3 px-1">
+            <h3 className="font-bold text-gray-800 text-base border-l-4 border-orange-500 pl-2">代表作品</h3>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            {works.map((work) => (
+              <div
+                key={work.id}
+                className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-100 active:scale-[0.99] transition-transform cursor-pointer"
+                onClick={() => {
+                  if (onProductSelect && work.price !== undefined) {
+                    onProductSelect({
+                      id: String(work.id),
+                      title: work.title,
+                      artist: artist?.name || '',
+                      image: work.image,
+                      price: work.price,
+                      productType: 'shop',
+                    } as Product);
+                  }
+                }}
+              >
+                <div className="aspect-square bg-gray-100 relative">
+                  <img src={work.image} alt={work.title} className="w-full h-full object-cover" />
+                </div>
+                <div className="p-2">
+                  <div className="text-sm text-gray-800 font-medium truncate">{work.title}</div>
+                  {work.price !== undefined && (
+                    <div className="text-red-500 text-sm font-bold mt-1">
+                      {work.price.toFixed(2)} <span className="text-[10px] font-normal text-gray-400">积分</span>
                     </div>
-                ))}
-            </div>
-            {!works.length && (
-              <div className="text-center text-xs text-gray-400 py-6">
-                暂无代表作品数据
+                  )}
+                  {work.description && !work.price && (
+                    <div className="text-[11px] text-gray-500 mt-1 line-clamp-2">
+                      {work.description}
+                    </div>
+                  )}
+                </div>
               </div>
-            )}
+            ))}
+          </div>
+          {!works.length && (
+            <div className="text-center text-xs text-gray-400 py-6">
+              暂无代表作品数据
+            </div>
+          )}
         </div>
         </>
         )}

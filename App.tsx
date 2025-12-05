@@ -43,6 +43,8 @@ import CumulativeRights from './pages/CumulativeRights';
 import ConsignmentVoucher from './pages/ConsignmentVoucher';
 import MessageCenter from './pages/MessageCenter';
 import MyCollection from './pages/MyCollection';
+import SignIn from './pages/SignIn';
+import InviteFriends from './pages/InviteFriends';
 import { Tab, Product, NewsItem, LoginSuccessPayload } from './types';
 import { AUTH_TOKEN_KEY, USER_INFO_KEY, fetchAnnouncements, AnnouncementItem } from './services/api';
 
@@ -72,7 +74,7 @@ const App: React.FC = () => {
   const [subPage, setSubPage] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [productDetailOrigin, setProductDetailOrigin] = useState<'market' | 'artist' | 'trading-zone' | null>(null);
-  
+
   // Initialize news list based on storage
   const [newsList, setNewsList] = useState<NewsItem[]>([]);
 
@@ -107,7 +109,7 @@ const App: React.FC = () => {
     const loadAnnouncements = async () => {
       try {
         const readIds = getReadNewsIds();
-        
+
         // 同时请求平台公告（normal）和平台动态（important）
         const [announcementRes, dynamicRes] = await Promise.all([
           fetchAnnouncements({ page: 1, limit: 10, type: 'normal' }),
@@ -158,43 +160,43 @@ const App: React.FC = () => {
 
   // Helper to navigate to product detail
   const handleProductSelect = (product: Product, origin: 'market' | 'artist' | 'trading-zone' = 'market') => {
-      setSelectedProduct(product);
-      setProductDetailOrigin(origin);
-      setSubPage('product-detail');
+    setSelectedProduct(product);
+    setProductDetailOrigin(origin);
+    setSubPage('product-detail');
   };
 
   // Helper to mark all news as read
   const handleMarkAllRead = () => {
-      const allIds = newsList.map(n => n.id);
-      // Merge with existing read IDs in storage to preserve history if news list changes
-      const currentReadIds = getReadNewsIds();
-      const newReadIds = Array.from(new Set([...currentReadIds, ...allIds]));
-      
-      saveReadNewsIds(newReadIds);
-      setNewsList(prev => prev.map(item => ({ ...item, isUnread: false })));
+    const allIds = newsList.map(n => n.id);
+    // Merge with existing read IDs in storage to preserve history if news list changes
+    const currentReadIds = getReadNewsIds();
+    const newReadIds = Array.from(new Set([...currentReadIds, ...allIds]));
+
+    saveReadNewsIds(newReadIds);
+    setNewsList(prev => prev.map(item => ({ ...item, isUnread: false })));
   };
 
   // Effect to mark single item as read when opening detail
   useEffect(() => {
     if (subPage && subPage.startsWith('news-detail:')) {
-        const id = subPage.split(':')[1];
-        
-        setNewsList(prev => {
-            // Check if we need to update state
-            const target = prev.find(p => p.id === id);
-            if (target && target.isUnread) {
-                return prev.map(item => 
-                    item.id === id ? { ...item, isUnread: false } : item
-                );
-            }
-            return prev;
-        });
+      const id = subPage.split(':')[1];
 
-        // Update storage
-        const readIds = getReadNewsIds();
-        if (!readIds.includes(id)) {
-            saveReadNewsIds([...readIds, id]);
+      setNewsList(prev => {
+        // Check if we need to update state
+        const target = prev.find(p => p.id === id);
+        if (target && target.isUnread) {
+          return prev.map(item =>
+            item.id === id ? { ...item, isUnread: false } : item
+          );
         }
+        return prev;
+      });
+
+      // Update storage
+      const readIds = getReadNewsIds();
+      if (!readIds.includes(id)) {
+        saveReadNewsIds([...readIds, id]);
+      }
     }
   }, [subPage]);
 
@@ -208,104 +210,105 @@ const App: React.FC = () => {
 
   // Authentication Gate
   if (!isLoggedIn) {
-      if (subPage === 'register') {
-          return (
-            <Register 
-                onBack={() => setSubPage(null)} 
-                onRegisterSuccess={() => setSubPage(null)}
-                onNavigateUserAgreement={() => setSubPage('user-agreement')}
-                onNavigatePrivacyPolicy={() => setSubPage('privacy-policy')}
-            />
-          );
-      }
-      if (subPage === 'privacy-policy') {
-          return (
-            <PrivacyPolicy
-              onBack={() => setSubPage(null)}
-            />
-          );
-      }
-      if (subPage === 'user-agreement') {
-          return (
-            <UserAgreement
-              onBack={() => setSubPage(null)}
-            />
-          );
-      }
-      if (subPage === 'forgot-password') {
-          return (
-            <ForgotPassword
-              onBack={() => setSubPage(null)}
-            />
-          );
-      }
+    if (subPage === 'register') {
       return (
-        <Login 
-            onLogin={handleLogin} 
-            onNavigateRegister={() => setSubPage('register')} 
-            onNavigateUserAgreement={() => setSubPage('user-agreement')}
-            onNavigatePrivacyPolicy={() => setSubPage('privacy-policy')}
-            onNavigateForgotPassword={() => setSubPage('forgot-password')}
+        <Register
+          onBack={() => setSubPage(null)}
+          onRegisterSuccess={() => setSubPage(null)}
+          onNavigateUserAgreement={() => setSubPage('user-agreement')}
+          onNavigatePrivacyPolicy={() => setSubPage('privacy-policy')}
         />
       );
+    }
+    if (subPage === 'privacy-policy') {
+      return (
+        <PrivacyPolicy
+          onBack={() => setSubPage(null)}
+        />
+      );
+    }
+    if (subPage === 'user-agreement') {
+      return (
+        <UserAgreement
+          onBack={() => setSubPage(null)}
+        />
+      );
+    }
+    if (subPage === 'forgot-password') {
+      return (
+        <ForgotPassword
+          onBack={() => setSubPage(null)}
+        />
+      );
+    }
+    return (
+      <Login
+        onLogin={handleLogin}
+        onNavigateRegister={() => setSubPage('register')}
+        onNavigateUserAgreement={() => setSubPage('user-agreement')}
+        onNavigatePrivacyPolicy={() => setSubPage('privacy-policy')}
+        onNavigateForgotPassword={() => setSubPage('forgot-password')}
+      />
+    );
   }
 
   const renderContent = () => {
     // Handle Product Detail Page
     if (subPage === 'product-detail' && selectedProduct) {
-        return (
-            <ProductDetail 
-                product={selectedProduct} 
-                onBack={() => {
-                    if (productDetailOrigin === 'trading-zone') {
-                      setSubPage('trading-zone');
-                    } else {
-                      setSubPage(null);
-                    }
-                    setSelectedProduct(null);
-                    setProductDetailOrigin(null);
-                }} 
-            />
-        );
+      return (
+        <ProductDetail
+          product={selectedProduct}
+          onBack={() => {
+            if (productDetailOrigin === 'trading-zone') {
+              setSubPage('trading-zone');
+            } else {
+              setSubPage(null);
+            }
+            setSelectedProduct(null);
+            setProductDetailOrigin(null);
+          }}
+        />
+      );
     }
 
     // Handle Announcement Detail Page: "news-detail:ID"
     if (subPage?.startsWith('news-detail:')) {
-        const newsId = subPage.split(':')[1];
-        const newsItem = newsList.find(item => item.id === newsId);
-        if (newsItem) {
-            // 根据新闻项类型保存标签页状态，确保返回时显示正确的标签
-            const targetTab = newsItem.type === 'announcement' ? 'announcement' : 'dynamics';
-            try {
-              localStorage.setItem('cat_news_active_tab', targetTab);
-            } catch (e) {
-              // 忽略存储错误
-            }
-            return <AnnouncementDetail newsItem={newsItem} onBack={() => setSubPage(null)} />;
+      const newsId = subPage.split(':')[1];
+      const newsItem = newsList.find(item => item.id === newsId);
+      if (newsItem) {
+        // 根据新闻项类型保存标签页状态，确保返回时显示正确的标签
+        const targetTab = newsItem.type === 'announcement' ? 'announcement' : 'dynamics';
+        try {
+          localStorage.setItem('cat_news_active_tab', targetTab);
+        } catch (e) {
+          // 忽略存储错误
         }
+        return <AnnouncementDetail newsItem={newsItem} onBack={() => setSubPage(null)} />;
+      }
     }
 
     // Handle Artist Detail Page: "artist-detail:ID"
     if (subPage?.startsWith('artist-detail:')) {
-        const artistId = subPage.split(':')[1];
-        if (artistId) {
-            return (
-                <ArtistDetail 
-                    artistId={artistId}
-                    onBack={() => setSubPage(null)}
-                />
-            );
-        }
+      const artistId = subPage.split(':')[1];
+      if (artistId) {
+        return (
+          <ArtistDetail 
+            artistId={artistId}
+            onBack={() => setSubPage(null)}
+            onProductSelect={(product) => handleProductSelect(product, 'artist')}
+          />
+        );
+      }
     }
 
     // Handle Order List Page: "order-list:category:tabIndex"
     if (subPage?.startsWith('order-list:')) {
       const [_, category, tabIndex] = subPage.split(':');
       return (
-        <OrderListPage 
-          category={category} 
-          initialTab={parseInt(tabIndex, 10)} 
-          onBack={() => setSubPage(null)} 
+        <OrderListPage
+          category={category}
+          initialTab={parseInt(tabIndex, 10)}
+          onBack={() => setSubPage(null)}
         />
       );
     }
@@ -356,10 +359,10 @@ const App: React.FC = () => {
         );
       case 'artist-showcase':
         return (
-            <ArtistShowcase 
-                onBack={() => setSubPage(null)} 
-                onArtistSelect={(id) => setSubPage(`artist-detail:${id}`)}
-            />
+          <ArtistShowcase
+            onBack={() => setSubPage(null)}
+            onArtistSelect={(id) => setSubPage(`artist-detail:${id}`)}
+          />
         );
       case 'masterpiece-showcase':
         return (
@@ -383,7 +386,7 @@ const App: React.FC = () => {
       case 'real-name-auth':
         return <RealNameAuth onBack={() => setSubPage(null)} />;
       case 'my-friends':
-        return <MyFriends onBack={() => setSubPage(null)} />;
+        return <MyFriends onBack={() => setSubPage(null)} onNavigate={(page) => setSubPage(page)} />;
       case 'agent-auth':
         return <AgentAuth onBack={() => setSubPage(null)} />;
       case 'help-center':
@@ -407,6 +410,8 @@ const App: React.FC = () => {
         return <ExtensionWithdraw onBack={() => setSubPage('asset-view')} />;
       case 'asset:service-recharge':
         return <ServiceRecharge onBack={() => setSubPage('asset-view')} />;
+      case 'sign-in':
+        return <SignIn onBack={() => setSubPage(null)} onNavigate={(page) => setSubPage(page)} />;
       case 'asset-history':
         return (
           <AssetHistory
@@ -419,6 +424,8 @@ const App: React.FC = () => {
         return <ConsignmentVoucher onBack={() => setSubPage(null)} />;
       case 'service-center:message':
         return <MessageCenter onBack={() => setSubPage(null)} />;
+      case 'invite-friends':
+        return <InviteFriends onBack={() => setSubPage('my-friends')} />;
     }
 
     // Handle special navigation: switch to market tab
@@ -430,8 +437,8 @@ const App: React.FC = () => {
     switch (activeTab) {
       case 'home':
         return (
-          <Home 
-            onNavigate={(page) => setSubPage(page)} 
+          <Home
+            onNavigate={(page) => setSubPage(page)}
             onSwitchTab={(tab) => setActiveTab(tab)}
             announcements={newsList}
           />
@@ -440,23 +447,23 @@ const App: React.FC = () => {
         return <Market onProductSelect={(product) => handleProductSelect(product, 'market')} />;
       case 'news':
         return (
-            <News 
-                newsList={newsList}
-                onNavigate={(id) => {
-                  // 根据新闻项类型保存标签页状态，确保返回时显示正确的标签
-                  const newsItem = newsList.find(item => item.id === id);
-                  if (newsItem) {
-                    const targetTab = newsItem.type === 'announcement' ? 'announcement' : 'dynamics';
-                    try {
-                      localStorage.setItem('cat_news_active_tab', targetTab);
-                    } catch (e) {
-                      // 忽略存储错误
-                    }
-                  }
-                  setSubPage(`news-detail:${id}`);
-                }} 
-                onMarkAllRead={handleMarkAllRead}
-            />
+          <News
+            newsList={newsList}
+            onNavigate={(id) => {
+              // 根据新闻项类型保存标签页状态，确保返回时显示正确的标签
+              const newsItem = newsList.find(item => item.id === id);
+              if (newsItem) {
+                const targetTab = newsItem.type === 'announcement' ? 'announcement' : 'dynamics';
+                try {
+                  localStorage.setItem('cat_news_active_tab', targetTab);
+                } catch (e) {
+                  // 忽略存储错误
+                }
+              }
+              setSubPage(`news-detail:${id}`);
+            }}
+            onMarkAllRead={handleMarkAllRead}
+          />
         );
       case 'orders':
         return <Orders onNavigate={(page) => setSubPage(page)} />;
@@ -464,8 +471,8 @@ const App: React.FC = () => {
         return <Profile onNavigate={(page) => setSubPage(page)} />;
       default:
         return (
-          <Home 
-            onNavigate={(page) => setSubPage(page)} 
+          <Home
+            onNavigate={(page) => setSubPage(page)}
             onSwitchTab={(tab) => setActiveTab(tab)}
           />
         );

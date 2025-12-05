@@ -1,85 +1,94 @@
 # Cultural Asset Trader (数权中心)
 
-A comprehensive mobile-first web application for trading cultural digital assets, featuring artwork showcases, marketplaces, news feeds, and order management.
+一个综合性的移动端优先的数字文化资产交易 Web 应用程序，具有艺术品展示、商城、新闻资讯和订单管理等功能。
 
-## 📱 Project Overview
+## 📱 项目概览
 
-This project is a React-based web application designed to simulate a mobile app experience ("数权中心"). It facilitates the trading of digital cultural assets, including paintings, calligraphy, and other artistic works.
+本项目是一个基于 React 的 Web 应用程序，旨在模拟移动端 App 体验（“数权中心”）。它促进了数字文化资产的交易，包括绘画、书法和其他艺术作品。
 
-### Key Features
+### 核心功能
 
-*   **Home Page**:
-    *   Auto-playing banner carousel with touch swipe support.
-    *   Vertical scrolling platform news ticker.
-    *   Quick access to sub-modules (About Us, News, Artists, Masterpieces).
-    *   Dedicated "Trading Zone" entrance.
-    *   Artist showcase preview.
-*   **Marketplace (商城)**:
-    *   Product search and categorization (Art, Intangible Heritage, etc.).
-    *   Sorting options (Price, Sales, Newest).
-    *   Product Detail page with specification selection sheet.
-*   **Trading Zone (交易专区)**:
-    *   Visual dashboard for ongoing and upcoming trading sessions.
-*   **News Center (资讯)**:
-    *   Tabbed view for "Platform Announcements" and "Platform Dynamics".
-    *   Read status tracking (Red dot indicator).
-    *   Local storage persistence for read items.
-    *   "Clear All Unread" functionality.
-*   **Order Center (订单)**:
-    *   Categorized order management (Product, Transaction, Delivery, Points).
-    *   Tabbed order lists for different statuses.
-*   **Profile (我的)**:
-    *   User dashboard with asset overview.
-    *   Detailed asset view (Balance, Service Fees, Points).
-*   **Sub-pages**:
-    *   **Artist Detail**: Bio, profile, and works gallery.
-    *   **Artist/Masterpiece Showcases**: Grid views for browsing content.
-    *   **About Us**: Platform introduction.
+*   **首页 (Home)**:
+    *   支持触摸滑动的自动播放轮播图。
+    *   垂直滚动的平台新闻快讯。
+    *   快速访问子模块（关于我们、资讯、艺术家、藏品）。
+    *   专属“交易专区”入口。
+    *   艺术家展示预览。
+*   **商城 (Market)**:
+    *   商品搜索和分类（艺术品、非遗等）。
+    *   排序选项（价格、销量、最新）。
+    *   带有规格选择面板的商品详情页。
+*   **交易专区 (Trading Zone)**:
+    *   正在进行和即将开始的交易场次的可视化仪表盘。
+*   **资讯中心 (News)**:
+    *   “平台公告”和“平台动态”的分页视图。
+    *   阅读状态追踪（红点指示器）。
+    *   已读项目的本地存储持久化。
+    *   “清除所有未读”功能。
+*   **订单中心 (Orders)**:
+    *   分类订单管理（商品、交易、提货、积分）。
+    *   不同状态的分页订单列表。
+*   **我的 (Profile)**:
+    *   带有资产概览的用户仪表盘。
+    *   详细的资产视图（余额、服务费、积分）。
+    *   **用户状态徽章**：区分新用户、普通用户和交易用户的独特图标。
+    *   **代理徽章**：已验证代理商的专属徽章。
+*   **子页面**:
+    *   **艺术家详情**: 简介、个人资料和作品库。
+    *   **艺术家/藏品展示**: 用于浏览内容的网格视图。
+    *   **关于我们**: 平台介绍。
+    *   **实名认证**: 用户身份验证流程。
+    *   **代理商申请**: 代理商入驻申请流程。
 
-## 🛠 Technology Stack
+## 🛠 技术栈
 
-*   **Framework**: React 18+
-*   **Styling**: Tailwind CSS
-*   **Icons**: Lucide React
-*   **Language**: TypeScript
-*   **Build Tooling**: Standard ES Modules (Simulated environment)
+*   **框架**: React 18+
+*   **样式**: Tailwind CSS
+*   **图标**: Lucide React
+*   **语言**: TypeScript
+*   **构建工具**: 标准 ES Modules (模拟环境)
 
-## 📂 Project Structure
+## 📂 项目结构
 
 ```
 /
-├── index.html              # Entry HTML with global styles
-├── index.tsx               # App entry point
-├── App.tsx                 # Main routing and state management
-├── types.ts                # TypeScript interface definitions
-├── constants.ts            # Mock data (Artists, Products, News, Orders)
-├── components/             # Reusable UI components
-│   ├── BottomNav.tsx       # Main navigation bar
-│   ├── GridShowcase.tsx    # Grid layout for items
-│   ├── ProductSpecSheet.tsx# Bottom sheet for product options
-│   └── SubPageLayout.tsx   # Wrapper for sub-pages with header
-└── pages/                  # Application screens
-    ├── Home.tsx            # Landing page
-    ├── Market.tsx          # Shopping page
-    ├── News.tsx            # Information feed
-    ├── Orders.tsx          # Order dashboard
-    ├── OrderListPage.tsx   # Specific order lists
-    ├── Profile.tsx         # User profile & assets
-    ├── TradingZone.tsx     # Special trading area
-    ├── ProductDetail.tsx   # Product buying page
-    ├── ArtistDetail.tsx    # Artist profile
-    └── ... (Other static content pages)
+├── index.html              # 带有全局样式的入口 HTML
+├── index.tsx               # App 入口点
+├── App.tsx                 # 主路由和状态管理
+├── types.ts                # TypeScript 接口定义
+├── constants.ts            # 模拟数据 (艺术家, 商品, 资讯, 订单)
+├── components/             # 可复用 UI 组件
+│   ├── BottomNav.tsx       # 底部主导航栏
+│   ├── GridShowcase.tsx    # 项目网格布局
+│   ├── ProductSpecSheet.tsx# 商品规格底部面板
+│   └── SubPageLayout.tsx   # 带有头部的子页面包装器
+└── pages/                  # 应用程序屏幕
+    ├── Home.tsx            # 首页
+    ├── Market.tsx          # 商城页
+    ├── News.tsx            # 资讯页
+    ├── Orders.tsx          # 订单仪表盘
+    ├── OrderListPage.tsx   # 特定订单列表
+    ├── Profile.tsx         # 用户个人中心 & 资产
+    ├── TradingZone.tsx     # 交易专区
+    ├── ProductDetail.tsx   # 商品详情页
+    ├── ArtistDetail.tsx    # 艺术家详情
+    ├── RealNameAuth.tsx    # 实名认证
+    ├── AgentAuth.tsx       # 代理商申请
+    ├── AssetView.tsx       # 资产详情
+    ├── Login.tsx           # 登录页
+    ├── Register.tsx        # 注册页
+    └── ... (其他静态内容页面)
 ```
 
-## 🚀 Development Notes
+## 🚀 开发说明
 
-*   **Mobile First**: The UI is optimized for mobile viewports (`max-width: 480px` roughly recommended for desktop testing).
-*   **No Scrollbars**: Global CSS hides scrollbars to mimic a native app feel.
-*   **Mock Data**: All data is currently static and located in `constants.ts`.
-*   **Routing**: Implemented via conditional rendering in `App.tsx` (SPA behavior) rather than a library like `react-router-dom`, to keep the environment lightweight and self-contained.
+*   **移动端优先**: UI 针对移动端视口进行了优化（建议桌面端测试时宽度约为 `max-width: 480px`）。
+*   **无滚动条**: 全局 CSS 隐藏了滚动条以模拟原生 App 的感觉。
+*   **模拟数据**: 所有数据目前都是静态的，位于 `constants.ts` 中。
+*   **路由**: 通过 `App.tsx` 中的条件渲染实现（SPA 行为），而不是使用 `react-router-dom` 等库，以保持环境轻量和独立。
 
-## 🎨 Design System
+## 🎨 设计系统
 
-*   **Primary Color**: Blue (`blue-600`)
-*   **Background**: Light Gray (`gray-50`) for content, White for cards/headers.
-*   **Typography**: Sans-serif, tailored for legibility on small screens.# Cultural
+*   **主色调**: 橙色 (`orange-500` / `orange-600`)
+*   **背景**: 头部使用浅橙色渐变 (`from-[#FFD6A5] to-gray-50`)，内容区域为白色。
+*   **排版**: 无衬线字体，专为小屏幕易读性定制。

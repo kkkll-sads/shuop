@@ -49,9 +49,8 @@ const UserSurvey: React.FC<UserSurveyProps> = ({ onBack }) => {
                       onClick={() => setRating(value)}
                     >
                       <span
-                        className={`text-2xl ${
-                          active ? 'text-yellow-400' : 'text-gray-300'
-                        }`}
+                        className={`text-2xl ${active ? 'text-yellow-400' : 'text-gray-300'
+                          }`}
                       >
                         ★
                       </span>
@@ -73,11 +72,10 @@ const UserSurvey: React.FC<UserSurveyProps> = ({ onBack }) => {
                     <button
                       key={option.value}
                       type="button"
-                      className={`px-3 py-1.5 rounded-full text-[11px] border text-gray-700 active:opacity-80 ${
-                        useFrequency === option.value
-                          ? 'bg-blue-50 text-blue-600 border-blue-400'
+                      className={`px-3 py-1.5 rounded-full text-[11px] border text-gray-700 active:opacity-80 ${useFrequency === option.value
+                          ? 'bg-orange-50 text-orange-600 border-orange-400'
                           : 'bg-white border-gray-200'
-                      }`}
+                        }`}
                       onClick={() =>
                         setUseFrequency(
                           useFrequency === option.value ? '' : option.value
@@ -104,7 +102,7 @@ const UserSurvey: React.FC<UserSurveyProps> = ({ onBack }) => {
             </div>
 
             <button
-              className="w-full bg-blue-500 text-white text-sm font-semibold py-3 rounded-md active:opacity-80 shadow-sm"
+              className="w-full bg-orange-500 text-white text-sm font-semibold py-3 rounded-md active:opacity-80 shadow-sm"
               onClick={handleSubmit}
             >
               提交问卷

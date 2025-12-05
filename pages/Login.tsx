@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronLeft, Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, User, Lock, Check } from 'lucide-react';
 import { login as loginApi, LoginParams } from '../services/api';
 import { LoginSuccessPayload } from '../types';
 
@@ -79,111 +79,111 @@ const Login: React.FC<LoginProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col px-8 pt-12 pb-safe">
-      {/* Header */}
-      <div className="flex items-center mb-10 relative">
-        <button className="absolute left-0 -ml-2 p-2">
-          <ChevronLeft size={24} className="text-gray-800" />
-        </button>
-        <h1 className="text-lg font-bold text-gray-900 w-full text-center">登录</h1>
-      </div>
-
-      {/* Logo */}
-      <div className="flex flex-col items-center mb-12">
-        <div className="w-24 h-24 mb-6">
-           {/* Custom SVG to mimic the red logo in the screenshot */}
-           <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-md">
-              <rect x="10" y="10" width="80" height="80" rx="10" fill="none" stroke="#b91c1c" strokeWidth="6" />
-              <path d="M30 30 L70 30 L70 40 L55 50 L70 60 L70 70 L30 70 L30 60 L45 50 L30 40 Z" fill="#b91c1c" />
-              <path d="M30 30 L30 70 M70 30 L70 70" stroke="#b91c1c" strokeWidth="2" fill="none" />
-           </svg>
-        </div>
-        <h2 className="text-lg font-bold text-gray-900 tracking-wide">欢迎登录数权中心</h2>
+    <div className="min-h-screen flex flex-col px-8 pt-20 pb-safe bg-gradient-to-br from-[#FFD6A5] via-[#FFC3A0] to-[#FFDEE9]">
+      {/* Title */}
+      <div className="mb-16">
+        <h1 className="text-4xl font-bold text-gray-800 mb-2">Hello!</h1>
+        <h2 className="text-2xl font-bold text-gray-700">欢迎登录树交所</h2>
       </div>
 
       {/* Form */}
-      <div className="space-y-6 mb-6">
-        <div className="border-b border-gray-200 py-2">
-          <input 
-            type="tel" 
-            placeholder="请输入手机号" 
+      <div className="space-y-6 mb-4">
+        {/* Phone Input */}
+        <div className="bg-white rounded-lg flex items-center px-4 py-3 shadow-sm">
+          <User className="text-gray-500 mr-3" size={20} />
+          <input
+            type="tel"
+            placeholder="请输入手机号"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            className="w-full text-base outline-none placeholder-gray-400 py-2 bg-transparent"
+            className="flex-1 text-base outline-none placeholder-gray-400 bg-transparent text-gray-800"
           />
+          {phone && (
+            <button onClick={() => setPhone('')} className="text-gray-300 ml-2">
+              <div className="bg-gray-200 rounded-full p-0.5">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-white"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              </div>
+            </button>
+          )}
         </div>
-        <div className="border-b border-gray-200 py-2 relative flex items-center">
-          <input 
-            type={showPassword ? "text" : "password"} 
-            placeholder="请输入您的密码" 
+
+        {/* Password Input */}
+        <div className="bg-white rounded-lg flex items-center px-4 py-3 shadow-sm">
+          <Lock className="text-gray-500 mr-3" size={20} />
+          <input
+            type={showPassword ? "text" : "password"}
+            placeholder="请输入您的密码"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full text-base outline-none placeholder-gray-400 py-2 bg-transparent pr-8"
+            className="flex-1 text-base outline-none placeholder-gray-400 bg-transparent text-gray-800"
           />
-          {password && (
-             <button onClick={() => setShowPassword(!showPassword)} className="text-gray-400">
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-             </button>
-          )}
+          <button onClick={() => setShowPassword(!showPassword)} className="text-gray-500 ml-2">
+            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+          </button>
         </div>
       </div>
 
       {/* Options */}
-      <div className="flex justify-between items-center mb-8 text-sm">
-        <label className="flex items-center text-gray-500 gap-2 cursor-pointer">
-           <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-           <span>记住账号</span>
+      <div className="flex justify-between items-center mb-10 text-sm">
+        <label className="flex items-center text-gray-700 gap-2 cursor-pointer select-none">
+          <div className="relative">
+            <input type="checkbox" className="peer sr-only" />
+            <div className="w-4 h-4 border border-orange-400 rounded bg-transparent peer-checked:bg-orange-400 peer-checked:border-orange-400 transition-colors"></div>
+            <Check size={12} className="absolute top-0.5 left-0.5 text-white opacity-0 peer-checked:opacity-100" />
+          </div>
+          <span>记住密码</span>
         </label>
         <button
           type="button"
-          className="text-blue-500"
+          className="text-gray-600"
           onClick={onNavigateForgotPassword}
         >
-          忘记密码?
+          忘记密码
         </button>
       </div>
 
       {/* Login Button */}
-      <button 
+      <button
         onClick={handleLogin}
         disabled={loading}
-        className="w-full bg-blue-500 text-white font-bold py-3.5 rounded-lg shadow-blue-200 shadow-lg active:scale-[0.99] transition-transform mb-6 text-base disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full bg-gradient-to-r from-[#FF9966] to-[#FF5E62] text-white font-bold py-3.5 rounded-full shadow-lg shadow-orange-200 active:scale-[0.98] transition-all mb-8 text-lg tracking-wide disabled:opacity-70 disabled:cursor-not-allowed"
       >
-        {loading ? '登录中...' : '登录'}
+        {loading ? '登录中...' : '登 录'}
       </button>
 
       {/* Agreement */}
-      <div className="flex items-start gap-2 text-xs text-gray-500 mb-12">
-         <div 
-            className={`w-4 h-4 rounded border flex-shrink-0 mt-0.5 flex items-center justify-center cursor-pointer transition-colors ${agreed ? 'bg-blue-500 border-blue-500' : 'border-gray-300 bg-white'}`}
-            onClick={() => setAgreed(!agreed)}
-         >
-            {agreed && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
-         </div>
-         <div className="leading-5">
-            阅读并同意{' '}
-            <button
-              type="button"
-              className="text-blue-500 underline-offset-2"
-              onClick={onNavigateUserAgreement}
-            >
-              《用户协议》
-            </button>{' '}
-            及{' '}
-            <button
-              type="button"
-              className="text-blue-500 underline-offset-2"
-              onClick={onNavigatePrivacyPolicy}
-            >
-              《隐私政策》
-            </button>
-         </div>
+      <div className="flex items-center justify-center gap-2 text-xs text-gray-600 mb-12">
+        <div
+          className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center cursor-pointer transition-colors ${agreed ? 'bg-orange-500 border-orange-500' : 'border-gray-400 bg-transparent'}`}
+          onClick={() => setAgreed(!agreed)}
+        >
+          {agreed && <Check size={12} className="text-white" />}
+        </div>
+        <div className="leading-none flex items-center flex-wrap">
+          <span>登录即代表你已同意</span>
+          <button
+            type="button"
+            className="text-orange-500 mx-0.5"
+            onClick={onNavigateUserAgreement}
+          >
+            用户协议
+          </button>
+          <span>和</span>
+          <button
+            type="button"
+            className="text-orange-500 mx-0.5"
+            onClick={onNavigatePrivacyPolicy}
+          >
+            隐私政策
+          </button>
+        </div>
       </div>
 
-      {/* Register Link */}
+      {/* Bottom Spacer/Register Link (Optional or hidden based on design, but keeping functionality) */}
       <div className="mt-auto text-center pb-8">
-        <span className="text-gray-400 text-sm">没有账号? </span>
-        <button onClick={onNavigateRegister} className="text-blue-500 text-sm font-medium">点击注册</button>
+        <button onClick={onNavigateRegister} className="text-gray-600 text-sm">
+          没有账户？点击注册
+        </button>
       </div>
     </div>
   );

@@ -669,13 +669,12 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ category, initialTab, onB
             <button
               key={index}
               onClick={() => setActiveTab(index)}
-              className={`flex-1 min-w-[80px] py-3 text-sm font-medium relative whitespace-nowrap ${
-                activeTab === index ? 'text-blue-600' : 'text-gray-500'
-              }`}
+              className={`flex-1 min-w-[80px] py-3 text-sm font-medium relative whitespace-nowrap ${activeTab === index ? 'text-orange-600' : 'text-gray-500'
+                }`}
             >
               {tab}
               {activeTab === index && (
-                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-6 h-0.5 bg-blue-600 rounded-full"></div>
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-6 h-0.5 bg-orange-600 rounded-full"></div>
               )}
             </button>
           ))}
@@ -694,7 +693,7 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ category, initialTab, onB
                     <span className="text-xs text-gray-500">
                       {order.create_time_text || formatOrderDate(order.create_time)}
                     </span>
-                    <span className="text-xs font-medium text-blue-600">
+                    <span className="text-xs font-medium text-orange-600">
                       {order.consignment_status_text || '未知状态'}
                     </span>
                   </div>

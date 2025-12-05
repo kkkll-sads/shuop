@@ -97,11 +97,11 @@ const AgentAuth: React.FC<AgentAuthProps> = ({ onBack }) => {
       setLicenseImagePath(path || fullUrl);
       const previewUrl = normalizeAssetUrl(fullUrl || path);
       setLicensePreview(previewUrl);
-      } catch (err: any) {
-        console.error('营业执照上传失败:', err);
-        // 优先使用接口返回的错误消息
-        const errorMsg = err?.msg || err?.response?.msg || err?.message || '营业执照上传失败，请稍后重试';
-        alert(errorMsg);
+    } catch (err: any) {
+      console.error('营业执照上传失败:', err);
+      // 优先使用接口返回的错误消息
+      const errorMsg = err?.msg || err?.response?.msg || err?.message || '营业执照上传失败，请稍后重试';
+      alert(errorMsg);
     } finally {
       setUploadingLicense(false);
     }
@@ -221,7 +221,7 @@ const AgentAuth: React.FC<AgentAuthProps> = ({ onBack }) => {
             <label className="flex items-center gap-1.5">
               <input
                 type="radio"
-                className="w-4 h-4 text-blue-500"
+                className="w-4 h-4 text-orange-500"
                 checked={entityType === 'individual'}
                 onChange={() => setEntityType('individual')}
               />
@@ -230,7 +230,7 @@ const AgentAuth: React.FC<AgentAuthProps> = ({ onBack }) => {
             <label className="flex items-center gap-1.5">
               <input
                 type="radio"
-                className="w-4 h-4 text-blue-500"
+                className="w-4 h-4 text-orange-500"
                 checked={entityType === 'company'}
                 onChange={() => setEntityType('company')}
               />
@@ -267,7 +267,7 @@ const AgentAuth: React.FC<AgentAuthProps> = ({ onBack }) => {
         </div>
 
         <button
-          className="w-full bg-blue-500 text-white text-sm font-semibold py-3 rounded-md active:opacity-80 shadow-sm"
+          className="w-full bg-orange-500 text-white text-sm font-semibold py-3 rounded-md active:opacity-80 shadow-sm"
           onClick={handleSubmit}
           disabled={submitting || uploadingLicense || loading}
         >

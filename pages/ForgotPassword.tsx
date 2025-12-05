@@ -72,7 +72,7 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack }) => {
               <span className="mb-2 block font-medium">手机号</span>
               <input
                 type="tel"
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none"
                 placeholder="请输入注册时使用的手机号"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
@@ -86,7 +86,7 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack }) => {
                   <span className="mb-2 block font-medium">验证码</span>
                   <input
                     type="text"
-                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none"
                     placeholder="请输入短信验证码"
                     value={code}
                     onChange={(e) => setCode(e.target.value)}
@@ -96,7 +96,7 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack }) => {
               </div>
               <button
                 type="button"
-                className="mt-6 whitespace-nowrap rounded-lg border border-blue-500 px-3 py-2 text-xs font-medium text-blue-500 active:opacity-80"
+                className="mt-6 whitespace-nowrap rounded-lg border border-orange-500 px-3 py-2 text-xs font-medium text-orange-500 active:opacity-80"
                 onClick={handleSendCode}
                 disabled={loading}
               >
@@ -108,7 +108,7 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack }) => {
               <span className="mb-2 block font-medium">新密码</span>
               <input
                 type="password"
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none"
                 placeholder="请设置新的登录密码，至少 6 位"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
@@ -118,7 +118,7 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack }) => {
 
             <button
               type="submit"
-              className="mt-2 w-full rounded-lg bg-blue-500 py-3 text-sm font-semibold text-white active:opacity-80 disabled:opacity-50"
+              className="mt-2 w-full rounded-lg bg-orange-500 py-3 text-sm font-semibold text-white active:opacity-80 disabled:opacity-50"
               disabled={loading}
             >
               {loading ? '提交中...' : '确认重置'}

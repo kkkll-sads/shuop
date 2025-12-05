@@ -171,88 +171,6 @@ const Profile: React.FC<ProfileProps> = ({ onNavigate }) => {
             <button onClick={() => onNavigate('service-center:message')}><MessageSquare size={20} /></button>
             <button onClick={() => onNavigate('service-center:settings')}><Settings size={20} /></button>
           </div>
-        )}
-
-        <div className="px-4 -mt-8 relative z-10">
-            {/* My Assets Section - Explicit Entry */}
-            <div 
-                className="bg-white rounded-xl p-4 shadow-sm mb-4 flex justify-between items-center cursor-pointer active:bg-gray-50 transition-colors" 
-                onClick={() => onNavigate('asset-view')}
-            >
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center">
-                        <Wallet size={20} strokeWidth={1.5} />
-                    </div>
-                    <div>
-                        <div className="text-sm font-bold text-gray-800">我的资产</div>
-                        <div className="text-xs text-gray-500">查看余额、积分与资金明细</div>
-                    </div>
-                </div>
-                <div className="flex items-center gap-1">
-                    <span className="text-xs text-gray-400">详情</span>
-                    <ChevronRight size={16} className="text-gray-400" />
-                </div>
-            </div>
-
-            {/* Convenient Services */}
-            <div className="bg-white rounded-xl p-4 shadow-sm mb-4">
-                <div className="font-bold text-gray-800 text-sm mb-4 border-l-4 border-orange-300 pl-2">便捷服务</div>
-                <div className="grid grid-cols-4 gap-4">
-                    {[
-                        {label: '余额充值', icon: Wallet, color: 'text-orange-500', action: () => onNavigate('asset-view')},
-                        {label: '余额提现', icon: Receipt, color: 'text-orange-500', action: () => onNavigate('asset-view')},
-                        {label: '商品寄售', icon: Receipt, color: 'text-orange-500', action: () => onNavigate('order-list:transaction:0')},
-                        {label: '积分兑换', icon: CoinsIcon, color: 'text-orange-500', action: () => onNavigate('switch-to-market')}, // Switch to Market tab for points exchange
-                    ].map((item, idx) => (
-                        <div key={idx} className="flex flex-col items-center cursor-pointer active:opacity-60" onClick={item.action}>
-                            <item.icon size={24} className={`${item.color} mb-2`} strokeWidth={1.5} />
-                            <span className="text-xs text-gray-600">{item.label}</span>
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            {/* Rights Management */}
-            <div className="bg-white rounded-xl p-4 shadow-sm mb-4">
-                <div className="font-bold text-gray-800 text-sm mb-4 border-l-4 border-orange-300 pl-2">权益管理</div>
-                <div className="grid grid-cols-4 gap-4">
-                    {[
-                        {label: '资产明细', icon: FileText, action: () => onNavigate('asset-view')},
-                        {label: '累计权益', icon: ShieldCheck, action: () => onNavigate('cumulative-rights')},
-                        {label: '寄售券', icon: Receipt, action: () => onNavigate('consignment-voucher')},
-
-                        {label: '我的藏品', icon: Box, action: () => onNavigate('my-collection')},
-                    ].map((item, idx) => (
-                        <div key={idx} className="flex flex-col items-center cursor-pointer active:opacity-60" onClick={item.action}>
-                             <item.icon size={24} className="text-gray-600 mb-2" strokeWidth={1.5} />
-                            <span className="text-xs text-gray-600">{item.label}</span>
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            {/* Service Management */}
-            <div className="bg-white rounded-xl p-4 shadow-sm mb-4">
-                <div className="font-bold text-gray-800 text-sm mb-4 border-l-4 border-orange-300 pl-2">服务管理</div>
-                <div className="grid grid-cols-4 gap-y-6 gap-x-4">
-                    {[
-                        {label: '实名认证', icon: UserCheck, action: () => onNavigate('real-name-auth')},
-                        {label: '卡号管理', icon: CreditCard, action: () => onNavigate('card-management')},
-                        {label: '收货地址', icon: MapPin, action: () => onNavigate('address-list')},
-                        {label: '我的好友', icon: Users, action: () => onNavigate('my-friends')},
-                        {label: '代理认证', icon: UserCheck, action: () => onNavigate('agent-auth')},
-                        {label: '帮助中心', icon: HelpCircle, action: () => onNavigate('help-center')},
-                        {label: '规则协议', icon: FileText, action: () => onNavigate('profile:user-agreement')},
-                        {label: '用户问卷', icon: FileText, action: () => onNavigate('user-survey')},
-                        {label: '在线客服', icon: HeadphonesIcon, action: () => onNavigate('online-service')},
-                    ].map((item, idx) => (
-                        <div key={idx} className="flex flex-col items-center cursor-pointer active:opacity-60" onClick={item.action}>
-                             <item.icon size={24} className="text-gray-600 mb-2" strokeWidth={1.5} />
-                            <span className="text-xs text-gray-600">{item.label}</span>
-                        </div>
-                    ))}
-                </div>
-            </div>
         </div>
 
         {/* Stats Overlay */}
@@ -318,8 +236,9 @@ const Profile: React.FC<ProfileProps> = ({ onNavigate }) => {
           <div className="grid grid-cols-4 gap-4">
             {[
               { label: '资产明细', icon: FileText, action: () => onNavigate('asset-view') },
-              { label: '累计权益', icon: ShieldCheck, action: () => { } },
-              { label: '寄售券', icon: Receipt, action: () => { } },
+              { label: '累计权益', icon: ShieldCheck, action: () => onNavigate('cumulative-rights') },
+              { label: '寄售券', icon: Receipt, action: () => onNavigate('consignment-voucher') },
+              { label: '我的藏品', icon: Box, action: () => onNavigate('my-collection') },
             ].map((item, idx) => (
               <div key={idx} className="flex flex-col items-center cursor-pointer active:opacity-60" onClick={item.action}>
                 <item.icon size={24} className="text-gray-600 mb-2" strokeWidth={1.5} />

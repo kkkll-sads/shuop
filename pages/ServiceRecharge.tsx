@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Loader2 } from 'lucide-react';
-import { transferBalanceToServiceFee, fetchProfile, AUTH_TOKEN_KEY, USER_INFO_KEY } from '../services/api';
+import { rechargeServiceFee, fetchProfile, AUTH_TOKEN_KEY, USER_INFO_KEY } from '../services/api';
 import { UserInfo } from '../types';
 
 interface ServiceRechargeProps {
@@ -19,6 +19,7 @@ const ServiceRecharge: React.FC<ServiceRechargeProps> = ({ onBack }) => {
   });
 
   const [amount, setAmount] = useState<string>('');
+  const [paymentSource, setPaymentSource] = useState<'balance_available' | 'withdrawable_money'>('balance_available');
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -66,21 +67,30 @@ const ServiceRecharge: React.FC<ServiceRechargeProps> = ({ onBack }) => {
       return;
     }
 
-    if (rechargeAmount > Number(userInfo?.balance_available || 0)) {
-      setError('可用余额不足');
-      return;
+    // 根据选择的支付方式验证余额
+    if (paymentSource === 'balance_available') {
+      if (rechargeAmount > Number(userInfo?.balance_available || 0)) {
+        setError('可用余额不足');
+        return;
+      }
+    } else {
+      if (rechargeAmount > Number(userInfo?.withdrawable_money || 0)) {
+        setError('提现余额不足');
+        return;
+      }
     }
 
     setLoading(true);
 
     try {
-      const response = await transferBalanceToServiceFee({
+      const response = await rechargeServiceFee({
         amount: rechargeAmount,
+        source: paymentSource === 'withdrawable_money' ? 'withdrawable_money' : undefined,
         token,
       });
 
       if (response.code === 1) {
-        setSuccess('划转成功');
+        setSuccess('充值成功');
         setAmount('');
 
         // 更新用户信息
@@ -95,11 +105,11 @@ const ServiceRecharge: React.FC<ServiceRechargeProps> = ({ onBack }) => {
           setSuccess(null);
         }, 3000);
       } else {
-        setError(response.msg || '划转失败');
+        setError(response.msg || '充值失败');
       }
     } catch (err: any) {
-      console.error('划转失败:', err);
-      setError(err?.msg || err?.message || '划转失败，请稍后重试');
+      console.error('充值失败:', err);
+      setError(err?.msg || err?.message || '充值失败，请稍后重试');
     } finally {
       setLoading(false);
     }
@@ -140,25 +150,46 @@ const ServiceRecharge: React.FC<ServiceRechargeProps> = ({ onBack }) => {
                 disabled={loading}
               />
             </div>
-            {userInfo?.balance_available && (
-              <div className="text-xs text-gray-400 mt-1">
-                可用余额：¥ {formatAmount(userInfo.balance_available)}
-              </div>
-            )}
           </div>
 
           <div>
             <label className="block text-xs text-gray-500 mb-1">支付方式</label>
             <div className="grid grid-cols-2 gap-3">
               <button
-                className="border border-orange-500 text-orange-600 bg-orange-50 rounded-lg py-2 text-sm"
-                disabled
+                onClick={() => {
+                  setPaymentSource('balance_available');
+                  setError(null);
+                }}
+                className={`border rounded-lg py-2 text-sm transition-colors ${
+                  paymentSource === 'balance_available'
+                    ? 'border-orange-500 text-orange-600 bg-orange-50'
+                    : 'border-gray-200 text-gray-700 bg-white'
+                }`}
+                disabled={loading}
               >
-                余额支付
+                可用余额支付
               </button>
-              {/* <button className="border border-gray-200 rounded-lg py-2 text-sm text-gray-700" disabled>
-                其他方式
-              </button> */}
+              <button
+                onClick={() => {
+                  setPaymentSource('withdrawable_money');
+                  setError(null);
+                }}
+                className={`border rounded-lg py-2 text-sm transition-colors ${
+                  paymentSource === 'withdrawable_money'
+                    ? 'border-orange-500 text-orange-600 bg-orange-50'
+                    : 'border-gray-200 text-gray-700 bg-white'
+                }`}
+                disabled={loading}
+              >
+                提现余额支付
+              </button>
+            </div>
+            <div className="text-xs text-gray-400 mt-2">
+              {paymentSource === 'balance_available' ? (
+                <>可用余额：¥ {formatAmount(userInfo?.balance_available)}</>
+              ) : (
+                <>提现余额：¥ {formatAmount(userInfo?.withdrawable_money)}</>
+              )}
             </div>
           </div>
         </div>
@@ -185,7 +216,7 @@ const ServiceRecharge: React.FC<ServiceRechargeProps> = ({ onBack }) => {
           className="w-full bg-orange-600 text-white rounded-full py-3 text-sm font-medium active:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           {loading && <Loader2 size={16} className="animate-spin" />}
-          {loading ? '划转中...' : '确认充值'}
+          {loading ? '充值中...' : '确认充值'}
         </button>
       </div>
     </div>

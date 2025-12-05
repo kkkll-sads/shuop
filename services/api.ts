@@ -84,6 +84,10 @@ export const API_ENDPOINTS = {
     transferBalanceToServiceFee: '/Account/transferBalanceToServiceFee',
     /** 服务费明细 */
     serviceFeeLog: '/Account/serviceFeeLog',
+    /** 服务费充值 */
+    rechargeServiceFee: '/Account/rechargeServiceFee',
+    /** 全部明细 */
+    allLog: '/Account/allLog',
   },
   address: {
     /** 收货地址列表 */
@@ -130,6 +134,8 @@ export const API_ENDPOINTS = {
     submitOrder: '/Recharge/submitOrder',
     /** 提交提现申请 */
     submitWithdraw: '/Recharge/submitWithdraw',
+    /** 提交拓展提现申请 */
+    submitStaticIncomeWithdraw: '/Recharge/submitStaticIncomeWithdraw',
     /** 获取我的充值订单列表 */
     getMyOrderList: '/Recharge/getMyOrderList',
     /** 获取我的提现记录列表 */
@@ -909,6 +915,66 @@ export async function getServiceFeeLog(
     return data;
   } catch (error: any) {
     console.error('获取服务费明细失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 服务费充值参数
+ */
+export interface RechargeServiceFeeParams {
+  amount: number | string;
+  remark?: string;
+  /** 充值来源：不传或传空使用可用余额（balance_available），传 "withdrawable_money" 使用可提现金额 */
+  source?: 'withdrawable_money' | '';
+  token?: string;
+}
+
+/**
+ * 服务费充值
+ * @param params 充值参数
+ */
+export async function rechargeServiceFee(
+  params: RechargeServiceFeeParams,
+): Promise<ApiResponse> {
+  const token = params.token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+
+  if (!token) {
+    throw new Error('未找到用户登录信息，请先登录后再尝试充值');
+  }
+
+  if (!params.amount || Number(params.amount) <= 0) {
+    throw new Error('请输入有效的充值金额');
+  }
+
+  // 构建 URL 参数（兼容性）
+  const search = new URLSearchParams();
+  search.append('amount', String(params.amount));
+  if (params.remark) {
+    search.append('remark', params.remark);
+  }
+
+  const url = `${API_ENDPOINTS.account.rechargeServiceFee}?${search.toString()}`;
+
+  // POST body 数据
+  const payload: Record<string, any> = {
+    amount: Number(params.amount),
+  };
+
+  if (params.source) {
+    payload.source = params.source;
+  }
+
+  try {
+    const data = await apiFetch(url, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      token,
+    });
+    console.log('服务费充值接口原始响应:', data);
+    return data;
+  } catch (error: any) {
+    console.error('服务费充值失败:', error);
     throw error;
   }
 }
@@ -2117,6 +2183,80 @@ export async function submitWithdraw(
 }
 
 /**
+ * 提交拓展提现申请参数
+ */
+export interface SubmitStaticIncomeWithdrawParams {
+  /** 提现金额(元) */
+  amount: number;
+  /** 用户绑定的收款账户ID */
+  payment_account_id: number;
+  /** 支付密码 */
+  pay_password: string;
+  /** 提现备注 */
+  remark?: string;
+  token?: string;
+}
+
+/**
+ * 提交拓展提现申请响应
+ */
+export interface SubmitStaticIncomeWithdrawResponse {
+  withdraw_id: number;
+  status: number;
+  fee: number;
+  actual_amount: number;
+}
+
+/**
+ * 提交拓展提现申请
+ * 对应后端: /Recharge/submitStaticIncomeWithdraw
+ */
+export async function submitStaticIncomeWithdraw(
+  params: SubmitStaticIncomeWithdrawParams,
+): Promise<ApiResponse<SubmitStaticIncomeWithdrawResponse>> {
+  const token = params.token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+
+  if (!token) {
+    throw new Error('未找到用户登录信息，请先登录后再提交提现申请');
+  }
+
+  if (!params.amount || params.amount <= 0) {
+    throw new Error('请输入有效的提现金额');
+  }
+
+  if (!params.payment_account_id) {
+    throw new Error('请选择收款账户');
+  }
+
+  if (!params.pay_password) {
+    throw new Error('请输入支付密码');
+  }
+
+  const requestBody = {
+    amount: params.amount,
+    payment_account_id: params.payment_account_id,
+    pay_password: params.pay_password,
+    remark: params.remark || '',
+  };
+
+  try {
+    const data = await apiFetch<SubmitStaticIncomeWithdrawResponse>(
+      API_ENDPOINTS.recharge.submitStaticIncomeWithdraw,
+      {
+        method: 'POST',
+        body: JSON.stringify(requestBody),
+        token,
+      },
+    );
+    console.log('提交拓展提现申请接口原始响应:', data);
+    return data;
+  } catch (error: any) {
+    console.error('提交拓展提现申请失败:', error);
+    throw error;
+  }
+}
+
+/**
  * 获取我的充值订单列表
  * 对应后端: /Recharge/getMyOrderList
  * 示例接口: http://18.166.211.131/index.php/api/Recharge/getMyOrderList?page=1&limit=10
@@ -2264,11 +2404,10 @@ export async function getMyWithdrawList(
  */
 export interface BalanceLogItem {
   id: number;
-  user_id: number;
-  money: string;
-  before: string;
-  after: string;
-  memo: string;
+  amount: number;
+  before_balance: number;
+  after_balance: number;
+  remark: string;
   create_time: number;
 }
 
@@ -2307,6 +2446,76 @@ export async function getBalanceLog(
     return data;
   } catch (error: any) {
     console.error('获取余额日志失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 全部明细项
+ */
+export interface AllLogItem {
+  id: number;
+  type: 'balance_available' | 'withdrawable_money' | 'service_fee_balance' | 'score';
+  amount: number;
+  before_value: number;
+  after_value: number;
+  remark: string;
+  create_time: number;
+}
+
+/**
+ * 全部明细列表数据
+ */
+export interface AllLogData {
+  list: AllLogItem[];
+  total: number;
+  per_page: number;
+  current_page: number;
+}
+
+/**
+ * 获取全部明细参数
+ */
+export interface GetAllLogParams {
+  page?: number;
+  limit?: number;
+  /** 明细类型：all(全部), balance_available(可用余额), withdrawable_money(提现余额), service_fee_balance(服务费余额), score(积分) */
+  type?: 'all' | 'balance_available' | 'withdrawable_money' | 'service_fee_balance' | 'score';
+  token?: string;
+}
+
+/**
+ * 获取全部明细
+ * @param params 查询参数
+ */
+export async function getAllLog(
+  params: GetAllLogParams = {},
+): Promise<ApiResponse<AllLogData>> {
+  const token = params.token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+  const page = params.page || 1;
+  const limit = params.limit || 10;
+  const type = params.type || 'all';
+
+  if (!token) {
+    throw new Error('未找到用户登录信息，请先登录后再查看明细');
+  }
+
+  const search = new URLSearchParams();
+  search.append('page', String(page));
+  search.append('limit', String(limit));
+  search.append('type', type);
+
+  const path = `${API_ENDPOINTS.account.allLog}?${search.toString()}`;
+
+  try {
+    const data = await apiFetch<AllLogData>(path, {
+      method: 'GET',
+      token,
+    });
+    console.log('获取全部明细接口原始响应:', data);
+    return data;
+  } catch (error: any) {
+    console.error('获取全部明细失败:', error);
     throw error;
   }
 }

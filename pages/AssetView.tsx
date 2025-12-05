@@ -221,15 +221,15 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
     <div key={item.id} className="bg-white rounded-lg p-4 mb-3 shadow-sm">
       <div className="flex justify-between items-start mb-2">
         <div className="flex-1">
-          <div className="text-sm font-medium text-gray-800 mb-1">{item.memo}</div>
+          <div className="text-sm font-medium text-gray-800 mb-1">{item.remark}</div>
           <div className="text-xs text-gray-500">{formatTime(item.create_time)}</div>
         </div>
-        <div className={`text-lg font-bold ${parseFloat(item.money) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-          {parseFloat(item.money) >= 0 ? '+' : ''}{item.money}
+        <div className={`text-lg font-bold ${item.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+          {item.amount >= 0 ? '+' : ''}{item.amount.toFixed(2)}
         </div>
       </div>
       <div className="text-xs text-gray-400">
-        余额: {item.before} → {item.after}
+        余额: {item.before_balance.toFixed(2)} → {item.after_balance.toFixed(2)}
       </div>
     </div>
   );

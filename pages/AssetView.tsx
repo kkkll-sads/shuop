@@ -9,10 +9,12 @@ import {
   deliverCollectionItem,
   consignCollectionItem,
   fetchProfile,
+  getServiceFeeLog,
   BalanceLogItem,
   RechargeOrderItem,
   WithdrawOrderItem,
   MyCollectionItem,
+  ServiceFeeLogItem,
   AUTH_TOKEN_KEY,
   USER_INFO_KEY,
   normalizeAssetUrl,
@@ -35,6 +37,7 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
   const [balanceLogs, setBalanceLogs] = useState<BalanceLogItem[]>([]);
   const [rechargeOrders, setRechargeOrders] = useState<RechargeOrderItem[]>([]);
   const [withdrawOrders, setWithdrawOrders] = useState<WithdrawOrderItem[]>([]);
+  const [serviceFeeLogs, setServiceFeeLogs] = useState<ServiceFeeLogItem[]>([]);
   const [myCollections, setMyCollections] = useState<MyCollectionItem[]>([]);
 
   const [page, setPage] = useState<number>(1);
@@ -76,6 +79,7 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
     setBalanceLogs([]);
     setRechargeOrders([]);
     setWithdrawOrders([]);
+    setServiceFeeLogs([]);
     setMyCollections([]);
   }, [activeTab]);
 
@@ -160,15 +164,15 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
           setError(res.msg || '获取拓展明细失败');
         }
       } else if (activeTab === 2) {
-        // 服务费明细 (充值订单)
-        const res = await getMyOrderList({ page, limit: 10, token });
+        // 服务费明细
+        const res = await getServiceFeeLog({ page, limit: 10, token });
         if (res.code === 1 && res.data) {
           if (page === 1) {
-            setRechargeOrders(res.data.data || []);
+            setServiceFeeLogs(res.data.list || []);
           } else {
-            setRechargeOrders(prev => [...prev, ...(res.data?.data || [])]);
+            setServiceFeeLogs(prev => [...prev, ...(res.data?.list || [])]);
           }
-          setHasMore(res.data.has_more || false);
+          setHasMore((res.data.list?.length || 0) >= 10 && (res.data.current_page || 1) * 10 < (res.data.total || 0));
         } else {
           setError(res.msg || '获取服务费明细失败');
         }
@@ -288,6 +292,23 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
             <div className="mt-1 text-red-500">审核原因: {item.audit_reason}</div>
           )}
         </div>
+      </div>
+    </div>
+  );
+
+  const renderServiceFeeLogItem = (item: ServiceFeeLogItem) => (
+    <div key={item.id} className="bg-white rounded-lg p-4 mb-3 shadow-sm">
+      <div className="flex justify-between items-start mb-2">
+        <div className="flex-1">
+          <div className="text-sm font-medium text-gray-800 mb-1">{item.remark}</div>
+          <div className="text-xs text-gray-500">{formatTime(item.create_time)}</div>
+        </div>
+        <div className="text-right">
+          <div className="text-lg font-bold text-green-600">+{item.amount.toFixed(2)}</div>
+        </div>
+      </div>
+      <div className="text-xs text-gray-400 mt-2 pt-2 border-t border-gray-100">
+        服务费余额: {item.before_service_fee.toFixed(2)} → {item.after_service_fee.toFixed(2)}
       </div>
     </div>
   );
@@ -770,7 +791,7 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
       );
     } else if (activeTab === 2) {
       // 服务费明细
-      if (rechargeOrders.length === 0) {
+      if (serviceFeeLogs.length === 0) {
         return (
           <div className="flex flex-col items-center justify-center py-12 text-gray-400">
             <div className="w-16 h-16 mb-4 border-2 border-gray-200 rounded-lg flex items-center justify-center">
@@ -782,7 +803,7 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
       }
       return (
         <div>
-          {rechargeOrders.map(renderRechargeOrderItem)}
+          {serviceFeeLogs.map(renderServiceFeeLogItem)}
           {hasMore && (
             <button
               onClick={() => setPage(prev => prev + 1)}
@@ -858,8 +879,8 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
                           <div className="font-medium">¥ {formatAmount(userInfo?.withdrawable_money)}</div>
                       </div>
                       <div>
-                          <div className="opacity-70 text-xs mb-1">服务费金额</div>
-                          <div className="font-medium">¥ {formatAmount(userInfo?.withdrawable_money)}</div>
+                          <div className="opacity-70 text-xs mb-1">服务费余额</div>
+                          <div className="font-medium">¥ {formatAmount(userInfo?.service_fee_balance)}</div>
                       </div>
                   </div>
               </div>

@@ -80,6 +80,10 @@ export const API_ENDPOINTS = {
     cancelAccount: '/Account/cancelAccount',
     /** 余额日志（资金明细） */
     balance: '/Account/balance',
+    /** 余额划转到服务费 */
+    transferBalanceToServiceFee: '/Account/transferBalanceToServiceFee',
+    /** 服务费明细 */
+    serviceFeeLog: '/Account/serviceFeeLog',
   },
   address: {
     /** 收货地址列表 */
@@ -799,6 +803,112 @@ export async function cancelAccount(params: CancelAccountParams): Promise<ApiRes
     return data;
   } catch (error: any) {
     console.error('提交账户注销申请失败:', error);
+    throw error;
+  }
+}
+
+export interface TransferBalanceToServiceFeeParams {
+  amount: number | string;
+  token?: string;
+}
+
+export interface TransferBalanceToServiceFeeResponse {
+  balance_available: number;
+  service_fee_balance: number;
+}
+
+/**
+ * 余额划转到服务费
+ * @param params 划转参数
+ */
+export async function transferBalanceToServiceFee(
+  params: TransferBalanceToServiceFeeParams,
+): Promise<ApiResponse<TransferBalanceToServiceFeeResponse>> {
+  const token = params.token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+
+  if (!token) {
+    throw new Error('未找到用户登录信息，请先登录后再尝试划转');
+  }
+
+  if (!params.amount || Number(params.amount) <= 0) {
+    throw new Error('请输入有效的划转金额');
+  }
+
+  try {
+    const url = `${API_ENDPOINTS.account.transferBalanceToServiceFee}?amount=${params.amount}`;
+    const data = await apiFetch<TransferBalanceToServiceFeeResponse>(url, {
+      method: 'POST',
+      token,
+    });
+    console.log('余额划转到服务费接口原始响应:', data);
+    return data;
+  } catch (error: any) {
+    console.error('余额划转到服务费失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 服务费明细项
+ */
+export interface ServiceFeeLogItem {
+  id: number;
+  amount: number;
+  before_service_fee: number;
+  after_service_fee: number;
+  remark: string;
+  create_time: number;
+}
+
+/**
+ * 服务费明细列表数据
+ */
+export interface ServiceFeeLogListData {
+  list: ServiceFeeLogItem[];
+  total: number;
+  per_page: number;
+  current_page: number;
+}
+
+/**
+ * 获取服务费明细参数
+ */
+export interface GetServiceFeeLogParams {
+  page?: number;
+  limit?: number;
+  token?: string;
+}
+
+/**
+ * 获取服务费明细
+ * @param params 查询参数
+ */
+export async function getServiceFeeLog(
+  params: GetServiceFeeLogParams = {},
+): Promise<ApiResponse<ServiceFeeLogListData>> {
+  const token = params.token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+  const page = params.page || 1;
+  const limit = params.limit || 10;
+
+  if (!token) {
+    throw new Error('未找到用户登录信息，请先登录后再查看服务费明细');
+  }
+
+  const search = new URLSearchParams();
+  search.append('page', String(page));
+  search.append('limit', String(limit));
+
+  const path = `${API_ENDPOINTS.account.serviceFeeLog}?${search.toString()}`;
+
+  try {
+    const data = await apiFetch<ServiceFeeLogListData>(path, {
+      method: 'GET',
+      token,
+    });
+    console.log('服务费明细接口原始响应:', data);
+    return data;
+  } catch (error: any) {
+    console.error('获取服务费明细失败:', error);
     throw error;
   }
 }

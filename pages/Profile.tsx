@@ -112,7 +112,7 @@ const Profile: React.FC<ProfileProps> = ({ onNavigate }) => {
   const stats = useMemo(() => ([
     { label: '可用余额', val: formatAmount(userInfo?.money) },
     { label: '提现余额', val: formatAmount(userInfo?.withdrawable_money) },
-    { label: '服务费余额', val: formatAmount(userInfo?.withdrawable_money) },
+    { label: '服务费余额', val: formatAmount(userInfo?.service_fee_balance) },
     { label: '积分余额', val: userInfo?.score?.toString() ?? '0' },
   ]), [userInfo]);
 

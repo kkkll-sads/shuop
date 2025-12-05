@@ -70,6 +70,8 @@ export interface UserInfo {
   gender: number;
   birthday: string | null;
   money: string;
+  balance_available: string;
+  service_fee_balance: string;
   withdrawable_money: string;
   usdt: string;
   static_income: string;

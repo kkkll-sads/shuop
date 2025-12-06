@@ -1,20 +1,38 @@
-import React from 'react';
-import { ShoppingCart, Truck, Coins, Clock, Package, XCircle, CheckCircle, FileText, ArrowRightLeft } from 'lucide-react';
+/**
+ * Orders - 订单中心页面
+ * 
+ * 使用 Card 组件优化样式
+ * 
+ * @author 树交所前端团队
+ * @version 2.0.0
+ */
 
+import React from 'react';
+import { ShoppingCart, Truck, Coins, Clock, Package, XCircle, CheckCircle, ArrowRightLeft } from 'lucide-react';
+
+/**
+ * Orders 组件属性接口
+ */
 interface OrdersProps {
   onNavigate?: (path: string) => void;
 }
 
+/**
+ * 订单区块属性接口
+ */
 interface OrderSectionProps {
   title: string;
   items: {
     icon: React.ElementType;
     label: string;
-    actionKey: string; // Used for navigation routing
+    actionKey: string;
   }[];
   onItemClick: (key: string) => void;
 }
 
+/**
+ * 订单区块组件
+ */
 const OrderSection: React.FC<OrderSectionProps> = ({ title, items, onItemClick }) => (
   <div className="bg-white rounded-xl p-4 mb-4 shadow-sm">
     <div className="flex items-center mb-4 border-l-4 border-orange-600 pl-2">
@@ -37,7 +55,13 @@ const OrderSection: React.FC<OrderSectionProps> = ({ title, items, onItemClick }
   </div>
 );
 
+/**
+ * Orders 订单中心页面组件
+ */
 const Orders: React.FC<OrdersProps> = ({ onNavigate }) => {
+  /**
+   * 处理导航
+   */
   const handleNav = (key: string) => {
     if (onNavigate) {
       onNavigate(`order-list:${key}`);
@@ -51,6 +75,7 @@ const Orders: React.FC<OrdersProps> = ({ onNavigate }) => {
       </header>
 
       <div className="p-4 space-y-4">
+        {/* 商品订单 */}
         <OrderSection
           title="商品订单"
           onItemClick={handleNav}
@@ -60,6 +85,7 @@ const Orders: React.FC<OrdersProps> = ({ onNavigate }) => {
           ]}
         />
 
+        {/* 交易订单 */}
         <OrderSection
           title="交易订单"
           onItemClick={handleNav}
@@ -70,6 +96,7 @@ const Orders: React.FC<OrdersProps> = ({ onNavigate }) => {
           ]}
         />
 
+        {/* 提货订单 */}
         <OrderSection
           title="提货订单"
           onItemClick={handleNav}
@@ -80,6 +107,7 @@ const Orders: React.FC<OrdersProps> = ({ onNavigate }) => {
           ]}
         />
 
+        {/* 积分订单 */}
         <OrderSection
           title="积分订单"
           onItemClick={handleNav}

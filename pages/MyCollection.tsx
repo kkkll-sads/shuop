@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Loader2, FileText, ShoppingBag, ArrowRight, X, AlertCircle, CheckCircle } from 'lucide-react';
+import { FileText, ShoppingBag, ArrowRight, X, AlertCircle, CheckCircle } from 'lucide-react';
 import SubPageLayout from '../components/SubPageLayout';
+import { LoadingSpinner, EmptyState, LazyImage } from '../components/common';
 import {
   getMyCollection,
   deliverCollectionItem,
@@ -134,15 +135,15 @@ const MyCollection: React.FC<MyCollectionProps> = ({ onBack }) => {
     const now = Math.floor(Date.now() / 1000);
     const elapsed = now - buyTime;
     const totalSeconds = 48 * 3600 - elapsed;
-    
+
     if (totalSeconds <= 0) {
       return null;
     }
-    
+
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
-    
+
     return { hours, minutes, seconds };
   };
 
@@ -406,16 +407,16 @@ const MyCollection: React.FC<MyCollectionProps> = ({ onBack }) => {
   };
 
   const renderCollectionItem = (item: MyCollectionItem) => (
-    <div 
-      key={item.id} 
+    <div
+      key={item.id}
       className="bg-white rounded-lg p-4 mb-3 shadow-sm cursor-pointer active:bg-gray-50 transition-colors"
       onClick={() => handleItemClick(item)}
     >
       <div className="flex gap-3">
         <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-          <img 
-            src={normalizeAssetUrl(item.image)} 
-            alt={item.title} 
+          <img
+            src={normalizeAssetUrl(item.image)}
+            alt={item.title}
             className="w-full h-full object-cover"
             onError={(e) => {
               (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150';
@@ -432,7 +433,7 @@ const MyCollection: React.FC<MyCollectionProps> = ({ onBack }) => {
           )}
           <div className="text-xs text-gray-500 mb-2">购买时间: {item.buy_time_text}</div>
           <div className="text-sm font-bold text-gray-900 mb-2">¥ {item.price}</div>
-          
+
           <div className="flex gap-2 flex-wrap">
             {item.consignment_status === 4 ? (
               <div className="text-xs px-2 py-1 rounded-full bg-green-50 text-green-600 border border-green-200">
@@ -444,15 +445,14 @@ const MyCollection: React.FC<MyCollectionProps> = ({ onBack }) => {
               </div>
             ) : item.delivery_status === 1 ? (
               // 已提货：显示提货订单状态（待发货/待收货/已签收）
-              <div className={`text-xs px-2 py-1 rounded-full ${
-                item.delivery_status_text === '待发货'
-                  ? 'bg-blue-50 text-blue-600 border border-blue-200'
-                  : item.delivery_status_text === '待收货'
+              <div className={`text-xs px-2 py-1 rounded-full ${item.delivery_status_text === '待发货'
+                ? 'bg-blue-50 text-blue-600 border border-blue-200'
+                : item.delivery_status_text === '待收货'
                   ? 'bg-yellow-50 text-yellow-600 border border-yellow-200'
                   : item.delivery_status_text === '已签收'
-                  ? 'bg-green-50 text-green-600 border border-green-200'
-                  : 'bg-green-50 text-green-600 border border-green-200'
-              }`}>
+                    ? 'bg-green-50 text-green-600 border border-green-200'
+                    : 'bg-green-50 text-green-600 border border-green-200'
+                }`}>
                 {item.delivery_status_text || '已提货'}
               </div>
             ) : hasConsignedBefore(item) ? (
@@ -461,15 +461,14 @@ const MyCollection: React.FC<MyCollectionProps> = ({ onBack }) => {
                 <div className="text-xs px-2 py-1 rounded-full bg-orange-50 text-orange-600 border border-orange-200">
                   待提货
                 </div>
-                <div className={`text-xs px-2 py-1 rounded-full ${
-                  item.consignment_status === 0 
-                    ? 'bg-gray-50 text-gray-600 border border-gray-200'
-                    : item.consignment_status === 1
+                <div className={`text-xs px-2 py-1 rounded-full ${item.consignment_status === 0
+                  ? 'bg-gray-50 text-gray-600 border border-gray-200'
+                  : item.consignment_status === 1
                     ? 'bg-yellow-50 text-yellow-600 border border-yellow-200'
                     : item.consignment_status === 3
-                    ? 'bg-red-50 text-red-600 border border-red-200'
-                    : 'bg-green-50 text-green-600 border border-green-200'
-                }`}>
+                      ? 'bg-red-50 text-red-600 border border-red-200'
+                      : 'bg-green-50 text-green-600 border border-green-200'
+                  }`}>
                   {item.consignment_status_text || '待寄售'}
                 </div>
               </>
@@ -479,15 +478,14 @@ const MyCollection: React.FC<MyCollectionProps> = ({ onBack }) => {
                 <div className="text-xs px-2 py-1 rounded-full bg-orange-50 text-orange-600 border border-orange-200">
                   ○ 未提货
                 </div>
-                <div className={`text-xs px-2 py-1 rounded-full ${
-                  item.consignment_status === 0 
-                    ? 'bg-gray-50 text-gray-600 border border-gray-200'
-                    : item.consignment_status === 1
+                <div className={`text-xs px-2 py-1 rounded-full ${item.consignment_status === 0
+                  ? 'bg-gray-50 text-gray-600 border border-gray-200'
+                  : item.consignment_status === 1
                     ? 'bg-yellow-50 text-yellow-600 border border-yellow-200'
                     : item.consignment_status === 3
-                    ? 'bg-red-50 text-red-600 border border-red-200'
-                    : 'bg-green-50 text-green-600 border border-green-200'
-                }`}>
+                      ? 'bg-red-50 text-red-600 border border-red-200'
+                      : 'bg-green-50 text-green-600 border border-green-200'
+                  }`}>
                   {item.consignment_status_text || '未寄售'}
                 </div>
               </>
@@ -502,24 +500,11 @@ const MyCollection: React.FC<MyCollectionProps> = ({ onBack }) => {
     <SubPageLayout title="我的藏品" onBack={onBack}>
       <div className="p-4">
         {loading && page === 1 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-            <Loader2 size={32} className="animate-spin mb-4" />
-            <span className="text-xs">加载中...</span>
-          </div>
+          <LoadingSpinner text="加载中..." />
         ) : error ? (
-          <div className="flex flex-col items-center justify-center py-12 text-red-400">
-            <div className="w-16 h-16 mb-4 border-2 border-red-200 rounded-lg flex items-center justify-center">
-              <FileText size={32} className="opacity-50" />
-            </div>
-            <span className="text-xs">{error}</span>
-          </div>
+          <EmptyState icon={<FileText size={48} className="text-gray-300" />} title="加载失败" description={error} />
         ) : myCollections.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-            <div className="w-16 h-16 mb-4 border-2 border-gray-200 rounded-lg flex items-center justify-center">
-              <ShoppingBag size={32} className="opacity-50" />
-            </div>
-            <span className="text-xs">暂无藏品</span>
-          </div>
+          <EmptyState icon={<ShoppingBag size={48} className="text-gray-300" />} title="暂无藏品" description="您还没有任何藏品" />
         ) : (
           <>
             {myCollections.map(renderCollectionItem)}
@@ -556,9 +541,9 @@ const MyCollection: React.FC<MyCollectionProps> = ({ onBack }) => {
 
             <div className="flex gap-3 mb-4">
               <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                <img 
-                  src={normalizeAssetUrl(selectedItem.image)} 
-                  alt={selectedItem.title} 
+                <img
+                  src={normalizeAssetUrl(selectedItem.image)}
+                  alt={selectedItem.title}
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150';
@@ -610,32 +595,30 @@ const MyCollection: React.FC<MyCollectionProps> = ({ onBack }) => {
             )}
 
             {(() => {
-              if (isConsigning(selectedItem) || 
-                  hasConsignedSuccessfully(selectedItem) || 
-                  isDelivered(selectedItem) || 
-                  hasConsignedBefore(selectedItem)) {
+              if (isConsigning(selectedItem) ||
+                hasConsignedSuccessfully(selectedItem) ||
+                isDelivered(selectedItem) ||
+                hasConsignedBefore(selectedItem)) {
                 return null;
               }
-              
+
               return (
                 <div className="flex bg-gray-100 p-1 rounded-lg mb-4">
                   <button
                     onClick={() => setActionTab('delivery')}
-                    className={`flex-1 py-2 text-xs rounded-md transition-colors ${
-                      actionTab === 'delivery'
-                        ? 'bg-white text-blue-600 font-medium shadow-sm'
-                        : 'text-gray-600'
-                    }`}
+                    className={`flex-1 py-2 text-xs rounded-md transition-colors ${actionTab === 'delivery'
+                      ? 'bg-white text-blue-600 font-medium shadow-sm'
+                      : 'text-gray-600'
+                      }`}
                   >
                     提货
                   </button>
                   <button
                     onClick={() => setActionTab('consignment')}
-                    className={`flex-1 py-2 text-xs rounded-md transition-colors ${
-                      actionTab === 'consignment'
-                        ? 'bg-white text-orange-600 font-medium shadow-sm'
-                        : 'text-gray-600'
-                    }`}
+                    className={`flex-1 py-2 text-xs rounded-md transition-colors ${actionTab === 'consignment'
+                      ? 'bg-white text-orange-600 font-medium shadow-sm'
+                      : 'text-gray-600'
+                      }`}
                   >
                     寄售
                   </button>
@@ -766,19 +749,18 @@ const MyCollection: React.FC<MyCollectionProps> = ({ onBack }) => {
             <button
               onClick={handleConfirmAction}
               disabled={actionLoading || !canPerformAction()}
-              className={`w-full py-3 rounded-lg text-sm font-medium transition-colors ${
-                !actionLoading && canPerformAction()
-                  ? actionTab === 'delivery'
-                    ? 'bg-blue-600 text-white active:bg-blue-700'
-                    : 'bg-orange-600 text-white active:bg-orange-700'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
+              className={`w-full py-3 rounded-lg text-sm font-medium transition-colors ${!actionLoading && canPerformAction()
+                ? actionTab === 'delivery'
+                  ? 'bg-blue-600 text-white active:bg-blue-700'
+                  : 'bg-orange-600 text-white active:bg-orange-700'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
             >
               {actionLoading
                 ? '提交中...'
                 : actionTab === 'delivery'
-                ? '确认提货'
-                : '确认寄售'}
+                  ? '确认提货'
+                  : '确认寄售'}
             </button>
           </div>
         </div>

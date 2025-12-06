@@ -1,7 +1,9 @@
 
 import React, { useEffect, useState } from 'react';
-import { Plus, MapPin, Pencil, Trash2, Loader2 } from 'lucide-react';
+import { Plus, MapPin, Pencil, Trash2 } from 'lucide-react';
 import SubPageLayout from '../components/SubPageLayout';
+import { LoadingSpinner, EmptyState } from '../components/common';
+import { isValidPhone } from '../utils/validation';
 import {
   AUTH_TOKEN_KEY,
   AddressItem,
@@ -304,7 +306,6 @@ const AddressList: React.FC<AddressListProps> = ({ onBack }) => {
               disabled={formLoading}
               className="w-full bg-orange-600 text-white text-sm font-semibold py-2.5 rounded-md active:opacity-80 disabled:opacity-60 flex items-center justify-center gap-2"
             >
-              {formLoading && <Loader2 size={16} className="animate-spin" />}
               {formLoading ? '提交中...' : '保存地址'}
             </button>
           </form>
@@ -369,8 +370,8 @@ const AddressList: React.FC<AddressListProps> = ({ onBack }) => {
                   <div className="flex items-center gap-2">
                     <div
                       className={`w-4 h-4 rounded-full border ${isDefault(addr)
-                          ? 'border-red-500 bg-red-500'
-                          : 'border-gray-300'
+                        ? 'border-red-500 bg-red-500'
+                        : 'border-gray-300'
                         }`}
                     ></div>
                     <span className="text-xs text-gray-500">默认地址</span>

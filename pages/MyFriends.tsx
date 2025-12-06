@@ -1,20 +1,39 @@
+/**
+ * MyFriends - 我的好友页面
+ * 
+ * 使用 PageContainer、LoadingSpinner、EmptyState 组件重构
+ * 使用 formatTime 工具函数
+ * 
+ * @author 树交所前端团队
+ * @version 2.0.0
+ */
+
 import React, { useState, useEffect } from 'react';
 import { UserPlus, ChevronRight } from 'lucide-react';
-import SubPageLayout from '../components/SubPageLayout';
+import PageContainer from '../components/layout/PageContainer';
+import { LoadingSpinner, EmptyState, ListItem } from '../components/common';
 import { fetchTeamMembers, normalizeAssetUrl } from '../services/api';
 import { TeamMember } from '../types';
+import { formatTime } from '../utils/format';
 
+/**
+ * MyFriends 组件属性接口
+ */
 interface MyFriendsProps {
   onBack: () => void;
   onNavigate?: (page: string) => void;
 }
 
+/**
+ * MyFriends 我的好友页面组件
+ */
 const MyFriends: React.FC<MyFriendsProps> = ({ onBack, onNavigate }) => {
   const [friends, setFriends] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
 
+  // 加载好友列表
   useEffect(() => {
     const loadTeamMembers = async () => {
       try {
@@ -38,71 +57,83 @@ const MyFriends: React.FC<MyFriendsProps> = ({ onBack, onNavigate }) => {
     loadTeamMembers();
   }, []);
 
-  // 格式化日期
+  /**
+   * 格式化日期
+   */
   const formatDate = (timestamp?: number, dateStr?: string) => {
     if (dateStr) return dateStr;
     if (timestamp) {
-      const date = new Date(timestamp * 1000); // 假设是秒级时间戳
-      return date.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' });
+      return formatTime(timestamp, 'YYYY-MM-DD');
     }
     return '';
   };
 
   return (
-    <SubPageLayout title="我的好友" onBack={onBack}>
-      <div className="p-4">
-        <div
-          onClick={() => onNavigate?.('invite-friends')}
-          className="bg-white rounded-xl p-4 flex items-center justify-between shadow-sm border border-gray-100 mb-4 active:bg-gray-50 transition-colors cursor-pointer"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center">
-              <UserPlus size={20} />
-            </div>
-            <div>
-              <div className="text-sm font-bold text-gray-800">邀请好友</div>
-              <div className="text-xs text-gray-500">邀请好友加入，共享艺术价值</div>
-            </div>
+    <PageContainer title="我的好友" onBack={onBack}>
+      {/* 邀请好友入口 */}
+      <ListItem
+        icon={
+          <div className="w-10 h-10 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center">
+            <UserPlus size={20} />
           </div>
-          <ChevronRight size={16} className="text-gray-400" />
-        </div>
+        }
+        title="邀请好友"
+        subtitle="邀请好友加入，共享艺术价值"
+        onClick={() => onNavigate?.('invite-friends')}
+      />
 
-        <h3 className="text-sm font-bold text-gray-800 mb-3 pl-1">好友列表 ({total})</h3>
+      {/* 好友列表标题 */}
+      <h3 className="text-sm font-bold text-gray-800 mb-3 pl-1 mt-4">好友列表 ({total})</h3>
 
-        {loading ? (
-          <div className="text-center py-8 text-gray-500">加载中...</div>
-        ) : error ? (
-          <div className="text-center py-8 text-red-500">{error}</div>
-        ) : friends.length === 0 ? (
-          <div className="text-center py-8 text-gray-400">暂无好友</div>
-        ) : (
-          <div className="space-y-3">
-            {friends.map(friend => (
-              <div key={friend.id} className="bg-white p-3 rounded-xl shadow-sm flex items-center gap-3">
-                <img
-                  src={normalizeAssetUrl(friend.avatar) || 'http://18.166.211.131/static/images/avatar.png'}
-                  alt={friend.nickname || friend.username}
-                  className="w-10 h-10 rounded-full object-cover"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.src = 'http://18.166.211.131/static/images/avatar.png';
-                  }}
-                />
-                <div className="flex-1">
-                  <div className="text-sm font-medium text-gray-800">{friend.nickname || friend.username}</div>
-                  <div className="text-xs text-gray-400">
-                    加入时间: {formatDate(friend.join_time, friend.join_date)}
-                  </div>
+      {/* 加载状态 */}
+      {loading && <LoadingSpinner text="加载中..." />}
+
+      {/* 错误状态 */}
+      {!loading && error && (
+        <div className="text-center py-8 text-red-500">{error}</div>
+      )}
+
+      {/* 空状态 */}
+      {!loading && !error && friends.length === 0 && (
+        <EmptyState title="暂无好友" description="快去邀请好友吧" />
+      )}
+
+      {/* 好友列表 */}
+      {!loading && !error && friends.length > 0 && (
+        <div className="space-y-3">
+          {friends.map((friend) => (
+            <div
+              key={friend.id}
+              className="bg-white p-3 rounded-xl shadow-sm flex items-center gap-3"
+            >
+              <img
+                src={
+                  normalizeAssetUrl(friend.avatar) ||
+                  'http://18.166.211.131/static/images/avatar.png'
+                }
+                alt={friend.nickname || friend.username}
+                className="w-10 h-10 rounded-full object-cover"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = 'http://18.166.211.131/static/images/avatar.png';
+                }}
+              />
+              <div className="flex-1">
+                <div className="text-sm font-medium text-gray-800">
+                  {friend.nickname || friend.username}
                 </div>
-                <button className="text-xs bg-gray-100 text-gray-600 px-3 py-1.5 rounded-full">
-                  查看
-                </button>
+                <div className="text-xs text-gray-400">
+                  加入时间: {formatDate(friend.join_time, friend.join_date)}
+                </div>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </SubPageLayout>
+              <button className="text-xs bg-gray-100 text-gray-600 px-3 py-1.5 rounded-full">
+                查看
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </PageContainer>
   );
 };
 

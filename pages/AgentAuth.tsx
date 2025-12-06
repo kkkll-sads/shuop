@@ -1,6 +1,16 @@
+/**
+ * AgentAuth - 代理商申请页面
+ * 
+ * 使用 PageContainer、LoadingSpinner 组件重构
+ * 
+ * @author 树交所前端团队
+ * @version 2.0.0
+ */
+
 import React, { useEffect, useState } from 'react';
-import { Building2, User, IdCard, Image as ImageIcon, Loader2 } from 'lucide-react';
-import SubPageLayout from '../components/SubPageLayout';
+import { Building2, User, IdCard, Image as ImageIcon } from 'lucide-react';
+import PageContainer from '../components/layout/PageContainer';
+import { LoadingSpinner } from '../components/common';
 import {
   AUTH_TOKEN_KEY,
   AgentReviewStatusData,
@@ -10,10 +20,16 @@ import {
   normalizeAssetUrl,
 } from '../services/api';
 
+/**
+ * AgentAuth 组件属性接口
+ */
 interface AgentAuthProps {
   onBack: () => void;
 }
 
+/**
+ * AgentAuth 代理商申请页面组件
+ */
 const AgentAuth: React.FC<AgentAuthProps> = ({ onBack }) => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -30,8 +46,7 @@ const AgentAuth: React.FC<AgentAuthProps> = ({ onBack }) => {
 
   const [error, setError] = useState<string | null>(null);
 
-  const isApplied = typeof status?.status === 'number' && status.status !== -1;
-
+  // 加载代理商状态
   useEffect(() => {
     const init = async () => {
       const token = localStorage.getItem(AUTH_TOKEN_KEY) || '';
@@ -60,7 +75,6 @@ const AgentAuth: React.FC<AgentAuthProps> = ({ onBack }) => {
         }
       } catch (e: any) {
         console.error('获取代理商状态异常:', e);
-        // 优先使用接口返回的错误消息
         setError(e?.msg || e?.response?.msg || e?.message || '获取代理商状态失败，请稍后重试');
       } finally {
         setLoading(false);
@@ -70,6 +84,9 @@ const AgentAuth: React.FC<AgentAuthProps> = ({ onBack }) => {
     init();
   }, []);
 
+  /**
+   * 处理营业执照上传
+   */
   const handleLicenseChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = '';
@@ -79,16 +96,8 @@ const AgentAuth: React.FC<AgentAuthProps> = ({ onBack }) => {
       setUploadingLicense(true);
       const res = await uploadImage(file);
       const data = res.data || {};
-      const path =
-        data.url ||
-        data.path ||
-        data.filepath ||
-        '';
-      const fullUrl =
-        data.fullurl ||
-        data.fullUrl ||
-        data.url ||
-        path;
+      const path = data.url || data.path || data.filepath || '';
+      const fullUrl = data.fullurl || data.fullUrl || data.url || path;
 
       if (!path && !fullUrl) {
         throw new Error('上传失败，返回数据为空');
@@ -99,7 +108,6 @@ const AgentAuth: React.FC<AgentAuthProps> = ({ onBack }) => {
       setLicensePreview(previewUrl);
     } catch (err: any) {
       console.error('营业执照上传失败:', err);
-      // 优先使用接口返回的错误消息
       const errorMsg = err?.msg || err?.response?.msg || err?.message || '营业执照上传失败，请稍后重试';
       alert(errorMsg);
     } finally {
@@ -107,6 +115,9 @@ const AgentAuth: React.FC<AgentAuthProps> = ({ onBack }) => {
     }
   };
 
+  /**
+   * 处理提交
+   */
   const handleSubmit = async () => {
     if (submitting) return;
 
@@ -127,6 +138,7 @@ const AgentAuth: React.FC<AgentAuthProps> = ({ onBack }) => {
         alert(res.msg);
       }
 
+      // 刷新状态
       try {
         const res = await fetchAgentReviewStatus(token);
         if (res.code === 1 || typeof res.code === 'undefined') {
@@ -137,7 +149,6 @@ const AgentAuth: React.FC<AgentAuthProps> = ({ onBack }) => {
       }
     } catch (e: any) {
       console.error('提交代理商申请失败:', e);
-      // 优先使用接口返回的错误消息
       const errorMsg = e?.msg || e?.response?.msg || e?.message || '提交代理商申请失败，请稍后重试';
       alert(errorMsg);
     } finally {
@@ -146,138 +157,143 @@ const AgentAuth: React.FC<AgentAuthProps> = ({ onBack }) => {
   };
 
   return (
-    <SubPageLayout title="代理商申请" onBack={onBack}>
-      <div className="p-4 space-y-4">
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-16 text-gray-400 text-sm">
-            <Loader2 className="animate-spin mb-3" size={20} />
-            正在加载代理商状态...
-          </div>
-        ) : error ? (
-          <div className="bg-red-50 border border-red-100 text-red-500 text-xs rounded-lg px-3 py-2">
-            {error}
-          </div>
-        ) : null}
+    <PageContainer title="代理商申请" onBack={onBack}>
+      {/* 加载状态 */}
+      {loading && <LoadingSpinner text="正在加载代理商状态..." />}
 
-        {status && !loading && !error ? (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="px-4 py-3 border-b border-gray-50 text-sm">
-              <span className="text-gray-500 mr-2">当前状态:</span>
-              <span className="font-medium text-gray-900">{status.status_text}</span>
+      {/* 错误提示 */}
+      {!loading && error && (
+        <div className="bg-red-50 border border-red-100 text-red-500 text-xs rounded-lg px-3 py-2 mb-4">
+          {error}
+        </div>
+      )}
+
+      {/* 当前状态 */}
+      {status && !loading && !error && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-4">
+          <div className="px-4 py-3 border-b border-gray-50 text-sm">
+            <span className="text-gray-500 mr-2">当前状态:</span>
+            <span className="font-medium text-gray-900">{status.status_text}</span>
+          </div>
+          {status.audit_remark && (
+            <div className="px-4 py-3 text-xs text-red-500 bg-red-50 border-t border-red-100">
+              审核备注：{status.audit_remark}
             </div>
-            {status.audit_remark ? (
-              <div className="px-4 py-3 text-xs text-red-500 bg-red-50 border-t border-red-100">
-                审核备注：{status.audit_remark}
-              </div>
-            ) : null}
-          </div>
-        ) : null}
-
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-50 flex items-center">
-            <span className="w-24 text-xs text-gray-500 flex items-center gap-1">
-              <Building2 size={14} />
-              企业名称
-            </span>
-            <input
-              type="text"
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
-              placeholder="请输入企业名称"
-              className="flex-1 text-sm text-gray-900 outline-none bg-transparent placeholder:text-gray-300"
-            />
-          </div>
-          <div className="px-4 py-3 border-b border-gray-50 flex items-center">
-            <span className="w-24 text-xs text-gray-500 flex items-center gap-1">
-              <User size={14} />
-              企业法人
-            </span>
-            <input
-              type="text"
-              value={legalPerson}
-              onChange={(e) => setLegalPerson(e.target.value)}
-              placeholder="请输入企业法人"
-              className="flex-1 text-sm text-gray-900 outline-none bg-transparent placeholder:text-gray-300"
-            />
-          </div>
-          <div className="px-4 py-3 flex items-center">
-            <span className="w-24 text-xs text-gray-500 flex items-center gap-1">
-              <IdCard size={14} />
-              法人证件号
-            </span>
-            <input
-              type="text"
-              value={legalId}
-              onChange={(e) => setLegalId(e.target.value)}
-              placeholder="请输入法人证件号"
-              className="flex-1 text-sm text-gray-900 outline-none bg-transparent placeholder:text-gray-300"
-            />
-          </div>
+          )}
         </div>
+      )}
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="px-4 pt-3 pb-2 text-xs text-gray-500">个体户/企业法人</div>
-          <div className="px-4 pb-3 flex items-center gap-4 text-sm">
-            <label className="flex items-center gap-1.5">
-              <input
-                type="radio"
-                className="w-4 h-4 text-orange-500"
-                checked={entityType === 'individual'}
-                onChange={() => setEntityType('individual')}
-              />
-              <span>个体户</span>
-            </label>
-            <label className="flex items-center gap-1.5">
-              <input
-                type="radio"
-                className="w-4 h-4 text-orange-500"
-                checked={entityType === 'company'}
-                onChange={() => setEntityType('company')}
-              />
-              <span>企业法人</span>
-            </label>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="px-4 pt-3 pb-2 text-xs text-gray-500">请上传营业执照</div>
-          <div className="px-4 pb-4">
-            <label className="border border-dashed border-gray-200 rounded-lg flex flex-col items-center justify-center py-6 text-xs text-gray-400 active:bg-gray-50 cursor-pointer">
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleLicenseChange}
-              />
-              {licensePreview ? (
-                <img
-                  src={licensePreview}
-                  alt="营业执照预览图"
-                  className="w-full h-32 object-cover rounded-md mb-2"
-                />
-              ) : (
-                <ImageIcon size={28} className="mb-2 text-gray-300" />
-              )}
-              <span className="text-gray-700 text-xs mb-0.5">预览图</span>
-              <span className="text-[10px] text-gray-400">
-                {uploadingLicense ? '上传中...' : '点击上传营业执照'}
+      {/* 表单区域 */}
+      {!loading && (
+        <>
+          {/* 企业信息 */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-4">
+            <div className="px-4 py-3 border-b border-gray-50 flex items-center">
+              <span className="w-24 text-xs text-gray-500 flex items-center gap-1">
+                <Building2 size={14} />
+                企业名称
               </span>
-            </label>
+              <input
+                type="text"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                placeholder="请输入企业名称"
+                className="flex-1 text-sm text-gray-900 outline-none bg-transparent placeholder:text-gray-300"
+              />
+            </div>
+            <div className="px-4 py-3 border-b border-gray-50 flex items-center">
+              <span className="w-24 text-xs text-gray-500 flex items-center gap-1">
+                <User size={14} />
+                企业法人
+              </span>
+              <input
+                type="text"
+                value={legalPerson}
+                onChange={(e) => setLegalPerson(e.target.value)}
+                placeholder="请输入企业法人"
+                className="flex-1 text-sm text-gray-900 outline-none bg-transparent placeholder:text-gray-300"
+              />
+            </div>
+            <div className="px-4 py-3 flex items-center">
+              <span className="w-24 text-xs text-gray-500 flex items-center gap-1">
+                <IdCard size={14} />
+                法人证件号
+              </span>
+              <input
+                type="text"
+                value={legalId}
+                onChange={(e) => setLegalId(e.target.value)}
+                placeholder="请输入法人证件号"
+                className="flex-1 text-sm text-gray-900 outline-none bg-transparent placeholder:text-gray-300"
+              />
+            </div>
           </div>
-        </div>
 
-        <button
-          className="w-full bg-orange-500 text-white text-sm font-semibold py-3 rounded-md active:opacity-80 shadow-sm"
-          onClick={handleSubmit}
-          disabled={submitting || uploadingLicense || loading}
-        >
-          {submitting ? '提交中...' : '提交申请'}
-        </button>
-      </div>
-    </SubPageLayout>
+          {/* 主体类型 */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-4">
+            <div className="px-4 pt-3 pb-2 text-xs text-gray-500">个体户/企业法人</div>
+            <div className="px-4 pb-3 flex items-center gap-4 text-sm">
+              <label className="flex items-center gap-1.5">
+                <input
+                  type="radio"
+                  className="w-4 h-4 text-orange-500"
+                  checked={entityType === 'individual'}
+                  onChange={() => setEntityType('individual')}
+                />
+                <span>个体户</span>
+              </label>
+              <label className="flex items-center gap-1.5">
+                <input
+                  type="radio"
+                  className="w-4 h-4 text-orange-500"
+                  checked={entityType === 'company'}
+                  onChange={() => setEntityType('company')}
+                />
+                <span>企业法人</span>
+              </label>
+            </div>
+          </div>
+
+          {/* 营业执照上传 */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-4">
+            <div className="px-4 pt-3 pb-2 text-xs text-gray-500">请上传营业执照</div>
+            <div className="px-4 pb-4">
+              <label className="border border-dashed border-gray-200 rounded-lg flex flex-col items-center justify-center py-6 text-xs text-gray-400 active:bg-gray-50 cursor-pointer">
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleLicenseChange}
+                />
+                {licensePreview ? (
+                  <img
+                    src={licensePreview}
+                    alt="营业执照预览图"
+                    className="w-full h-32 object-cover rounded-md mb-2"
+                  />
+                ) : (
+                  <ImageIcon size={28} className="mb-2 text-gray-300" />
+                )}
+                <span className="text-gray-700 text-xs mb-0.5">预览图</span>
+                <span className="text-[10px] text-gray-400">
+                  {uploadingLicense ? '上传中...' : '点击上传营业执照'}
+                </span>
+              </label>
+            </div>
+          </div>
+
+          {/* 提交按钮 */}
+          <button
+            className="w-full bg-orange-500 text-white text-sm font-semibold py-3 rounded-md active:opacity-80 shadow-sm disabled:opacity-50"
+            onClick={handleSubmit}
+            disabled={submitting || uploadingLicense || loading}
+          >
+            {submitting ? '提交中...' : '提交申请'}
+          </button>
+        </>
+      )}
+    </PageContainer>
   );
 };
 
 export default AgentAuth;
-
-

@@ -1,8 +1,21 @@
+/**
+ * Login - 登录页面
+ * 
+ * 使用 isValidPhone 验证函数重构
+ * 
+ * @author 树交所前端团队
+ * @version 2.0.0
+ */
+
 import React, { useState } from 'react';
 import { Eye, EyeOff, User, Lock, Check } from 'lucide-react';
 import { login as loginApi, LoginParams } from '../services/api';
 import { LoginSuccessPayload } from '../types';
+import { isValidPhone } from '../utils/validation';
 
+/**
+ * Login 组件属性接口
+ */
 interface LoginProps {
   onLogin: (payload?: LoginSuccessPayload) => void;
   onNavigateRegister: () => void;
@@ -11,6 +24,9 @@ interface LoginProps {
   onNavigateForgotPassword: () => void;
 }
 
+/**
+ * Login 登录页面组件
+ */
 const Login: React.FC<LoginProps> = ({
   onLogin,
   onNavigateRegister,
@@ -24,6 +40,9 @@ const Login: React.FC<LoginProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  /**
+   * 处理登录
+   */
   const handleLogin = async () => {
     if (!phone || !password) {
       alert('请输入手机号和密码');
@@ -34,9 +53,10 @@ const Login: React.FC<LoginProps> = ({
       return;
     }
 
-    const phoneRegex = /^1[3-9]\d{9}$/;
-    if (!phoneRegex.test(phone)) {
-      alert('请输入正确的手机号');
+    // 使用验证工具函数
+    const phoneValidation = isValidPhone(phone);
+    if (!phoneValidation.valid) {
+      alert(phoneValidation.message);
       return;
     }
 
@@ -80,15 +100,15 @@ const Login: React.FC<LoginProps> = ({
 
   return (
     <div className="min-h-screen flex flex-col px-8 pt-20 pb-safe bg-gradient-to-br from-[#FFD6A5] via-[#FFC3A0] to-[#FFDEE9]">
-      {/* Title */}
+      {/* 标题 */}
       <div className="mb-16">
         <h1 className="text-4xl font-bold text-gray-800 mb-2">Hello!</h1>
         <h2 className="text-2xl font-bold text-gray-700">欢迎登录树交所</h2>
       </div>
 
-      {/* Form */}
+      {/* 表单 */}
       <div className="space-y-6 mb-4">
-        {/* Phone Input */}
+        {/* 手机号输入 */}
         <div className="bg-white rounded-lg flex items-center px-4 py-3 shadow-sm">
           <User className="text-gray-500 mr-3" size={20} />
           <input
@@ -107,7 +127,7 @@ const Login: React.FC<LoginProps> = ({
           )}
         </div>
 
-        {/* Password Input */}
+        {/* 密码输入 */}
         <div className="bg-white rounded-lg flex items-center px-4 py-3 shadow-sm">
           <Lock className="text-gray-500 mr-3" size={20} />
           <input
@@ -123,7 +143,7 @@ const Login: React.FC<LoginProps> = ({
         </div>
       </div>
 
-      {/* Options */}
+      {/* 选项 */}
       <div className="flex justify-between items-center mb-10 text-sm">
         <label className="flex items-center text-gray-700 gap-2 cursor-pointer select-none">
           <div className="relative">
@@ -133,16 +153,12 @@ const Login: React.FC<LoginProps> = ({
           </div>
           <span>记住密码</span>
         </label>
-        <button
-          type="button"
-          className="text-gray-600"
-          onClick={onNavigateForgotPassword}
-        >
+        <button type="button" className="text-gray-600" onClick={onNavigateForgotPassword}>
           忘记密码
         </button>
       </div>
 
-      {/* Login Button */}
+      {/* 登录按钮 */}
       <button
         onClick={handleLogin}
         disabled={loading}
@@ -151,7 +167,7 @@ const Login: React.FC<LoginProps> = ({
         {loading ? '登录中...' : '登 录'}
       </button>
 
-      {/* Agreement */}
+      {/* 协议 */}
       <div className="flex items-center justify-center gap-2 text-xs text-gray-600 mb-12">
         <div
           className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center cursor-pointer transition-colors ${agreed ? 'bg-orange-500 border-orange-500' : 'border-gray-400 bg-transparent'}`}
@@ -161,25 +177,17 @@ const Login: React.FC<LoginProps> = ({
         </div>
         <div className="leading-none flex items-center flex-wrap">
           <span>登录即代表你已同意</span>
-          <button
-            type="button"
-            className="text-orange-500 mx-0.5"
-            onClick={onNavigateUserAgreement}
-          >
+          <button type="button" className="text-orange-500 mx-0.5" onClick={onNavigateUserAgreement}>
             用户协议
           </button>
           <span>和</span>
-          <button
-            type="button"
-            className="text-orange-500 mx-0.5"
-            onClick={onNavigatePrivacyPolicy}
-          >
+          <button type="button" className="text-orange-500 mx-0.5" onClick={onNavigatePrivacyPolicy}>
             隐私政策
           </button>
         </div>
       </div>
 
-      {/* Bottom Spacer/Register Link (Optional or hidden based on design, but keeping functionality) */}
+      {/* 注册链接 */}
       <div className="mt-auto text-center pb-8">
         <button onClick={onNavigateRegister} className="text-gray-600 text-sm">
           没有账户？点击注册

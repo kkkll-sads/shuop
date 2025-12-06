@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { MessageSquare, Loader2, FileText, Bell, CheckCircle, AlertCircle, Info, Package, Truck, Wallet, Receipt } from 'lucide-react';
+import { MessageSquare, FileText, Bell, CheckCircle, AlertCircle, Info, Package, Truck, Wallet, Receipt } from 'lucide-react';
 import SubPageLayout from '../components/SubPageLayout';
-import { 
-  AUTH_TOKEN_KEY, 
-  fetchAnnouncements, 
+import { LoadingSpinner, EmptyState } from '../components/common';
+import { formatDateShort } from '../utils/format';
+import {
+  AUTH_TOKEN_KEY,
+  fetchAnnouncements,
   AnnouncementItem,
   getMyOrderList,
   getMyWithdrawList,
@@ -133,7 +135,7 @@ const MessageCenter: React.FC<MessageCenterProps> = ({ onBack }) => {
             rechargeRes.data.data.forEach((item: RechargeOrderItem) => {
               const id = `recharge-${item.id}`;
               const timestamp = item.create_time ? item.create_time * 1000 : Date.now();
-              
+
               // 只显示需要用户关注的状态（待审核、已通过、已拒绝）
               if (item.status === 0 || item.status === 1 || item.status === 2) {
                 let content = '';
@@ -172,7 +174,7 @@ const MessageCenter: React.FC<MessageCenterProps> = ({ onBack }) => {
             withdrawRes.data.data.forEach((item: WithdrawOrderItem) => {
               const id = `withdraw-${item.id}`;
               const timestamp = item.create_time ? item.create_time * 1000 : Date.now();
-              
+
               // 只显示需要用户关注的状态
               if (item.status === 0 || item.status === 1 || item.status === 2) {
                 let content = '';
@@ -334,7 +336,7 @@ const MessageCenter: React.FC<MessageCenterProps> = ({ onBack }) => {
 
   const unreadCount = messages.filter(m => !m.isRead).length;
 
-  const filteredMessages = activeTab === 'unread' 
+  const filteredMessages = activeTab === 'unread'
     ? messages.filter(m => !m.isRead)
     : messages;
 
@@ -361,8 +363,8 @@ const MessageCenter: React.FC<MessageCenterProps> = ({ onBack }) => {
   };
 
   return (
-    <SubPageLayout 
-      title="消息中心" 
+    <SubPageLayout
+      title="消息中心"
       onBack={onBack}
       rightAction={
         unreadCount > 0 ? (
@@ -395,21 +397,19 @@ const MessageCenter: React.FC<MessageCenterProps> = ({ onBack }) => {
         <div className="flex bg-white rounded-xl p-1 mb-4 shadow-sm">
           <button
             onClick={() => setActiveTab('all')}
-            className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${
-              activeTab === 'all'
-                ? 'bg-blue-100 text-blue-600'
-                : 'text-gray-500'
-            }`}
+            className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'all'
+              ? 'bg-blue-100 text-blue-600'
+              : 'text-gray-500'
+              }`}
           >
             全部消息
           </button>
           <button
             onClick={() => setActiveTab('unread')}
-            className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors relative ${
-              activeTab === 'unread'
-                ? 'bg-blue-100 text-blue-600'
-                : 'text-gray-500'
-            }`}
+            className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors relative ${activeTab === 'unread'
+              ? 'bg-blue-100 text-blue-600'
+              : 'text-gray-500'
+              }`}
           >
             未读消息
             {unreadCount > 0 && (
@@ -420,32 +420,26 @@ const MessageCenter: React.FC<MessageCenterProps> = ({ onBack }) => {
 
         {/* 消息列表 */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-            <Loader2 size={32} className="animate-spin mb-4" />
-            <span className="text-xs">加载中...</span>
-          </div>
+          <LoadingSpinner text="加载消息中..." />
         ) : error ? (
-          <div className="flex flex-col items-center justify-center py-12 text-red-400">
-            <div className="w-16 h-16 mb-4 border-2 border-red-200 rounded-lg flex items-center justify-center">
-              <FileText size={32} className="opacity-50" />
-            </div>
-            <span className="text-xs">{error}</span>
-          </div>
+          <EmptyState
+            icon={<FileText size={48} className="text-gray-300" />}
+            title="加载失败"
+            description={error}
+          />
         ) : filteredMessages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-            <MessageSquare size={48} className="opacity-30 mb-4" />
-            <span className="text-xs">
-              {activeTab === 'unread' ? '暂无未读消息' : '暂无消息'}
-            </span>
-          </div>
+          <EmptyState
+            icon={<MessageSquare size={48} className="text-gray-300" />}
+            title={activeTab === 'unread' ? '暂无未读消息' : '暂无消息'}
+            description={activeTab === 'unread' ? '您已阅读所有消息' : '暂时没有新的消息'}
+          />
         ) : (
           <div className="space-y-3">
             {filteredMessages.map((message) => (
               <div
                 key={message.id}
-                className={`bg-white rounded-xl p-4 shadow-sm cursor-pointer active:bg-gray-50 transition-colors ${
-                  !message.isRead ? 'border-l-4 border-blue-500' : ''
-                }`}
+                className={`bg-white rounded-xl p-4 shadow-sm cursor-pointer active:bg-gray-50 transition-colors ${!message.isRead ? 'border-l-4 border-blue-500' : ''
+                  }`}
                 onClick={() => handleMarkAsRead(message.id)}
               >
                 <div className="flex items-start gap-3">

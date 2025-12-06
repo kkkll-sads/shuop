@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronRight, Building2, Newspaper, Palette, Trophy } from 'lucide-react';
+import { LazyImage } from '../components/common';
 import { Tab, NewsItem, Banner, Artist } from '../types';
 import {
   fetchBanners,
@@ -308,8 +309,8 @@ const Home: React.FC<HomeProps> = ({ onNavigate, onSwitchTab, announcements = []
         </div>
         <div className="grid grid-cols-2 gap-4">
           {artists.map((artist) => (
-            <div 
-              key={artist.id} 
+            <div
+              key={artist.id}
               className="flex flex-col items-center active:scale-95 transition-transform cursor-pointer"
               onClick={() => onNavigate(`artist-detail:${artist.id}`)}
             >

@@ -1,5 +1,15 @@
+/**
+ * ArtistDetail - 艺术家详情页面
+ * 
+ * 使用 PageContainer、LoadingSpinner、EmptyState、LazyImage 组件重构
+ * 
+ * @author 树交所前端团队
+ * @version 2.0.0
+ */
+
 import React, { useEffect, useState } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import PageContainer from '../components/layout/PageContainer';
+import { LoadingSpinner, EmptyState, LazyImage } from '../components/common';
 import { Artist, Product } from '../types';
 import {
   normalizeAssetUrl,
@@ -10,27 +20,35 @@ import {
   ArtistListData,
 } from '../services/api';
 
+/**
+ * ArtistDetail 组件属性接口
+ */
 interface ArtistDetailProps {
   artistId: string;
   onBack: () => void;
   onProductSelect?: (product: Product) => void;
 }
 
+/**
+ * ArtistDetail 艺术家详情页面组件
+ */
 const ArtistDetail: React.FC<ArtistDetailProps> = ({ artistId, onBack, onProductSelect }) => {
   const [artist, setArtist] = useState<Artist | null>(null);
   const [works, setWorks] = useState<ArtistWorkItem[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // 加载艺术家详情
   useEffect(() => {
     let isMounted = true;
+
     const load = async () => {
       try {
         setLoading(true);
         setError(null);
         let targetId: string | number | undefined = artistId;
 
-        // 兜底：如果没有传入 artistId，则从列表接口中取第一个艺术家
+        // 兜底：如果没有传入 artistId，从列表接口取第一个
         if (!targetId) {
           try {
             const listRes = await fetchArtists({ page: 1, limit: 1 });
@@ -51,10 +69,12 @@ const ArtistDetail: React.FC<ArtistDetailProps> = ({ artistId, onBack, onProduct
 
         const res = await fetchArtistDetail(targetId);
         if (!isMounted) return;
+
         if (res.code !== 1 || !res.data) {
           setError(res.msg || '艺术家数据加载失败');
           return;
         }
+
         const data: ArtistDetailData = res.data;
         setArtist({
           id: String(data.id),
@@ -63,10 +83,12 @@ const ArtistDetail: React.FC<ArtistDetailProps> = ({ artistId, onBack, onProduct
           title: data.title,
           bio: data.bio,
         });
-        setWorks((data.works || []).map((w) => ({
-          ...w,
-          image: normalizeAssetUrl(w.image),
-        })));
+        setWorks(
+          (data.works || []).map((w) => ({
+            ...w,
+            image: normalizeAssetUrl(w.image),
+          }))
+        );
       } catch (e: any) {
         console.error('加载艺术家详情失败:', e);
         setError(e?.message || '加载艺术家详情失败');
@@ -74,6 +96,7 @@ const ArtistDetail: React.FC<ArtistDetailProps> = ({ artistId, onBack, onProduct
         if (isMounted) setLoading(false);
       }
     };
+
     load();
     return () => {
       isMounted = false;
@@ -81,104 +104,104 @@ const ArtistDetail: React.FC<ArtistDetailProps> = ({ artistId, onBack, onProduct
   }, [artistId]);
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-safe">
-      <header className="bg-white px-4 py-3 flex items-center sticky top-0 z-30 shadow-sm">
-        <button
-          onClick={onBack}
-          className="absolute left-4 p-1 text-gray-600 active:bg-gray-100 rounded-full"
-        >
-          <ArrowLeft size={20} />
-        </button>
-        <h1 className="text-lg font-bold text-gray-800 w-full text-center">艺术家详情</h1>
-      </header>
+    <PageContainer title="艺术家详情" onBack={onBack}>
+      {/* 加载状态 */}
+      {loading && !artist && <LoadingSpinner text="加载中..." />}
 
-      <div className="p-4">
-        {loading && !artist && (
-          <div className="text-center text-xs text-gray-400 py-8">加载中...</div>
-        )}
-        {error && !artist && (
-          <div className="text-center text-xs text-red-400 py-8">{error}</div>
-        )}
-        {artist && (
+      {/* 错误状态 */}
+      {error && !artist && (
+        <div className="text-center text-xs text-red-400 py-8">{error}</div>
+      )}
+
+      {/* 艺术家信息 */}
+      {artist && (
         <>
-        {/* Profile Section */}
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex flex-col items-center text-center mb-4">
-          <div className="w-24 h-24 rounded-full overflow-hidden mb-4 border-4 border-gray-50 shadow-inner">
-            <img src={artist.image} alt={artist.name} className="w-full h-full object-cover" />
-          </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-1">{artist.name}</h2>
-          {artist.title && (
-            <span className="inline-block bg-orange-50 text-orange-600 text-xs px-3 py-1 rounded-full font-medium mb-4">
-              {artist.title}
-            </span>
-          )}
-
-          <div className="w-full h-px bg-gray-100 mb-4"></div>
-
-          <div className="text-left w-full">
-            <h3 className="font-bold text-sm text-gray-800 mb-2 border-l-4 border-orange-500 pl-2">艺术家简介</h3>
-            <p className="text-sm text-gray-600 leading-relaxed text-justify">
-              {artist.bio || "暂无简介"}
-            </p>
-          </div>
-        </div>
-        </>
-        )}
-        {artist && (
-        <>
-        {/* Works Section */}
-        <div className="mb-4">
-          <div className="flex items-center mb-3 px-1">
-            <h3 className="font-bold text-gray-800 text-base border-l-4 border-orange-500 pl-2">代表作品</h3>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            {works.map((work) => (
-              <div
-                key={work.id}
-                className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-100 active:scale-[0.99] transition-transform cursor-pointer"
-                onClick={() => {
-                  if (onProductSelect && work.price !== undefined) {
-                    onProductSelect({
-                      id: String(work.id),
-                      title: work.title,
-                      artist: artist?.name || '',
-                      image: work.image,
-                      price: work.price,
-                      productType: 'shop',
-                    } as Product);
-                  }
-                }}
-              >
-                <div className="aspect-square bg-gray-100 relative">
-                  <img src={work.image} alt={work.title} className="w-full h-full object-cover" />
-                </div>
-                <div className="p-2">
-                  <div className="text-sm text-gray-800 font-medium truncate">{work.title}</div>
-                  {work.price !== undefined && (
-                    <div className="text-red-500 text-sm font-bold mt-1">
-                      {work.price.toFixed(2)} <span className="text-[10px] font-normal text-gray-400">积分</span>
-                    </div>
-                  )}
-                  {work.description && !work.price && (
-                    <div className="text-[11px] text-gray-500 mt-1 line-clamp-2">
-                      {work.description}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-          {!works.length && (
-            <div className="text-center text-xs text-gray-400 py-6">
-              暂无代表作品数据
+          {/* 个人信息卡片 */}
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex flex-col items-center text-center mb-4">
+            <div className="w-24 h-24 rounded-full overflow-hidden mb-4 border-4 border-gray-50 shadow-inner">
+              <LazyImage
+                src={artist.image}
+                alt={artist.name}
+                className="w-full h-full"
+              />
             </div>
-          )}
-        </div>
+            <h2 className="text-xl font-bold text-gray-900 mb-1">{artist.name}</h2>
+            {artist.title && (
+              <span className="inline-block bg-orange-50 text-orange-600 text-xs px-3 py-1 rounded-full font-medium mb-4">
+                {artist.title}
+              </span>
+            )}
+
+            <div className="w-full h-px bg-gray-100 mb-4" />
+
+            <div className="text-left w-full">
+              <h3 className="font-bold text-sm text-gray-800 mb-2 border-l-4 border-orange-500 pl-2">
+                艺术家简介
+              </h3>
+              <p className="text-sm text-gray-600 leading-relaxed text-justify">
+                {artist.bio || '暂无简介'}
+              </p>
+            </div>
+          </div>
+
+          {/* 代表作品 */}
+          <div className="mb-4">
+            <div className="flex items-center mb-3 px-1">
+              <h3 className="font-bold text-gray-800 text-base border-l-4 border-orange-500 pl-2">
+                代表作品
+              </h3>
+            </div>
+
+            {works.length > 0 ? (
+              <div className="grid grid-cols-2 gap-3">
+                {works.map((work) => (
+                  <div
+                    key={work.id}
+                    className="bg-white rounded-lg overflow-hidden shadow-sm border border-gray-100 active:scale-[0.99] transition-transform cursor-pointer"
+                    onClick={() => {
+                      if (onProductSelect && work.price !== undefined) {
+                        onProductSelect({
+                          id: String(work.id),
+                          title: work.title,
+                          artist: artist?.name || '',
+                          image: work.image,
+                          price: work.price,
+                          productType: 'shop',
+                        } as Product);
+                      }
+                    }}
+                  >
+                    <LazyImage
+                      src={work.image}
+                      alt={work.title}
+                      className="w-full aspect-square"
+                    />
+                    <div className="p-2">
+                      <div className="text-sm text-gray-800 font-medium truncate">
+                        {work.title}
+                      </div>
+                      {work.price !== undefined && (
+                        <div className="text-red-500 text-sm font-bold mt-1">
+                          {work.price.toFixed(2)}{' '}
+                          <span className="text-[10px] font-normal text-gray-400">积分</span>
+                        </div>
+                      )}
+                      {work.description && !work.price && (
+                        <div className="text-[11px] text-gray-500 mt-1 line-clamp-2">
+                          {work.description}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <EmptyState title="暂无代表作品数据" />
+            )}
+          </div>
         </>
-        )}
-      </div>
-    </div>
+      )}
+    </PageContainer>
   );
 };
 

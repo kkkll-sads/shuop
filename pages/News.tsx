@@ -1,17 +1,34 @@
+/**
+ * News - 资讯页面
+ * 
+ * 使用 EmptyState 组件重构
+ * 
+ * @author 树交所前端团队
+ * @version 2.0.0
+ */
+
 import React, { useState, useMemo, useEffect } from 'react';
-import { ArrowRight, Trash2, FileText } from 'lucide-react';
+import { ArrowRight, Trash2 } from 'lucide-react';
+import { EmptyState } from '../components/common';
 import { NewsItem } from '../types';
 
+/**
+ * News 组件属性接口
+ */
 interface NewsProps {
   newsList: NewsItem[];
   onNavigate: (id: string) => void;
   onMarkAllRead: () => void;
 }
 
+/** 本地存储键名 */
 const NEWS_TAB_STORAGE_KEY = 'cat_news_active_tab';
 
+/**
+ * News 资讯页面组件
+ */
 const News: React.FC<NewsProps> = ({ newsList, onNavigate, onMarkAllRead }) => {
-  // 从 localStorage 恢复标签页状态，如果没有则默认为 'announcement'
+  // 从 localStorage 恢复标签页状态
   const [activeTab, setActiveTab] = useState<'announcement' | 'dynamics'>(() => {
     try {
       const saved = localStorage.getItem(NEWS_TAB_STORAGE_KEY);
@@ -21,15 +38,16 @@ const News: React.FC<NewsProps> = ({ newsList, onNavigate, onMarkAllRead }) => {
     }
   });
 
-  // 当标签页改变时，保存到 localStorage
+  // 保存标签页状态到 localStorage
   useEffect(() => {
     try {
       localStorage.setItem(NEWS_TAB_STORAGE_KEY, activeTab);
-    } catch (e) {
+    } catch {
       // 忽略存储错误
     }
   }, [activeTab]);
 
+  // 过滤新闻列表
   const filteredNews = useMemo(() => {
     return newsList.filter(item => {
       if (activeTab === 'announcement') return item.type === 'announcement';
@@ -37,10 +55,12 @@ const News: React.FC<NewsProps> = ({ newsList, onNavigate, onMarkAllRead }) => {
     });
   }, [activeTab, newsList]);
 
+  // 是否有未读消息
   const hasUnread = useMemo(() => newsList.some(item => item.isUnread), [newsList]);
 
   return (
     <div className="pb-24 min-h-screen bg-gray-50">
+      {/* 顶部导航 */}
       <header className="bg-white sticky top-0 z-10">
         <div className="flex items-center justify-center p-3 border-b border-gray-100 relative">
           <h1 className="font-bold text-lg">资讯</h1>
@@ -54,27 +74,35 @@ const News: React.FC<NewsProps> = ({ newsList, onNavigate, onMarkAllRead }) => {
             title={hasUnread ? '一键清除未读' : '暂无未读公告'}
           >
             <Trash2 size={16} />
-
           </button>
         </div>
+
+        {/* 标签页切换 */}
         <div className="flex">
           <button
             onClick={() => setActiveTab('announcement')}
-            className={`flex-1 py-3 text-sm font-medium relative transition-colors ${activeTab === 'announcement' ? 'text-orange-600' : 'text-gray-500'}`}
+            className={`flex-1 py-3 text-sm font-medium relative transition-colors ${activeTab === 'announcement' ? 'text-orange-600' : 'text-gray-500'
+              }`}
           >
             平台公告
-            {activeTab === 'announcement' && <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-6 h-0.5 bg-orange-600 rounded-full"></div>}
+            {activeTab === 'announcement' && (
+              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-6 h-0.5 bg-orange-600 rounded-full" />
+            )}
           </button>
           <button
             onClick={() => setActiveTab('dynamics')}
-            className={`flex-1 py-3 text-sm font-medium relative transition-colors ${activeTab === 'dynamics' ? 'text-orange-600' : 'text-gray-500'}`}
+            className={`flex-1 py-3 text-sm font-medium relative transition-colors ${activeTab === 'dynamics' ? 'text-orange-600' : 'text-gray-500'
+              }`}
           >
             平台动态
-            {activeTab === 'dynamics' && <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-6 h-0.5 bg-orange-600 rounded-full"></div>}
+            {activeTab === 'dynamics' && (
+              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-6 h-0.5 bg-orange-600 rounded-full" />
+            )}
           </button>
         </div>
       </header>
 
+      {/* 新闻列表 */}
       <div className="p-4 space-y-4">
         {filteredNews.length > 0 ? (
           filteredNews.map((item) => (
@@ -82,7 +110,6 @@ const News: React.FC<NewsProps> = ({ newsList, onNavigate, onMarkAllRead }) => {
               key={item.id}
               className="bg-white rounded-xl p-4 shadow-sm relative cursor-pointer active:bg-gray-50 transition-colors"
               onClick={() => {
-                // 根据新闻项类型设置标签页，确保返回时显示正确的标签
                 const targetTab = item.type === 'announcement' ? 'announcement' : 'dynamics';
                 if (activeTab !== targetTab) {
                   setActiveTab(targetTab);
@@ -90,7 +117,10 @@ const News: React.FC<NewsProps> = ({ newsList, onNavigate, onMarkAllRead }) => {
                 onNavigate(item.id);
               }}
             >
-              {item.isUnread && <div className="absolute top-4 right-4 w-2 h-2 bg-red-500 rounded-full ring-4 ring-white"></div>}
+              {/* 未读标记 */}
+              {item.isUnread && (
+                <div className="absolute top-4 right-4 w-2 h-2 bg-red-500 rounded-full ring-4 ring-white" />
+              )}
               <div className="text-xs text-gray-400 mb-3">{item.date}</div>
               <h3 className="text-sm text-gray-800 font-medium leading-relaxed mb-4 pr-4">
                 {item.title}
@@ -102,10 +132,9 @@ const News: React.FC<NewsProps> = ({ newsList, onNavigate, onMarkAllRead }) => {
             </div>
           ))
         ) : (
-          <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-            <FileText size={48} className="mb-2 opacity-20" />
-            <p className="text-xs">暂无{activeTab === 'announcement' ? '公告' : '动态'}</p>
-          </div>
+          <EmptyState
+            title={`暂无${activeTab === 'announcement' ? '公告' : '动态'}`}
+          />
         )}
       </div>
     </div>

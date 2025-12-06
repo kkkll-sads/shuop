@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Package, X, MapPin, Phone, User, FileText, Calendar, CreditCard } from 'lucide-react';
 import SubPageLayout from '../components/SubPageLayout';
+import { LoadingSpinner, EmptyState, LazyImage } from '../components/common';
+import { formatTime, formatAmount } from '../utils/format';
 import { Order } from '../types';
 import { MOCK_ORDERS } from '../constants';
 import {
@@ -260,12 +262,12 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ category, initialTab, onB
     try {
       const token = localStorage.getItem(AUTH_TOKEN_KEY) || '';
       const response = await confirmOrder({ id: orderId, token });
-      
+
       if (response.code === 1) {
         // Refresh orders after confirmation
         setPage(1);
         setOrders([]);
-        
+
         // Reload orders
         setLoading(true);
         try {
@@ -285,24 +287,24 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ category, initialTab, onB
             }
             reloadResponse = await getDeliveryList({ page: 1, limit: 10, status, token });
           } else {
-          switch (activeTab) {
-            case 0:
-              reloadResponse = await fetchPendingPayOrders({ page: 1, limit: 10, token });
-              break;
-            case 1:
-              reloadResponse = await fetchPendingShipOrders({ page: 1, limit: 10, token });
-              break;
-            case 2:
-              reloadResponse = await fetchPendingConfirmOrders({ page: 1, limit: 10, token });
-              break;
-            case 3:
-              reloadResponse = await fetchCompletedOrders({ page: 1, limit: 10, token });
-              break;
-            default:
-              reloadResponse = { code: 1, data: { list: [], total: 0, page: 1, limit: 10 } };
+            switch (activeTab) {
+              case 0:
+                reloadResponse = await fetchPendingPayOrders({ page: 1, limit: 10, token });
+                break;
+              case 1:
+                reloadResponse = await fetchPendingShipOrders({ page: 1, limit: 10, token });
+                break;
+              case 2:
+                reloadResponse = await fetchPendingConfirmOrders({ page: 1, limit: 10, token });
+                break;
+              case 3:
+                reloadResponse = await fetchCompletedOrders({ page: 1, limit: 10, token });
+                break;
+              default:
+                reloadResponse = { code: 1, data: { list: [], total: 0, page: 1, limit: 10 } };
             }
           }
-          
+
           if (reloadResponse.code === 1 && reloadResponse.data) {
             setOrders(reloadResponse.data.list || []);
           }
@@ -322,7 +324,7 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ category, initialTab, onB
 
   const formatOrderDate = (date: number | string | undefined, includeTime: boolean = false): string => {
     if (!date) return '';
-    
+
     let timestamp: number;
     if (typeof date === 'string') {
       // 如果是字符串，先清理，只取数字部分
@@ -335,24 +337,24 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ category, initialTab, onB
     } else {
       timestamp = date;
     }
-    
+
     if (!timestamp || timestamp === 0) return '';
-    
+
     // 判断时间戳是秒级还是毫秒级
     // 如果时间戳小于 10000000000，认为是秒级，需要乘以1000
     // 否则认为是毫秒级
     const timestampMs = timestamp < 10000000000 ? timestamp * 1000 : timestamp;
-    
+
     const d = new Date(timestampMs);
-    
+
     // 检查日期是否有效
     if (isNaN(d.getTime())) return '';
-    
+
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
     const dateStr = `${year}-${month}-${day}`;
-    
+
     if (includeTime) {
       const hours = String(d.getHours()).padStart(2, '0');
       const minutes = String(d.getMinutes()).padStart(2, '0');
@@ -408,16 +410,16 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ category, initialTab, onB
   const getOrderPrice = (order: ShopOrderItem): { amount: number; score: number; isScore: boolean } => {
     const firstItem = getFirstItem(order);
     const isScore = order.pay_type === 'score';
-    
+
     if (isScore) {
       // For score orders, show score
-      const totalScore = order.total_score 
+      const totalScore = order.total_score
         ? (typeof order.total_score === 'string' ? parseFloat(order.total_score) : order.total_score)
         : (firstItem?.subtotal_score || firstItem?.score_price || 0);
       return { amount: 0, score: totalScore, isScore: true };
     } else {
       // For money orders, show amount
-      const totalAmount = order.total_amount 
+      const totalAmount = order.total_amount
         ? (typeof order.total_amount === 'string' ? parseFloat(order.total_amount) : order.total_amount)
         : (firstItem?.subtotal || firstItem?.price || 0);
       return { amount: totalAmount, score: 0, isScore: false };
@@ -432,12 +434,12 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ category, initialTab, onB
     try {
       const token = localStorage.getItem(AUTH_TOKEN_KEY) || '';
       const response = await payOrder({ id: orderId, token });
-      
+
       if (response.code === 1) {
         // Refresh orders after payment
         setPage(1);
         setOrders([]);
-        
+
         // Reload orders
         setLoading(true);
         try {
@@ -457,24 +459,24 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ category, initialTab, onB
             }
             reloadResponse = await getDeliveryList({ page: 1, limit: 10, status, token });
           } else {
-          switch (activeTab) {
-            case 0:
-              reloadResponse = await fetchPendingPayOrders({ page: 1, limit: 10, token });
-              break;
-            case 1:
-              reloadResponse = await fetchPendingShipOrders({ page: 1, limit: 10, token });
-              break;
-            case 2:
-              reloadResponse = await fetchPendingConfirmOrders({ page: 1, limit: 10, token });
-              break;
-            case 3:
-              reloadResponse = await fetchCompletedOrders({ page: 1, limit: 10, token });
-              break;
-            default:
-              reloadResponse = { code: 1, data: { list: [], total: 0, page: 1, limit: 10 } };
+            switch (activeTab) {
+              case 0:
+                reloadResponse = await fetchPendingPayOrders({ page: 1, limit: 10, token });
+                break;
+              case 1:
+                reloadResponse = await fetchPendingShipOrders({ page: 1, limit: 10, token });
+                break;
+              case 2:
+                reloadResponse = await fetchPendingConfirmOrders({ page: 1, limit: 10, token });
+                break;
+              case 3:
+                reloadResponse = await fetchCompletedOrders({ page: 1, limit: 10, token });
+                break;
+              default:
+                reloadResponse = { code: 1, data: { list: [], total: 0, page: 1, limit: 10 } };
             }
           }
-          
+
           if (reloadResponse.code === 1 && reloadResponse.data) {
             setOrders(reloadResponse.data.list || []);
           }
@@ -501,12 +503,12 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ category, initialTab, onB
     try {
       const token = localStorage.getItem(AUTH_TOKEN_KEY) || '';
       const response = await deleteOrder({ id: orderId, token });
-      
+
       if (response.code === 1) {
         // Refresh orders after deletion
         setPage(1);
         setOrders([]);
-        
+
         // Reload orders
         setLoading(true);
         try {
@@ -526,24 +528,24 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ category, initialTab, onB
             }
             reloadResponse = await getDeliveryList({ page: 1, limit: 10, status, token });
           } else {
-          switch (activeTab) {
-            case 0:
-              reloadResponse = await fetchPendingPayOrders({ page: 1, limit: 10, token });
-              break;
-            case 1:
-              reloadResponse = await fetchPendingShipOrders({ page: 1, limit: 10, token });
-              break;
-            case 2:
-              reloadResponse = await fetchPendingConfirmOrders({ page: 1, limit: 10, token });
-              break;
-            case 3:
-              reloadResponse = await fetchCompletedOrders({ page: 1, limit: 10, token });
-              break;
-            default:
-              reloadResponse = { code: 1, data: { list: [], total: 0, page: 1, limit: 10 } };
+            switch (activeTab) {
+              case 0:
+                reloadResponse = await fetchPendingPayOrders({ page: 1, limit: 10, token });
+                break;
+              case 1:
+                reloadResponse = await fetchPendingShipOrders({ page: 1, limit: 10, token });
+                break;
+              case 2:
+                reloadResponse = await fetchPendingConfirmOrders({ page: 1, limit: 10, token });
+                break;
+              case 3:
+                reloadResponse = await fetchCompletedOrders({ page: 1, limit: 10, token });
+                break;
+              default:
+                reloadResponse = { code: 1, data: { list: [], total: 0, page: 1, limit: 10 } };
             }
           }
-          
+
           if (reloadResponse.code === 1 && reloadResponse.data) {
             setOrders(reloadResponse.data.list || []);
           }
@@ -567,7 +569,7 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ category, initialTab, onB
     try {
       const token = localStorage.getItem(AUTH_TOKEN_KEY) || '';
       const response = await getOrderDetail({ id: orderId, token });
-      
+
       if (response.code === 1 && response.data) {
         setSelectedOrder(response.data);
         setShowDetailModal(true);
@@ -610,12 +612,12 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ category, initialTab, onB
     try {
       const token = localStorage.getItem(AUTH_TOKEN_KEY) || '';
       const response = await cancelConsignment({ consignment_id: consignmentId, token });
-      
+
       if (response.code === 1) {
         // Refresh consignment orders after cancellation
         setPage(1);
         setConsignmentOrders([]);
-        
+
         // Reload orders
         setLoading(true);
         try {
@@ -634,7 +636,7 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ category, initialTab, onB
               status = 0;
           }
           const reloadResponse = await getMyConsignmentList({ page: 1, limit: 10, status, token });
-          
+
           if (reloadResponse.code === 1 && reloadResponse.data) {
             setConsignmentOrders(reloadResponse.data.list || []);
           }
@@ -656,8 +658,8 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ category, initialTab, onB
   // For non-points, non-delivery, non-transaction, and non-product categories, use mock data
   const filteredOrders = category !== 'points' && category !== 'delivery' && category !== 'transaction' && category !== 'product'
     ? MOCK_ORDERS.filter(
-        order => order.type === category && order.subStatusIndex === activeTab
-      )
+      order => order.type === category && order.subStatusIndex === activeTab
+    )
     : [];
 
   return (
@@ -697,14 +699,14 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ category, initialTab, onB
                       {order.consignment_status_text || '未知状态'}
                     </span>
                   </div>
-                  
+
                   <div className="flex gap-3">
                     {order.image && (
                       <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                        <img 
-                          src={normalizeAssetUrl(order.image)} 
-                          alt={order.title} 
-                          className="w-full h-full object-cover" 
+                        <img
+                          src={normalizeAssetUrl(order.image)}
+                          alt={order.title}
+                          className="w-full h-full object-cover"
                           onError={(e) => {
                             (e.target as HTMLImageElement).style.display = 'none';
                           }}
@@ -724,7 +726,7 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ category, initialTab, onB
                         </div>
                         <div className="flex gap-2">
                           {activeTab === 1 && order.consignment_status === 1 && (
-                            <button 
+                            <button
                               onClick={() => handleCancelConsignment(order.consignment_id)}
                               className="px-3 py-1 rounded-full border border-red-300 text-red-600 text-xs active:bg-red-50"
                             >
@@ -768,14 +770,14 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ category, initialTab, onB
                           {record.status_text || record.order_status_text || '未知状态'}
                         </span>
                       </div>
-                      
+
                       <div className="flex gap-3">
                         {record.item_image && (
                           <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                            <img 
-                              src={normalizeAssetUrl(record.item_image)} 
-                              alt={record.item_title} 
-                              className="w-full h-full object-cover" 
+                            <img
+                              src={normalizeAssetUrl(record.item_image)}
+                              alt={record.item_title}
+                              className="w-full h-full object-cover"
                               onError={(e) => {
                                 (e.target as HTMLImageElement).style.display = 'none';
                               }}
@@ -902,14 +904,14 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ category, initialTab, onB
                       {getOrderStatus(order)}
                     </span>
                   </div>
-                  
+
                   <div className="flex gap-3">
                     {getOrderImage(order) && (
                       <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                        <img 
-                          src={getOrderImage(order)} 
-                          alt={getOrderName(order)} 
-                          className="w-full h-full object-cover" 
+                        <img
+                          src={getOrderImage(order)}
+                          alt={getOrderName(order)}
+                          className="w-full h-full object-cover"
                           onError={(e) => {
                             (e.target as HTMLImageElement).style.display = 'none';
                           }}
@@ -927,7 +929,7 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ category, initialTab, onB
                         <div className="text-sm font-bold text-gray-900">
                           {(() => {
                             const priceInfo = getOrderPrice(order);
-                            return priceInfo.isScore 
+                            return priceInfo.isScore
                               ? `${priceInfo.score} 积分`
                               : `¥ ${formatOrderPrice(priceInfo.amount)}`;
                           })()}
@@ -935,8 +937,8 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ category, initialTab, onB
                         <div className="flex gap-2">
                           {activeTab === 0 && category === 'points' && (
                             <>
-                          
-                              <button 
+
+                              <button
                                 onClick={() => handleDeleteOrder(order.id)}
                                 className="px-3 py-1 rounded-full border border-red-300 text-red-600 text-xs active:bg-red-50"
                               >
@@ -945,14 +947,14 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ category, initialTab, onB
                             </>
                           )}
                           {(activeTab === 2 && category === 'points') || (activeTab === 1 && category === 'delivery') ? (
-                            <button 
+                            <button
                               onClick={() => handleConfirmReceipt(order.id)}
                               className="px-3 py-1 rounded-full bg-blue-600 text-white text-xs active:bg-blue-700"
                             >
                               确认收货
                             </button>
                           ) : null}
-                          <button 
+                          <button
                             onClick={() => handleViewDetail(order.id)}
                             className="px-3 py-1 rounded-full border border-gray-200 text-xs text-gray-600 active:bg-gray-50"
                           >
@@ -988,7 +990,7 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ category, initialTab, onB
                     <span className="text-xs text-gray-500">{order.date}</span>
                     <span className="text-xs font-medium text-blue-600">{order.status}</span>
                   </div>
-                  
+
                   <div className="flex gap-3">
                     <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                       <img src={order.productImage} alt={order.productName} className="w-full h-full object-cover" />
@@ -997,10 +999,10 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ category, initialTab, onB
                       <h3 className="text-sm font-medium text-gray-800 mb-1">{order.productName}</h3>
                       <div className="text-xs text-gray-400 mb-2">数量: {order.quantity}</div>
                       <div className="flex justify-between items-end">
-                         <div className="text-sm font-bold text-gray-900">¥ {order.total.toFixed(2)}</div>
-                         <button className="px-3 py-1 rounded-full border border-gray-200 text-xs text-gray-600 active:bg-gray-50">
-                            查看详情
-                         </button>
+                        <div className="text-sm font-bold text-gray-900">¥ {order.total.toFixed(2)}</div>
+                        <button className="px-3 py-1 rounded-full border border-gray-200 text-xs text-gray-600 active:bg-gray-50">
+                          查看详情
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -1073,7 +1075,7 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ category, initialTab, onB
                     const priceInfo = getOrderPrice(selectedOrder);
                     return (
                       <span className="text-xl font-bold text-blue-600">
-                        {priceInfo.isScore 
+                        {priceInfo.isScore
                           ? `${priceInfo.score} 积分`
                           : `¥ ${formatOrderPrice(priceInfo.amount)}`}
                       </span>
@@ -1256,7 +1258,7 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ category, initialTab, onB
                   </button>
                   {activeTab === 0 && selectedOrder.status === 'pending' && category === 'points' && (
                     <>
-                
+
                       <button
                         onClick={() => {
                           setShowDetailModal(false);
@@ -1350,30 +1352,30 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ category, initialTab, onB
                 selectedConsignmentDetail.buyer_username ||
                 selectedConsignmentDetail.buyer_nickname ||
                 selectedConsignmentDetail.buyer_mobile) && (
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
-                  <h4 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                    <User size={16} className="text-blue-600" />
-                    买家信息
-                  </h4>
-                  <div className="space-y-2 text-xs text-gray-700">
-                    {selectedConsignmentDetail.buyer_id && (
-                      <div>买家ID：{selectedConsignmentDetail.buyer_id}</div>
-                    )}
-                    {selectedConsignmentDetail.buyer_username && (
-                      <div>用户名：{selectedConsignmentDetail.buyer_username}</div>
-                    )}
-                    {selectedConsignmentDetail.buyer_nickname && (
-                      <div>昵称：{selectedConsignmentDetail.buyer_nickname}</div>
-                    )}
-                    {selectedConsignmentDetail.buyer_mobile && (
-                      <div className="flex items-center gap-1">
-                        <Phone size={14} className="text-gray-400" />
-                        <span>{selectedConsignmentDetail.buyer_mobile}</span>
-                      </div>
-                    )}
+                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                    <h4 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                      <User size={16} className="text-blue-600" />
+                      买家信息
+                    </h4>
+                    <div className="space-y-2 text-xs text-gray-700">
+                      {selectedConsignmentDetail.buyer_id && (
+                        <div>买家ID：{selectedConsignmentDetail.buyer_id}</div>
+                      )}
+                      {selectedConsignmentDetail.buyer_username && (
+                        <div>用户名：{selectedConsignmentDetail.buyer_username}</div>
+                      )}
+                      {selectedConsignmentDetail.buyer_nickname && (
+                        <div>昵称：{selectedConsignmentDetail.buyer_nickname}</div>
+                      )}
+                      {selectedConsignmentDetail.buyer_mobile && (
+                        <div className="flex items-center gap-1">
+                          <Phone size={14} className="text-gray-400" />
+                          <span>{selectedConsignmentDetail.buyer_mobile}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
               {/* Description */}
               {selectedConsignmentDetail.description && (

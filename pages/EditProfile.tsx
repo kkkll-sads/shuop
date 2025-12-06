@@ -1,14 +1,31 @@
+/**
+ * EditProfile - 编辑资料页面
+ * 
+ * 使用 PageContainer 布局组件重构
+ * 
+ * @author 树交所前端团队
+ * @version 2.0.0
+ */
+
 import React, { useMemo, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
+import PageContainer from '../components/layout/PageContainer';
 import { AUTH_TOKEN_KEY, USER_INFO_KEY, uploadImage, updateAvatar, updateNickname } from '../services/api';
 import { UserInfo } from '../types';
 
+/**
+ * EditProfile 组件属性接口
+ */
 interface EditProfileProps {
   onBack: () => void;
   onLogout: () => void;
 }
 
+/**
+ * EditProfile 编辑资料页面组件
+ */
 const EditProfile: React.FC<EditProfileProps> = ({ onBack, onLogout }) => {
+  // 从本地存储获取用户信息
   const cachedUser: UserInfo | null = useMemo(() => {
     try {
       const cached = localStorage.getItem(USER_INFO_KEY);
@@ -29,6 +46,9 @@ const EditProfile: React.FC<EditProfileProps> = ({ onBack, onLogout }) => {
   const displayName = nickname || userInfo?.nickname || userInfo?.username || '用户';
   const displayAvatarText = displayName.slice(0, 1).toUpperCase();
 
+  /**
+   * 保存昵称
+   */
   const handleSave = async () => {
     if (!userInfo) {
       onBack();
@@ -61,6 +81,9 @@ const EditProfile: React.FC<EditProfileProps> = ({ onBack, onLogout }) => {
     }
   };
 
+  /**
+   * 点击头像触发文件选择
+   */
   const handleAvatarClick = () => {
     if (!userInfo) {
       alert('请先登录后再修改头像');
@@ -69,6 +92,9 @@ const EditProfile: React.FC<EditProfileProps> = ({ onBack, onLogout }) => {
     fileInputRef.current?.click();
   };
 
+  /**
+   * 处理头像文件变化
+   */
   const handleAvatarChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
 
@@ -123,19 +149,8 @@ const EditProfile: React.FC<EditProfileProps> = ({ onBack, onLogout }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 pb-safe">
-      {/* Header */}
-      <header className="bg-white px-4 py-3 flex items-center justify-center sticky top-0 z-10 shadow-sm">
-        <button
-          className="absolute left-0 ml-1 p-1 active:opacity-70"
-          onClick={onBack}
-        >
-          <ChevronLeft size={22} className="text-gray-800" />
-        </button>
-        <h1 className="text-base font-bold text-gray-900">编辑资料</h1>
-      </header>
-
-      {/* Avatar row */}
+    <PageContainer title="编辑资料" onBack={onBack} bgColor="bg-gray-100" padding={false}>
+      {/* 头像行 */}
       <div className="bg-white mt-2">
         <button
           className="w-full px-4 py-3 flex items-center justify-between active:bg-gray-50 disabled:opacity-50"
@@ -155,7 +170,6 @@ const EditProfile: React.FC<EditProfileProps> = ({ onBack, onLogout }) => {
                 displayAvatarText
               )}
             </div>
-
             <ChevronRight size={16} className="text-gray-400" />
           </div>
         </button>
@@ -168,7 +182,7 @@ const EditProfile: React.FC<EditProfileProps> = ({ onBack, onLogout }) => {
         />
       </div>
 
-      {/* Nickname row */}
+      {/* 昵称行 */}
       <div className="bg-white mt-2">
         <div className="px-4 py-3 flex items-center border-t border-gray-100">
           <span className="text-sm text-gray-800 w-14">昵称</span>
@@ -182,10 +196,10 @@ const EditProfile: React.FC<EditProfileProps> = ({ onBack, onLogout }) => {
         </div>
       </div>
 
-      {/* Buttons */}
+      {/* 按钮区域 */}
       <div className="mt-8 px-4 space-y-3">
         <button
-          className="w-full bg-orange-500 text-white text-sm font-semibold py-3 rounded-md active:opacity-80 shadow-sm"
+          className="w-full bg-orange-500 text-white text-sm font-semibold py-3 rounded-md active:opacity-80 shadow-sm disabled:opacity-50"
           onClick={handleSave}
           disabled={saving}
         >
@@ -198,10 +212,8 @@ const EditProfile: React.FC<EditProfileProps> = ({ onBack, onLogout }) => {
           退出登录
         </button>
       </div>
-    </div>
+    </PageContainer>
   );
 };
 
 export default EditProfile;
-
-

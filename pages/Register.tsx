@@ -1,7 +1,20 @@
+/**
+ * Register - 注册页面
+ * 
+ * 使用 isValidPhone 验证函数重构
+ * 
+ * @author 树交所前端团队
+ * @version 2.0.0
+ */
+
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, XCircle, User, Lock, Smartphone, CreditCard, ShieldCheck, Check } from 'lucide-react';
 import { register, RegisterParams } from '../services/api';
+import { isValidPhone } from '../utils/validation';
 
+/**
+ * Register 组件属性接口
+ */
 interface RegisterProps {
   onBack: () => void;
   onRegisterSuccess: () => void;
@@ -9,13 +22,18 @@ interface RegisterProps {
   onNavigatePrivacyPolicy: () => void;
 }
 
+/**
+ * Register 注册页面组件
+ */
 const Register: React.FC<RegisterProps> = ({
   onBack,
   onRegisterSuccess,
   onNavigateUserAgreement,
   onNavigatePrivacyPolicy,
 }) => {
-  // 从URL参数中获取邀请码
+  /**
+   * 从URL参数中获取邀请码
+   */
   const getInviteCodeFromUrl = () => {
     if (typeof window === 'undefined') return '';
     const urlParams = new URLSearchParams(window.location.search);
@@ -30,7 +48,7 @@ const Register: React.FC<RegisterProps> = ({
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // 组件加载时，从URL参数中读取邀请码并自动填充
+  // 组件加载时从URL参数中读取邀请码
   useEffect(() => {
     const urlInviteCode = getInviteCodeFromUrl();
     if (urlInviteCode) {
@@ -38,6 +56,9 @@ const Register: React.FC<RegisterProps> = ({
     }
   }, []);
 
+  /**
+   * 处理注册
+   */
   const handleRegister = async () => {
     if (!phone || !password || !payPassword || !verifyCode) {
       alert('请填写完整信息');
@@ -48,10 +69,10 @@ const Register: React.FC<RegisterProps> = ({
       return;
     }
 
-    // 验证手机号格式
-    const phoneRegex = /^1[3-9]\d{9}$/;
-    if (!phoneRegex.test(phone)) {
-      alert('请输入正确的手机号');
+    // 使用验证工具函数验证手机号
+    const phoneValidation = isValidPhone(phone);
+    if (!phoneValidation.valid) {
+      alert(phoneValidation.message);
       return;
     }
 
@@ -65,28 +86,17 @@ const Register: React.FC<RegisterProps> = ({
       };
 
       const response = await register(params);
-
-      // 打印完整响应用于调试
       console.log('注册接口响应:', response);
-      console.log('响应 code:', response.code);
-      console.log('响应 msg:', response.msg);
-      console.log('响应 data:', response.data);
 
-      // 判断注册是否成功
-      // 根据 API 响应：code === 1 表示成功，code === 0 表示失败
-      const isSuccess = response.code === 1;
-
-      if (isSuccess) {
+      if (response.code === 1) {
         alert('注册成功！');
         onRegisterSuccess();
       } else {
-        // 显示服务器返回的错误消息
         const errorMsg = response.msg || response.message || '注册失败，请稍后重试';
         alert(errorMsg);
       }
     } catch (error: any) {
       console.error('注册失败:', error);
-      // 显示更详细的错误信息
       if (error.isCorsError) {
         alert(error.message);
       } else if (error.message) {
@@ -101,7 +111,7 @@ const Register: React.FC<RegisterProps> = ({
 
   return (
     <div className="min-h-screen flex flex-col px-6 pt-8 pb-safe bg-gradient-to-br from-[#FFD6A5] via-[#FFC3A0] to-[#FFDEE9]">
-      {/* Header */}
+      {/* 顶部导航 */}
       <div className="flex items-center mb-8 relative">
         <button onClick={onBack} className="absolute left-0 -ml-2 p-2">
           <ChevronLeft size={24} className="text-gray-800" />
@@ -109,13 +119,15 @@ const Register: React.FC<RegisterProps> = ({
         <h1 className="text-lg font-bold text-gray-900 w-full text-center">注册</h1>
       </div>
 
+      {/* 标题 */}
       <div className="mb-8">
         <h2 className="text-3xl font-bold text-gray-800 mb-2">Hello!</h2>
         <h3 className="text-xl font-bold text-gray-700">欢迎注册树交所</h3>
       </div>
 
+      {/* 表单 */}
       <div className="space-y-4 mb-8">
-        {/* Invite Code */}
+        {/* 邀请码 */}
         <div className="bg-white rounded-lg flex items-center px-4 py-3 shadow-sm">
           <User className="text-gray-500 mr-3" size={20} />
           <input
@@ -132,7 +144,7 @@ const Register: React.FC<RegisterProps> = ({
           )}
         </div>
 
-        {/* Phone */}
+        {/* 手机号 */}
         <div className="bg-white rounded-lg flex items-center px-4 py-3 shadow-sm">
           <Smartphone className="text-gray-500 mr-3" size={20} />
           <input
@@ -144,7 +156,7 @@ const Register: React.FC<RegisterProps> = ({
           />
         </div>
 
-        {/* Password */}
+        {/* 登录密码 */}
         <div className="bg-white rounded-lg flex items-center px-4 py-3 shadow-sm">
           <Lock className="text-gray-500 mr-3" size={20} />
           <input
@@ -156,7 +168,7 @@ const Register: React.FC<RegisterProps> = ({
           />
         </div>
 
-        {/* Payment Password */}
+        {/* 支付密码 */}
         <div className="bg-white rounded-lg flex items-center px-4 py-3 shadow-sm">
           <CreditCard className="text-gray-500 mr-3" size={20} />
           <input
@@ -168,7 +180,7 @@ const Register: React.FC<RegisterProps> = ({
           />
         </div>
 
-        {/* Verification Code */}
+        {/* 验证码 */}
         <div className="bg-white rounded-lg flex items-center px-4 py-3 shadow-sm">
           <ShieldCheck className="text-gray-500 mr-3" size={20} />
           <input
@@ -184,7 +196,7 @@ const Register: React.FC<RegisterProps> = ({
         </div>
       </div>
 
-      {/* Submit Button */}
+      {/* 提交按钮 */}
       <div className="mb-6">
         <button
           onClick={handleRegister}
@@ -195,7 +207,7 @@ const Register: React.FC<RegisterProps> = ({
         </button>
       </div>
 
-      {/* Agreement */}
+      {/* 协议 */}
       <div className="flex items-center justify-center gap-2 text-xs text-gray-600 mb-8">
         <div
           className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center cursor-pointer transition-colors ${agreed ? 'bg-orange-500 border-orange-500' : 'border-gray-400 bg-transparent'}`}
@@ -205,25 +217,17 @@ const Register: React.FC<RegisterProps> = ({
         </div>
         <div className="leading-none flex items-center flex-wrap">
           <span>阅读并同意</span>
-          <button
-            type="button"
-            className="text-orange-500 mx-0.5"
-            onClick={onNavigateUserAgreement}
-          >
+          <button type="button" className="text-orange-500 mx-0.5" onClick={onNavigateUserAgreement}>
             《用户协议》
           </button>
           <span>及</span>
-          <button
-            type="button"
-            className="text-orange-500 mx-0.5"
-            onClick={onNavigatePrivacyPolicy}
-          >
+          <button type="button" className="text-orange-500 mx-0.5" onClick={onNavigatePrivacyPolicy}>
             《隐私政策》
           </button>
         </div>
       </div>
 
-      {/* Download App Link */}
+      {/* 下载APP链接 */}
       <div className="text-center pb-4 mt-auto">
         <button className="text-orange-600 text-sm font-medium">点击下载APP</button>
       </div>

@@ -1,10 +1,25 @@
-import React, { useState } from 'react';
-import SubPageLayout from '../components/SubPageLayout';
+/**
+ * OnlineService - 在线客服页面
+ * 
+ * 使用 PageContainer 布局组件重构
+ * 
+ * @author 树交所前端团队
+ * @version 2.0.0
+ */
 
+import React, { useState } from 'react';
+import PageContainer from '../components/layout/PageContainer';
+
+/**
+ * OnlineService 组件属性接口
+ */
 interface OnlineServiceProps {
   onBack: () => void;
 }
 
+/**
+ * 聊天消息接口
+ */
 interface ChatMessage {
   id: number;
   from: 'user' | 'service';
@@ -12,6 +27,7 @@ interface ChatMessage {
   time: string;
 }
 
+/** 快捷问题列表 */
 const QUICK_QUESTIONS = [
   '账户相关问题',
   '交易流程咨询',
@@ -19,6 +35,7 @@ const QUICK_QUESTIONS = [
   '平台规则与协议',
 ];
 
+/** 初始消息 */
 const initialMessages: ChatMessage[] = [
   {
     id: 1,
@@ -28,11 +45,17 @@ const initialMessages: ChatMessage[] = [
   },
 ];
 
+/**
+ * OnlineService 在线客服页面组件
+ */
 const OnlineService: React.FC<OnlineServiceProps> = ({ onBack }) => {
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [input, setInput] = useState('');
   const [nextId, setNextId] = useState(2);
 
+  /**
+   * 添加消息
+   */
   const pushMessage = (from: ChatMessage['from'], content: string) => {
     const newMsg: ChatMessage = {
       id: nextId,
@@ -44,26 +67,33 @@ const OnlineService: React.FC<OnlineServiceProps> = ({ onBack }) => {
     setNextId((id) => id + 1);
   };
 
+  /**
+   * 发送消息
+   */
   const handleSend = () => {
     if (!input.trim()) return;
     const text = input.trim();
     setInput('');
     pushMessage('user', text);
 
+    // 模拟客服回复
     setTimeout(() => {
       pushMessage(
         'service',
-        '已收到您的消息，当前为模拟客服示例。如需正式接入，可对接在线客服系统接口。',
+        '已收到您的消息，当前为模拟客服示例。如需正式接入，可对接在线客服系统接口。'
       );
     }, 500);
   };
 
+  /**
+   * 选择快捷问题
+   */
   const handleQuickQuestion = (q: string) => {
     setInput(q);
   };
 
   return (
-    <SubPageLayout title="在线客服" onBack={onBack}>
+    <PageContainer title="在线客服" onBack={onBack} padding={false}>
       <div className="flex flex-col h-[calc(100vh-56px)] bg-gray-50">
         {/* 聊天区域 */}
         <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3">
@@ -124,10 +154,8 @@ const OnlineService: React.FC<OnlineServiceProps> = ({ onBack }) => {
           </button>
         </div>
       </div>
-    </SubPageLayout>
+    </PageContainer>
   );
 };
 
 export default OnlineService;
-
-

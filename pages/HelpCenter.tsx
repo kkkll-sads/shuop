@@ -1,5 +1,15 @@
+/**
+ * HelpCenter - 帮助中心页面
+ * 
+ * 使用 PageContainer、LoadingSpinner、EmptyState 组件重构
+ * 
+ * @author 树交所前端团队
+ * @version 2.0.0
+ */
+
 import React, { useEffect, useState } from 'react';
-import SubPageLayout from '../components/SubPageLayout';
+import PageContainer from '../components/layout/PageContainer';
+import { LoadingSpinner, EmptyState } from '../components/common';
 import {
   fetchHelpCategories,
   fetchHelpQuestions,
@@ -7,16 +17,25 @@ import {
   HelpQuestionItem,
 } from '../services/api';
 
+/**
+ * HelpCenter 组件属性接口
+ */
 interface HelpCenterProps {
   onBack: () => void;
 }
 
+/**
+ * 帮助分类接口
+ */
 interface HelpCategory {
   id: number;
   name: string;
   code: string;
 }
 
+/**
+ * 帮助问题接口
+ */
 interface HelpQuestion {
   id: number;
   categoryId: number;
@@ -25,23 +44,18 @@ interface HelpQuestion {
   imageUrls?: string[];
 }
 
+/**
+ * HelpCenter 帮助中心页面组件
+ */
 const HelpCenter: React.FC<HelpCenterProps> = ({ onBack }) => {
   const [categories, setCategories] = useState<HelpCategory[]>([]);
-  const [expandedCategoryId, setExpandedCategoryId] = useState<number | null>(
-    null,
-  );
-  const [activeQuestion, setActiveQuestion] = useState<HelpQuestion | null>(
-    null,
-  );
-  const [questionsByCategory, setQuestionsByCategory] = useState<
-    Record<number, HelpQuestion[]>
-  >({});
-  const [loadingCategories, setLoadingCategories] = useState<boolean>(false);
-  const [loadingCategoryId, setLoadingCategoryId] = useState<number | null>(
-    null,
-  );
+  const [expandedCategoryId, setExpandedCategoryId] = useState<number | null>(null);
+  const [activeQuestion, setActiveQuestion] = useState<HelpQuestion | null>(null);
+  const [questionsByCategory, setQuestionsByCategory] = useState<Record<number, HelpQuestion[]>>({});
+  const [loadingCategories, setLoadingCategories] = useState<boolean>(true);
+  const [loadingCategoryId, setLoadingCategoryId] = useState<number | null>(null);
 
-  // 初始化加载分类列表
+  // 加载分类列表
   useEffect(() => {
     const loadCategories = async () => {
       try {
@@ -67,6 +81,9 @@ const HelpCenter: React.FC<HelpCenterProps> = ({ onBack }) => {
     loadCategories();
   }, []);
 
+  /**
+   * 切换分类展开状态
+   */
   const handleToggleCategory = async (cat: HelpCategory) => {
     const isExpanded = expandedCategoryId === cat.id;
     if (isExpanded) {
@@ -96,7 +113,6 @@ const HelpCenter: React.FC<HelpCenterProps> = ({ onBack }) => {
             [cat.id]: list,
           }));
         } else {
-          console.warn('获取帮助中心问题列表失败:', res);
           setQuestionsByCategory((prev) => ({
             ...prev,
             [cat.id]: [],
@@ -114,109 +130,116 @@ const HelpCenter: React.FC<HelpCenterProps> = ({ onBack }) => {
     }
   };
 
+  /**
+   * 从详情返回列表
+   */
   const handleBackFromDetail = () => {
     setActiveQuestion(null);
   };
 
   return (
-    <SubPageLayout title="帮助中心" onBack={activeQuestion ? handleBackFromDetail : onBack}>
-      <div className="flex flex-col h-[calc(100vh-56px)] bg-gray-50">
-        {/* 列表 & 详情 */}
-        <div className="flex-1 overflow-y-auto">
-          {!activeQuestion ? (
-            <div className="mt-2 space-y-2">
-              {loadingCategories && categories.length === 0 && (
-                <div className="px-4 py-6 text-center text-xs text-gray-400">
-                  正在加载帮助中心内容...
-                </div>
-              )}
-              {!loadingCategories && categories.length === 0 && (
-                <div className="px-4 py-6 text-center text-xs text-gray-400">
-                  暂无帮助中心数据
-                </div>
-              )}
-              {categories.map((cat) => {
-                const isExpanded = expandedCategoryId === cat.id;
-                const catQuestions = questionsByCategory[cat.id] || [];
-                const isLoadingThisCategory = loadingCategoryId === cat.id;
-                return (
-                  <div key={cat.id} className="bg-white">
-                    <button
-                      className="w-full px-4 py-3 flex items-center justify-between border-b border-gray-100 active:bg-gray-50"
-                      onClick={() => handleToggleCategory(cat)}
-                    >
-                      <span className="text-sm font-medium text-gray-900 text-left">
-                        {cat.name}
-                      </span>
-                      <span className="text-xs text-gray-400 ml-2">
-                        {isExpanded ? '收起' : '展开'}
-                      </span>
-                    </button>
-                    {isExpanded && (
-                      <div>
-                        {isLoadingThisCategory && catQuestions.length === 0 && (
-                          <div className="px-4 py-3 text-[11px] text-gray-400 border-t border-gray-50">
-                            正在加载问题列表...
-                          </div>
-                        )}
-                        {!isLoadingThisCategory &&
-                          catQuestions.map((q) => (
-                            <button
-                              key={q.id}
-                              className="w-full px-4 py-3 flex items-center justify-between border-b border-gray-50 text-left active:bg-gray-50"
-                              onClick={() => setActiveQuestion(q)}
-                            >
-                              <span className="text-xs text-gray-800">
-                                {q.title}
-                              </span>
-                              <span className="text-[11px] text-gray-400 ml-2">
-                                详情
-                              </span>
-                            </button>
-                          ))}
-                        {!isLoadingThisCategory && catQuestions.length === 0 && (
-                          <div className="px-4 py-3 text-[11px] text-gray-400 border-t border-gray-50">
-                            暂无相关问题
-                          </div>
-                        )}
+    <PageContainer
+      title="帮助中心"
+      onBack={activeQuestion ? handleBackFromDetail : onBack}
+      padding={false}
+    >
+      {/* 列表视图 */}
+      {!activeQuestion ? (
+        <div className="mt-2 space-y-2">
+          {/* 加载状态 */}
+          {loadingCategories && categories.length === 0 && (
+            <div className="py-10">
+              <LoadingSpinner text="正在加载帮助中心内容..." />
+            </div>
+          )}
+
+          {/* 空状态 */}
+          {!loadingCategories && categories.length === 0 && (
+            <EmptyState title="暂无帮助中心数据" />
+          )}
+
+          {/* 分类列表 */}
+          {categories.map((cat) => {
+            const isExpanded = expandedCategoryId === cat.id;
+            const catQuestions = questionsByCategory[cat.id] || [];
+            const isLoadingThisCategory = loadingCategoryId === cat.id;
+
+            return (
+              <div key={cat.id} className="bg-white">
+                <button
+                  className="w-full px-4 py-3 flex items-center justify-between border-b border-gray-100 active:bg-gray-50"
+                  onClick={() => handleToggleCategory(cat)}
+                >
+                  <span className="text-sm font-medium text-gray-900 text-left">
+                    {cat.name}
+                  </span>
+                  <span className="text-xs text-gray-400 ml-2">
+                    {isExpanded ? '收起' : '展开'}
+                  </span>
+                </button>
+
+                {isExpanded && (
+                  <div>
+                    {/* 加载问题列表中 */}
+                    {isLoadingThisCategory && catQuestions.length === 0 && (
+                      <div className="px-4 py-3 text-[11px] text-gray-400 border-t border-gray-50">
+                        正在加载问题列表...
+                      </div>
+                    )}
+
+                    {/* 问题列表 */}
+                    {!isLoadingThisCategory &&
+                      catQuestions.map((q) => (
+                        <button
+                          key={q.id}
+                          className="w-full px-4 py-3 flex items-center justify-between border-b border-gray-50 text-left active:bg-gray-50"
+                          onClick={() => setActiveQuestion(q)}
+                        >
+                          <span className="text-xs text-gray-800">{q.title}</span>
+                          <span className="text-[11px] text-gray-400 ml-2">详情</span>
+                        </button>
+                      ))}
+
+                    {/* 无问题 */}
+                    {!isLoadingThisCategory && catQuestions.length === 0 && (
+                      <div className="px-4 py-3 text-[11px] text-gray-400 border-t border-gray-50">
+                        暂无相关问题
                       </div>
                     )}
                   </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="p-4">
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-                <h2 className="text-sm font-semibold text-gray-900 mb-2">
-                  {activeQuestion.title}
-                </h2>
-                {/* 支持后端返回 HTML 内容的展示 */}
-                <div
-                  className="text-xs leading-6 text-gray-600 prose prose-sm max-w-none [&_img]:max-w-full [&_img]:h-auto"
-                  dangerouslySetInnerHTML={{ __html: activeQuestion.content }}
-                />
-                {activeQuestion.imageUrls && activeQuestion.imageUrls.length > 0 && (
-                  <div className="mt-3 space-y-2">
-                    {activeQuestion.imageUrls.map((url) => (
-                      <img
-                        key={url}
-                        src={url}
-                        alt="帮助说明图片"
-                        className="w-full rounded-md border border-gray-100 object-contain"
-                      />
-                    ))}
-                  </div>
                 )}
               </div>
-            </div>
-          )}
+            );
+          })}
         </div>
-      </div>
-    </SubPageLayout>
+      ) : (
+        /* 问题详情视图 */
+        <div className="p-4">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+            <h2 className="text-sm font-semibold text-gray-900 mb-2">
+              {activeQuestion.title}
+            </h2>
+            <div
+              className="text-xs leading-6 text-gray-600 prose prose-sm max-w-none [&_img]:max-w-full [&_img]:h-auto"
+              dangerouslySetInnerHTML={{ __html: activeQuestion.content }}
+            />
+            {activeQuestion.imageUrls && activeQuestion.imageUrls.length > 0 && (
+              <div className="mt-3 space-y-2">
+                {activeQuestion.imageUrls.map((url) => (
+                  <img
+                    key={url}
+                    src={url}
+                    alt="帮助说明图片"
+                    className="w-full rounded-md border border-gray-100 object-contain"
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </PageContainer>
   );
 };
 
 export default HelpCenter;
-
-

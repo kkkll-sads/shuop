@@ -1,6 +1,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { Settings, MessageSquare, ShieldCheck, CreditCard, MapPin, Users, UserCheck, HelpCircle, FileText, HeadphonesIcon, ChevronRight, Wallet, Receipt, Box, Gem, Sprout, Award, CalendarCheck } from 'lucide-react';
+import { formatAmount } from '../utils/format';
 import { AUTH_TOKEN_KEY, USER_INFO_KEY, fetchProfile, normalizeAssetUrl } from '../services/api';
 import { UserInfo } from '../types';
 
@@ -81,12 +82,6 @@ const Profile: React.FC<ProfileProps> = ({ onNavigate }) => {
     };
   }, []);
 
-  const formatAmount = (value?: string | number) => {
-    if (value === undefined || value === null) return '0.00';
-    const num = Number(value);
-    if (Number.isNaN(num)) return String(value);
-    return num.toFixed(2);
-  };
 
   const displayName = userInfo?.nickname || userInfo?.username || '用户';
   const displayAvatarText = displayName.slice(0, 1).toUpperCase();

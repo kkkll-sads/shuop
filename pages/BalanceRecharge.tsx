@@ -1,5 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { ArrowLeft, X, Upload, Image as ImageIcon } from 'lucide-react';
+import { X, Upload } from 'lucide-react';
+import PageContainer from '../components/layout/PageContainer';
+import { LoadingSpinner } from '../components/common';
+import { isValidAmount } from '../utils/validation';
 import {
   fetchCompanyAccountList,
   CompanyAccountItem,
@@ -7,6 +10,7 @@ import {
   submitRechargeOrder,
   uploadImage,
 } from '../services/api';
+
 
 interface BalanceRechargeProps {
   onBack: () => void;
@@ -48,14 +52,7 @@ const BalanceRecharge: React.FC<BalanceRechargeProps> = ({ onBack }) => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
-      <header className="bg-white px-4 py-3 flex items-center sticky top-0 z-10 shadow-sm">
-        <button onClick={onBack} className="absolute left-4 p-1">
-          <ArrowLeft size={20} />
-        </button>
-        <h1 className="text-lg font-bold text-gray-800 w-full text-center">余额充值</h1>
-      </header>
-
+    <PageContainer title="余额充值" onBack={onBack}>
       <div className="p-4 space-y-4">
         <div className="bg-white rounded-xl p-4 shadow-sm">
           <div className="text-xs text-gray-500 mb-1">当前可用余额 (元)</div>
@@ -108,8 +105,8 @@ const BalanceRecharge: React.FC<BalanceRechargeProps> = ({ onBack }) => {
                   <div
                     key={item.id}
                     className={`border rounded-lg p-3 cursor-pointer transition-colors ${isSelected
-                        ? 'border-orange-500 bg-orange-50'
-                        : 'border-gray-100 bg-gray-50'
+                      ? 'border-orange-500 bg-orange-50'
+                      : 'border-gray-100 bg-gray-50'
                       }`}
                     onClick={() =>
                       setSelectedAccount((prev) =>
@@ -417,8 +414,8 @@ const BalanceRecharge: React.FC<BalanceRechargeProps> = ({ onBack }) => {
 
         <button
           className={`w-full rounded-full py-3 text-sm font-medium ${selectedAccount
-              ? 'bg-orange-600 text-white active:bg-orange-700'
-              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            ? 'bg-orange-600 text-white active:bg-orange-700'
+            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
           onClick={() => {
             if (selectedAccount) {
@@ -430,7 +427,7 @@ const BalanceRecharge: React.FC<BalanceRechargeProps> = ({ onBack }) => {
           确认充值
         </button>
       </div>
-    </div>
+    </PageContainer>
   );
 };
 

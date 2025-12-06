@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ChevronLeft, CreditCard, Loader2, Trash2, Edit2 } from 'lucide-react';
+import { CreditCard, Trash2, Edit2 } from 'lucide-react';
+import PageContainer from '../components/layout/PageContainer';
+import { LoadingSpinner, EmptyState } from '../components/common';
 import {
   AUTH_TOKEN_KEY,
   PaymentAccountItem,
@@ -318,8 +320,8 @@ const CardManagement: React.FC<CardManagementProps> = ({ onBack }) => {
                 key={opt.value}
                 type="button"
                 className={`py-1.5 rounded-md text-xs border ${active
-                    ? 'bg-orange-50 text-orange-600 border-orange-300'
-                    : 'bg-white text-gray-600 border-gray-200'
+                  ? 'bg-orange-50 text-orange-600 border-orange-300'
+                  : 'bg-white text-gray-600 border-gray-200'
                   } active:opacity-80`}
                 onClick={() => handleFormInputChange('type', opt.value)}
               >
@@ -422,29 +424,19 @@ const CardManagement: React.FC<CardManagementProps> = ({ onBack }) => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-100 pb-safe flex flex-col">
-      {/* Header */}
-      <header className="bg-white px-4 py-3 flex items-center justify-center sticky top-0 z-10 shadow-sm">
-        <button
-          className="absolute left-0 ml-1 p-1 active:opacity-70"
-          onClick={() => {
-            if (mode === 'add' || mode === 'edit') {
-              resetForm();
-              setMode('list');
-              setEditingId(null);
-              setEditingWasDefault(false);
-            } else {
-              onBack();
-            }
-          }}
-        >
-          <ChevronLeft size={22} className="text-gray-800" />
-        </button>
-        <h1 className="text-base font-bold text-gray-900">
-          {mode === 'add' ? '新增账户' : mode === 'edit' ? '编辑账户' : '银行卡'}
-        </h1>
-      </header>
-
+    <PageContainer
+      title={mode === 'add' ? '新增账户' : mode === 'edit' ? '编辑账户' : '银行卡'}
+      onBack={() => {
+        if (mode === 'add' || mode === 'edit') {
+          resetForm();
+          setMode('list');
+          setEditingId(null);
+          setEditingWasDefault(false);
+        } else {
+          onBack();
+        }
+      }}
+    >
       <main className="flex-1 px-4 py-3 overflow-y-auto">
         {notice && (
           <div className="bg-green-50 text-green-600 text-xs px-3 py-2 rounded-md mb-3">
@@ -454,12 +446,7 @@ const CardManagement: React.FC<CardManagementProps> = ({ onBack }) => {
 
         {(mode === 'add' || mode === 'edit') && renderForm()}
 
-        {loading && (
-          <div className="flex items-center justify-center py-10 text-gray-500 text-sm">
-            <Loader2 className="animate-spin mr-2" size={18} />
-            加载中...
-          </div>
-        )}
+        {loading && <LoadingSpinner text="加载中..." />}
 
         {!loading && error && (
           <div className="bg-red-50 text-red-600 text-xs px-3 py-2 rounded-md mb-3">
@@ -499,7 +486,7 @@ const CardManagement: React.FC<CardManagementProps> = ({ onBack }) => {
           </button>
         </footer>
       )}
-    </div>
+    </PageContainer>
   );
 };
 

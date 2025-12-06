@@ -1,6 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Wallet, Receipt, CreditCard, FileText, Loader2, ShoppingBag, Package, ArrowRight, X, AlertCircle, CheckCircle } from 'lucide-react';
+import { Wallet, Receipt, CreditCard, FileText, ShoppingBag, Package, ArrowRight, X, AlertCircle, CheckCircle } from 'lucide-react';
+import PageContainer from '../components/layout/PageContainer';
+import { LoadingSpinner, EmptyState, LazyImage } from '../components/common';
+import { formatTime, formatAmount } from '../utils/format';
 import {
   getBalanceLog,
   getMyOrderList,
@@ -47,7 +50,7 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
   const [showActionModal, setShowActionModal] = useState<boolean>(false);
   const [selectedItem, setSelectedItem] = useState<MyCollectionItem | null>(null);
   const [actionTab, setActionTab] = useState<'delivery' | 'consignment'>('delivery');
-  
+
   // 用户信息
   const [userInfo, setUserInfo] = useState<UserInfo | null>(() => {
     try {
@@ -244,8 +247,8 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
         <div className="text-right">
           <div className="text-lg font-bold text-green-600">+{item.amount}</div>
           <div className={`text-xs mt-1 ${item.status === 1 ? 'text-green-600' :
-              item.status === 2 ? 'text-red-600' :
-                'text-yellow-600'
+            item.status === 2 ? 'text-red-600' :
+              'text-yellow-600'
             }`}>
             {item.status_text}
           </div>
@@ -273,8 +276,8 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
         <div className="text-right">
           <div className="text-lg font-bold text-red-600">-{item.amount}</div>
           <div className={`text-xs mt-1 ${item.status === 1 ? 'text-green-600' :
-              item.status === 2 ? 'text-red-600' :
-                'text-yellow-600'
+            item.status === 2 ? 'text-red-600' :
+              'text-yellow-600'
             }`}>
             {item.status_text}
           </div>
@@ -699,12 +702,12 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
                   ○ 未提货
                 </div>
                 <div className={`text-xs px-2 py-1 rounded-full ${item.consignment_status === 0
-                    ? 'bg-gray-50 text-gray-600 border border-gray-200'
-                    : item.consignment_status === 1
-                      ? 'bg-yellow-50 text-yellow-600 border border-yellow-200'
-                      : item.consignment_status === 3
-                        ? 'bg-red-50 text-red-600 border border-red-200'
-                        : 'bg-green-50 text-green-600 border border-green-200'
+                  ? 'bg-gray-50 text-gray-600 border border-gray-200'
+                  : item.consignment_status === 1
+                    ? 'bg-yellow-50 text-yellow-600 border border-yellow-200'
+                    : item.consignment_status === 3
+                      ? 'bg-red-50 text-red-600 border border-red-200'
+                      : 'bg-green-50 text-green-600 border border-green-200'
                   }`}>
                   {item.consignment_status_text || '未寄售'}
                 </div>
@@ -718,12 +721,7 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
 
   const renderContent = () => {
     if (loading && page === 1) {
-      return (
-        <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-          <Loader2 size={32} className="animate-spin mb-4" />
-          <span className="text-xs">加载中...</span>
-        </div>
-      );
+      return <LoadingSpinner text="加载中..." />;
     }
 
     if (error) {
@@ -844,47 +842,48 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
     }
   };
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
-      <header className="bg-white px-4 py-3 flex items-center sticky top-0 z-10">
-        <button onClick={onBack} className="absolute left-4 p-1"><ArrowLeft size={20} /></button>
-        <h1 className="text-lg font-bold text-gray-800 w-full text-center">我的资产</h1>
+    <PageContainer
+      title="我的资产"
+      onBack={onBack}
+      rightAction={
         <button
           onClick={() => onNavigate('asset-history')}
-          className="absolute right-4 text-sm text-orange-600"
+          className="text-sm text-orange-600"
         >
           历史记录
         </button>
-      </header>
+      }
+    >
       <div className="p-4">
-           {/* Asset Card */}
-           <div className="bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl p-6 text-white shadow-lg mb-6 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
-              <div className="relative z-10">
-                  <div className="text-sm opacity-90 mb-1">可用余额 (元)</div>
-                  <div className="text-4xl font-bold mb-6">¥ {formatAmount(userInfo?.money)}</div>
-                  
-                  <div className="w-full h-px bg-white opacity-20 mb-4"></div>
-                  
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                          <div className="opacity-70 text-xs mb-1">寄售券</div>
-                          <div className="font-medium">{consignmentTicketCount} 张</div>
-                      </div>
-                      <div>
-                          <div className="opacity-70 text-xs mb-1">积分</div>
-                          <div className="font-medium">{userInfo?.score ?? 0}</div>
-                      </div>
-                      <div>
-                          <div className="opacity-70 text-xs mb-1">提现余额</div>
-                          <div className="font-medium">¥ {formatAmount(userInfo?.withdrawable_money)}</div>
-                      </div>
-                      <div>
-                          <div className="opacity-70 text-xs mb-1">服务费余额</div>
-                          <div className="font-medium">¥ {formatAmount(userInfo?.service_fee_balance)}</div>
-                      </div>
-                  </div>
+        {/* Asset Card */}
+        <div className="bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl p-6 text-white shadow-lg mb-6 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
+          <div className="relative z-10">
+            <div className="text-sm opacity-90 mb-1">可用余额 (元)</div>
+            <div className="text-4xl font-bold mb-6">¥ {formatAmount(userInfo?.money)}</div>
+
+            <div className="w-full h-px bg-white opacity-20 mb-4"></div>
+
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <div className="opacity-70 text-xs mb-1">寄售券</div>
+                <div className="font-medium">{consignmentTicketCount} 张</div>
               </div>
+              <div>
+                <div className="opacity-70 text-xs mb-1">积分</div>
+                <div className="font-medium">{userInfo?.score ?? 0}</div>
+              </div>
+              <div>
+                <div className="opacity-70 text-xs mb-1">提现余额</div>
+                <div className="font-medium">¥ {formatAmount(userInfo?.withdrawable_money)}</div>
+              </div>
+              <div>
+                <div className="opacity-70 text-xs mb-1">服务费余额</div>
+                <div className="font-medium">¥ {formatAmount(userInfo?.service_fee_balance)}</div>
+              </div>
+            </div>
           </div>
+        </div>
 
         {/* Actions */}
         <div className="grid grid-cols-4 gap-4 mb-8">
@@ -980,8 +979,8 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
                   <button
                     onClick={() => setActionTab('delivery')}
                     className={`flex-1 py-2 text-xs rounded-md transition-colors ${actionTab === 'delivery'
-                        ? 'bg-white text-orange-600 font-medium shadow-sm'
-                        : 'text-gray-600'
+                      ? 'bg-white text-orange-600 font-medium shadow-sm'
+                      : 'text-gray-600'
                       }`}
                   >
                     提货
@@ -989,8 +988,8 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
                   <button
                     onClick={() => setActionTab('consignment')}
                     className={`flex-1 py-2 text-xs rounded-md transition-colors ${actionTab === 'consignment'
-                        ? 'bg-white text-orange-600 font-medium shadow-sm'
-                        : 'text-gray-600'
+                      ? 'bg-white text-orange-600 font-medium shadow-sm'
+                      : 'text-gray-600'
                       }`}
                   >
                     寄售
@@ -1135,10 +1134,10 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
               onClick={handleConfirmAction}
               disabled={actionLoading || !canPerformAction()}
               className={`w-full py-3 rounded-lg text-sm font-medium transition-colors ${!actionLoading && canPerformAction()
-                  ? actionTab === 'delivery'
-                    ? 'bg-orange-600 text-white active:bg-orange-700'
-                    : 'bg-orange-600 text-white active:bg-orange-700'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                ? actionTab === 'delivery'
+                  ? 'bg-orange-600 text-white active:bg-orange-700'
+                  : 'bg-orange-600 text-white active:bg-orange-700'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
             >
               {actionLoading
@@ -1150,7 +1149,7 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
           </div>
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 };
 

@@ -1,11 +1,27 @@
-import React, { useState } from 'react';
-import { ChevronLeft } from 'lucide-react';
-import { AUTH_TOKEN_KEY, USER_INFO_KEY, cancelAccount } from '../services/api';
+/**
+ * AccountDeletion - 账户注销页面
+ * 
+ * 使用 PageContainer 布局组件重构
+ * 使用 ConfirmModal 确认弹窗
+ * 
+ * @author 树交所前端团队
+ * @version 2.0.0
+ */
 
+import React, { useState } from 'react';
+import PageContainer from '../components/layout/PageContainer';
+import { ConfirmModal } from '../components/common';
+import { AUTH_TOKEN_KEY, USER_INFO_KEY, cancelAccount } from '../services/api';
+import { useModal } from '../hooks';
+
+/**
+ * AccountDeletion 组件属性接口
+ */
 interface AccountDeletionProps {
   onBack: () => void;
 }
 
+/** 注销提示列表 */
 const tips = [
   '账户不存在安全状态（没有被盗、被封等风险）；',
   '平台内，您的资产账户已结清；',
@@ -13,6 +29,9 @@ const tips = [
   '您的所有订单均处于已完成状态。',
 ];
 
+/**
+ * AccountDeletion 账户注销页面组件
+ */
 const AccountDeletion: React.FC<AccountDeletionProps> = ({ onBack }) => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -20,32 +39,51 @@ const AccountDeletion: React.FC<AccountDeletionProps> = ({ onBack }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
+  // 使用 useModal 管理确认弹窗
+  const confirmModal = useModal();
 
+  /**
+   * 验证表单
+   */
+  const validateForm = () => {
     const trimmedPassword = password.trim();
     const trimmedConfirm = confirmPassword.trim();
-    const trimmedReason = reason.trim();
 
     if (!trimmedPassword || !trimmedConfirm) {
       setError('请填写登录密码并完成二次确认');
-      return;
+      return false;
     }
 
     if (trimmedPassword !== trimmedConfirm) {
       setError('两次输入的密码不一致');
-      return;
+      return false;
     }
 
     setError('');
-    const confirmed = window.confirm('确认提交账号注销申请？确认后账号将无法恢复。');
-    if (!confirmed) return;
+    return true;
+  };
 
+  /**
+   * 处理提交
+   */
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (validateForm()) {
+      confirmModal.show();
+    }
+  };
+
+  /**
+   * 确认注销
+   */
+  const handleConfirmDeletion = async () => {
+    confirmModal.hide();
     setLoading(true);
+
     try {
       const response = await cancelAccount({
-        password: trimmedPassword,
-        reason: trimmedReason,
+        password: password.trim(),
+        reason: reason.trim(),
       });
 
       // 注销成功后清理本地登录态
@@ -64,20 +102,10 @@ const AccountDeletion: React.FC<AccountDeletionProps> = ({ onBack }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-safe flex flex-col">
-      <header className="bg-white px-4 py-3 flex items-center justify-center sticky top-0 z-10 shadow-sm">
-        <button
-          className="absolute left-0 ml-1 p-1 active:opacity-70"
-          onClick={onBack}
-          aria-label="返回"
-        >
-          <ChevronLeft size={22} className="text-gray-800" />
-        </button>
-        <h1 className="text-base font-bold text-gray-900">账户注销</h1>
-      </header>
-
+    <PageContainer title="账户注销" onBack={onBack} padding={false}>
       <form className="flex flex-col flex-1" onSubmit={handleSubmit}>
         <main className="px-4 pt-4 flex flex-col gap-3 flex-1">
+          {/* 注销提示 */}
           <section className="rounded-xl bg-white shadow-sm border border-gray-100">
             <h2 className="px-4 py-3 text-sm font-semibold text-gray-900 border-b border-gray-100">
               注销提示
@@ -87,6 +115,7 @@ const AccountDeletion: React.FC<AccountDeletionProps> = ({ onBack }) => {
             </p>
           </section>
 
+          {/* 注销条件 */}
           <section className="rounded-xl bg-white shadow-sm border border-gray-100">
             <h2 className="px-4 py-3 text-sm font-semibold text-gray-900 border-b border-gray-100">
               注销条件
@@ -103,6 +132,7 @@ const AccountDeletion: React.FC<AccountDeletionProps> = ({ onBack }) => {
             </div>
           </section>
 
+          {/* 身份验证 */}
           <section className="rounded-xl bg-white shadow-sm border border-gray-100">
             <h2 className="px-4 py-3 text-sm font-semibold text-gray-900 border-b border-gray-100">
               身份验证
@@ -153,6 +183,7 @@ const AccountDeletion: React.FC<AccountDeletionProps> = ({ onBack }) => {
           </section>
         </main>
 
+        {/* 提交按钮 */}
         <div className="px-4 pt-6 pb-6">
           <button
             type="submit"
@@ -163,10 +194,20 @@ const AccountDeletion: React.FC<AccountDeletionProps> = ({ onBack }) => {
           </button>
         </div>
       </form>
-    </div>
+
+      {/* 确认弹窗 */}
+      <ConfirmModal
+        open={confirmModal.open}
+        title="确认注销账户"
+        content="确认提交账号注销申请？确认后账号将无法恢复。"
+        confirmText="确认注销"
+        cancelText="取消"
+        type="danger"
+        onConfirm={handleConfirmDeletion}
+        onCancel={confirmModal.hide}
+      />
+    </PageContainer>
   );
 };
 
 export default AccountDeletion;
-
-

@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowLeft, X } from 'lucide-react';
+import { X } from 'lucide-react';
+import PageContainer from '../components/layout/PageContainer';
+import { LoadingSpinner, EmptyState } from '../components/common';
+import { isValidAmount } from '../utils/validation';
+import { formatAmount } from '../utils/format';
 import {
   fetchPaymentAccountList,
   PaymentAccountItem,
@@ -9,6 +13,7 @@ import {
   USER_INFO_KEY,
 } from '../services/api';
 import { UserInfo } from '../types';
+
 
 interface BalanceWithdrawProps {
   onBack: () => void;
@@ -160,14 +165,7 @@ const BalanceWithdraw: React.FC<BalanceWithdrawProps> = ({ onBack, onNavigate })
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
-      <header className="bg-white px-4 py-3 flex items-center sticky top-0 z-10 shadow-sm">
-        <button onClick={onBack} className="absolute left-4 p-1">
-          <ArrowLeft size={20} />
-        </button>
-        <h1 className="text-lg font-bold text-gray-800 w-full text-center">余额提现</h1>
-      </header>
-
+    <PageContainer title="余额提现" onBack={onBack}>
       <div className="p-4 space-y-4">
         <div className="bg-white rounded-xl p-4 shadow-sm space-y-2">
           <div className="flex justify-between text-xs text-gray-500">
@@ -280,8 +278,8 @@ const BalanceWithdraw: React.FC<BalanceWithdrawProps> = ({ onBack, onNavigate })
 
         <button
           className={`w-full rounded-full py-3 text-sm font-medium ${submitting
-              ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
-              : 'bg-orange-600 text-white active:bg-orange-700'
+            ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+            : 'bg-orange-600 text-white active:bg-orange-700'
             }`}
           onClick={handleSubmit}
           disabled={submitting}
@@ -354,8 +352,8 @@ const BalanceWithdraw: React.FC<BalanceWithdrawProps> = ({ onBack, onNavigate })
                     <div
                       key={itemId || `${typeText}-${account}`}
                       className={`border rounded-lg p-3 cursor-pointer transition-colors ${isSelected
-                          ? 'border-orange-500 bg-orange-50'
-                          : 'border-gray-100 bg-gray-50'
+                        ? 'border-orange-500 bg-orange-50'
+                        : 'border-gray-100 bg-gray-50'
                         }`}
                       onClick={() => {
                         setSelectedAccount(item);
@@ -395,7 +393,7 @@ const BalanceWithdraw: React.FC<BalanceWithdrawProps> = ({ onBack, onNavigate })
           </div>
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 };
 

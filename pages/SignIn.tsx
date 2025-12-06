@@ -1,20 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, Gift, CalendarCheck, Users, Wallet, Info, X, History, ChevronRight as ChevronRightIcon, ChevronLeft as ChevronLeftIcon } from 'lucide-react';
-import { 
-  fetchPaymentAccountList, 
-  PaymentAccountItem, 
-  submitWithdraw, 
-  AUTH_TOKEN_KEY,
-  fetchSignInRules,
-  fetchSignInInfo,
-  doSignIn,
-  getSignInRecords,
-  fetchSignInProgress,
-  fetchPromotionCard,
-  SignInRulesData,
-  SignInInfoData,
-  SignInRecordItem,
-  SignInProgressData
+import {
+    fetchPaymentAccountList,
+    PaymentAccountItem,
+    submitWithdraw,
+    AUTH_TOKEN_KEY,
+    fetchSignInRules,
+    fetchSignInInfo,
+    doSignIn,
+    getSignInRecords,
+    fetchSignInProgress,
+    fetchPromotionCard,
+    SignInRulesData,
+    SignInInfoData,
+    SignInRecordItem,
+    SignInProgressData
 } from '../services/api';
 
 interface SignInProps {
@@ -51,7 +51,7 @@ const SignIn: React.FC<SignInProps> = ({ onBack, onNavigate }) => {
         const loadData = async () => {
             setLoading(true);
             const token = localStorage.getItem(AUTH_TOKEN_KEY);
-            
+
             try {
                 // Load activity rules (no token required)
                 const rulesRes = await fetchSignInRules();
@@ -66,12 +66,12 @@ const SignIn: React.FC<SignInProps> = ({ onBack, onNavigate }) => {
                         fetchSignInProgress(token),
                         fetchPromotionCard(token).catch(() => ({ code: -1, data: null })) // 如果失败不影响其他数据加载
                     ]);
-                    
+
                     if (infoRes.code === 0 && infoRes.data) {
                         const data = infoRes.data;
                         setBalance(data.total_reward || 0);
                         setHasSignedIn(data.today_signed || false);
-                        
+
                         // Convert signed dates from YYYY-MM-DD to DateString format for calendar
                         // Store both formats for compatibility
                         const dates = data.calendar?.signed_dates?.map((dateStr: string) => {
@@ -87,7 +87,7 @@ const SignIn: React.FC<SignInProps> = ({ onBack, onNavigate }) => {
                         }) || [];
                         setSignedInDates(dates);
                     }
-                    
+
                     if (progressRes.code === 0 && progressRes.data) {
                         console.log('进度数据:', progressRes.data);
                         setProgressInfo(progressRes.data);
@@ -131,7 +131,7 @@ const SignIn: React.FC<SignInProps> = ({ onBack, onNavigate }) => {
             if (res.code === 0 && res.data) {
                 const data = res.data;
                 const rewardAmount = data.daily_reward || 0;
-                
+
                 setRedPacketAmount(rewardAmount);
                 setShowRedPacket(true);
                 setBalance(data.total_reward || 0);
@@ -150,7 +150,7 @@ const SignIn: React.FC<SignInProps> = ({ onBack, onNavigate }) => {
                     }
                 }) || [];
                 setSignedInDates(dates);
-                
+
                 // Refresh progress info after sign in
                 const token = localStorage.getItem(AUTH_TOKEN_KEY);
                 if (token) {
@@ -213,7 +213,7 @@ const SignIn: React.FC<SignInProps> = ({ onBack, onNavigate }) => {
     const handleWithdrawClick = () => {
         const minAmount = progressInfo?.withdraw_min_amount || activityInfo?.activity?.withdraw_min_amount || 10;
         const canWithdraw = progressInfo?.can_withdraw ?? (balance >= minAmount);
-        
+
         if (!canWithdraw) {
             alert(`余额不足 ${minAmount.toFixed(2)} 元，暂不可提现`);
             return;
@@ -255,11 +255,11 @@ const SignIn: React.FC<SignInProps> = ({ onBack, onNavigate }) => {
                             fetchSignInInfo(token),
                             fetchSignInProgress(token)
                         ]);
-                        
+
                         if (infoRes.code === 0 && infoRes.data) {
                             setBalance(infoRes.data.total_reward || 0);
                         }
-                        
+
                         if (progressRes.code === 0 && progressRes.data) {
                             setProgressInfo(progressRes.data);
                             if (progressRes.data.total_money !== undefined) {
@@ -311,8 +311,8 @@ const SignIn: React.FC<SignInProps> = ({ onBack, onNavigate }) => {
                     // Handle both DateString format and YYYY-MM-DD format
                     const signed = signedDate.includes('-') ? new Date(signedDate) : new Date(signedDate);
                     return signed.getFullYear() === currentYear &&
-                           signed.getMonth() === currentMonth &&
-                           signed.getDate() === day;
+                        signed.getMonth() === currentMonth &&
+                        signed.getDate() === day;
                 } catch {
                     return false;
                 }
@@ -391,11 +391,11 @@ const SignIn: React.FC<SignInProps> = ({ onBack, onNavigate }) => {
                         {activityInfo?.activity?.name || '共识建设与通道测试活动'}
                     </h2>
                     <div className="mt-2 text-xs opacity-75">
-                        活动时间：{activityInfo?.activity?.start_time 
+                        活动时间：{activityInfo?.activity?.start_time
                             ? new Date(activityInfo.activity.start_time).toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' })
-                            : '2025.11.29'} - {activityInfo?.activity?.end_time 
-                            ? new Date(activityInfo.activity.end_time).toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' })
-                            : '2025.12.04'}
+                            : '2025.11.29'} - {activityInfo?.activity?.end_time
+                                ? new Date(activityInfo.activity.end_time).toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' })
+                                : '2025.12.04'}
                     </div>
                 </div>
             </div>
@@ -439,111 +439,91 @@ const SignIn: React.FC<SignInProps> = ({ onBack, onNavigate }) => {
                         </div>
                         <span className="text-xs text-gray-400">T+1 到账</span>
                     </div>
-                    <div className="bg-gray-50 rounded-lg p-3 mb-4">
-                        <div className="flex justify-between text-sm mb-2">
-                            <span className="text-gray-500">当前余额</span>
-                            <span className="font-bold text-red-600">{(progressInfo?.total_money ?? balance).toFixed(2)} 元</span>
+
+                    {/* 余额显示优化 */}
+                    <div className="bg-gradient-to-br from-red-50 to-orange-50 rounded-xl p-5 mb-4 relative overflow-hidden border border-red-100">
+                        <div className="absolute -right-3 -top-3 opacity-5 transform rotate-12">
+                            <Wallet size={80} className="text-red-500" />
                         </div>
-                        <div className="flex justify-between text-sm mb-1">
-                            <span className="text-gray-500">提现门槛</span>
-                            <span className="font-medium">{(progressInfo?.withdraw_min_amount || activityInfo?.activity?.withdraw_min_amount || 10).toFixed(2)} 元</span>
+                        <div className="flex items-center gap-1 text-gray-500 text-sm mb-2 relative z-10">
+                            <Wallet size={14} />
+                            <span>当前余额</span>
                         </div>
-                        {(() => {
-                            // Use progress data from API if available, otherwise calculate
-                            const currentBalance = progressInfo?.total_money ?? balance;
-                            const minAmount = progressInfo?.withdraw_min_amount || activityInfo?.activity?.withdraw_min_amount || 10;
-                            
-                            // Calculate progress: use API progress if it's a valid number (> 0 or explicitly 0 with balance > 0), otherwise calculate
-                            let progress: number;
-                            if (progressInfo && typeof progressInfo.progress === 'number') {
-                                // If API returns progress but it's 0 while we have balance, recalculate
-                                if (progressInfo.progress === 0 && currentBalance > 0) {
-                                    progress = Math.min((currentBalance / minAmount) * 100, 100);
-                                } else {
-                                    progress = progressInfo.progress;
-                                }
-                            } else {
-                                // Calculate from balance
-                                progress = Math.min((currentBalance / minAmount) * 100, 100);
-                            }
-                            
-                            // Use API remaining if available, otherwise calculate
-                            const remaining = progressInfo && typeof progressInfo.remaining_amount === 'number'
-                                ? progressInfo.remaining_amount
-                                : Math.max(minAmount - currentBalance, 0);
-                            
-                            return (
-                                <>
-                                    <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
-                                        <div
-                                            className="bg-green-500 h-full transition-all duration-500"
-                                            style={{ width: `${Math.max(0, Math.min(100, progress))}%` }}
-                                        />
-                                    </div>
-                                    <div className="flex justify-between items-center mt-1">
-                                        <div className="text-xs text-gray-400">
-                                            进度: {progress.toFixed(0)}%
-                                        </div>
-                                        {remaining > 0 && (
-                                            <div className="text-xs text-gray-500">
-                                                还差 {remaining.toFixed(2)} 元
-                                            </div>
-                                        )}
-                                    </div>
-                                </>
-                            );
-                        })()}
+                        <div className="relative z-10 flex items-baseline">
+                            <span className="text-3xl font-bold text-gray-900 mr-1">
+                                {(progressInfo?.total_money ?? balance).toFixed(2)}
+                            </span>
+                            <span className="text-sm font-normal text-gray-500">元</span>
+                        </div>
                     </div>
-                    <button
-                        onClick={handleWithdrawClick}
-                        disabled={!(progressInfo?.can_withdraw ?? false)}
-                        className={`w-full py-3 rounded-lg font-medium text-sm active:opacity-90 ${
-                            !(progressInfo?.can_withdraw ?? false)
-                                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                : 'bg-gray-900 text-white'
-                        }`}
-                    >
-                        申请提现
-                    </button>
+
+                    {/* 提现按钮 - 根据余额动态显示 */}
+                    {(() => {
+                        const currentBalance = progressInfo?.total_money ?? balance;
+                        const minAmount = 10;
+                        const canWithdraw = currentBalance >= minAmount;
+
+                        return (
+                            <button
+                                onClick={canWithdraw ? handleWithdrawClick : undefined}
+                                disabled={!canWithdraw}
+                                className={`w-full py-3 rounded-lg font-bold text-sm transition-all shadow-sm ${canWithdraw
+                                    ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white active:scale-[0.98] active:opacity-90'
+                                    : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                    }`}
+                            >
+                                {canWithdraw ? '申请提现' : `余额不足10元，还差 ${(minAmount - currentBalance).toFixed(2)} 元`}
+                            </button>
+                        );
+                    })()}
                 </div>
 
-                {/* Rules Section */}
+                {/* Rules Section - 优化排版 */}
                 <div className="bg-white rounded-xl p-4 shadow-sm">
-                    <div className="flex items-center gap-2 font-bold text-gray-800 mb-3">
+                    <div className="flex items-center gap-2 font-bold text-gray-800 mb-4">
                         <Info className="text-blue-500" size={20} />
                         <span>活动规则</span>
                     </div>
-                    <div className="space-y-3 text-sm text-gray-600 leading-relaxed">
+                    <div className="space-y-3">
                         {activityInfo?.rules?.map((rule, index) => (
-                            <div key={index} className="flex gap-2">
-                                <span className={`text-xs px-1.5 py-0.5 rounded shrink-0 h-fit mt-0.5 ${
-                                    rule.key === 'daily_reward' || rule.key === 'register_reward' || rule.key === 'invite_reward'
-                                        ? 'bg-red-100 text-red-600'
-                                        : 'bg-blue-100 text-blue-600'
-                                }`}>
-                                    {rule.title}
-                                </span>
-                                <div>
-                                    <p>{rule.description}</p>
+                            <div key={index} className="flex items-start gap-3 bg-gray-50 rounded-lg p-3">
+                                <div className="w-24 shrink-0 flex justify-center">
+                                    <span className={`text-xs px-2 py-0.5 rounded-md w-full text-center font-medium block ${rule.key === 'daily_reward' ? 'bg-orange-100 text-orange-600' :
+                                        rule.key === 'register_reward' ? 'bg-green-100 text-green-600' :
+                                            rule.key === 'invite_reward' ? 'bg-purple-100 text-purple-600' :
+                                                'bg-blue-100 text-blue-600'
+                                        }`}>
+                                        {rule.title}
+                                    </span>
                                 </div>
+                                <p className="text-sm text-gray-600 flex-1 leading-relaxed">{rule.description}</p>
                             </div>
                         ))}
                         {!activityInfo?.rules && (
                             <>
-                                <div className="flex gap-2">
-                                    <span className="bg-red-100 text-red-600 text-xs px-1.5 py-0.5 rounded shrink-0 h-fit mt-0.5">奖励</span>
-                                    <div>
-                                        <p>• 注册激活：<span className="text-red-500 font-bold">2.88 元</span></p>
-                                        <p>• 每日签到：<span className="text-red-500 font-bold">0.2 ~ 0.5 元</span> (随机红包)</p>
-                                        <p>• 邀请好友：<span className="text-red-500 font-bold">1.5 ~ 2.0 元/人</span></p>
+                                <div className="flex items-start gap-3 bg-gray-50 rounded-lg p-3">
+                                    <div className="w-24 shrink-0 flex justify-center">
+                                        <span className="text-xs px-2 py-0.5 rounded-md w-full text-center font-medium block bg-orange-100 text-orange-600">每日签到奖励</span>
                                     </div>
+                                    <p className="text-sm text-gray-600 flex-1 leading-relaxed">每日首次签到可获得 <span className="text-red-500 font-bold">0.20 - 0.50</span> 元随机金额奖励</p>
                                 </div>
-                                <div className="flex gap-2">
-                                    <span className="bg-blue-100 text-blue-600 text-xs px-1.5 py-0.5 rounded shrink-0 h-fit mt-0.5">提现</span>
-                                    <div>
-                                        <p>• 账户余额满 <span className="font-bold">10.00 元</span> 可申请提现。</p>
-                                        <p>• 每日限提现 1 次， T+1 到账。</p>
+                                <div className="flex items-start gap-3 bg-gray-50 rounded-lg p-3">
+                                    <div className="w-24 shrink-0 flex justify-center">
+                                        <span className="text-xs px-2 py-0.5 rounded-md w-full text-center font-medium block bg-green-100 text-green-600">注册奖励</span>
                                     </div>
+                                    <p className="text-sm text-gray-600 flex-1 leading-relaxed">新用户注册/激活可获得 <span className="text-red-500 font-bold">2.88</span> 元奖励</p>
+                                </div>
+                                <div className="flex items-start gap-3 bg-gray-50 rounded-lg p-3">
+                                    <div className="w-24 shrink-0 flex justify-center">
+                                        <span className="text-xs px-2 py-0.5 rounded-md w-full text-center font-medium block bg-purple-100 text-purple-600">邀请好友奖励</span>
+                                    </div>
+                                    <p className="text-sm text-gray-600 flex-1 leading-relaxed">邀请好友注册可获得 <span className="text-red-500 font-bold">2.00 - 2.00</span> 元随机金额奖励</p>
+                                </div>
+                                <div className="flex items-start gap-3 bg-gray-50 rounded-lg p-3">
+                                    <div className="w-24 shrink-0 flex justify-center">
+                                        <span className="text-xs px-2 py-0.5 rounded-md w-full text-center font-medium block bg-blue-100 text-blue-600">提现规则</span>
+                                    </div>
+                                    <p className="text-sm text-gray-600 flex-1 leading-relaxed">账户余额满 <span className="font-bold">10.00</span> 元可申请提现，每人每天限提 1 次，24 小时内审核到账。</p>
                                 </div>
                             </>
                         )}

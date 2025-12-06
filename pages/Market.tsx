@@ -1,6 +1,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { Search, Filter, LayoutGrid, List } from 'lucide-react';
+import { LoadingSpinner, EmptyState, LazyImage } from '../components/common';
 import { Product } from '../types';
 import {
   fetchShopProducts,
@@ -205,8 +206,8 @@ const Market: React.FC<MarketProps> = ({ onProductSelect }) => {
               key={filter.id}
               onClick={() => handleFilterClick(filter.id)}
               className={`flex items-center justify-center flex-1 py-1 ${(activeFilter === filter.id || (filter.id === 'price' && activeFilter.startsWith('price')))
-                  ? 'text-orange-600 font-bold'
-                  : 'text-gray-500'
+                ? 'text-orange-600 font-bold'
+                : 'text-gray-500'
                 }`}
             >
               {filter.label}
@@ -224,15 +225,13 @@ const Market: React.FC<MarketProps> = ({ onProductSelect }) => {
       {/* Product Grid */}
       <div className="p-3">
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-            <LayoutGrid size={40} className="mb-2 opacity-20" />
-            <p className="text-xs">商品加载中...</p>
-          </div>
+          <LoadingSpinner text="商品加载中..." />
         ) : error ? (
-          <div className="flex flex-col items-center justify-center py-12 text-red-400">
-            <LayoutGrid size={40} className="mb-2 opacity-20" />
-            <p className="text-xs">{error}</p>
-          </div>
+          <EmptyState
+            icon={<LayoutGrid size={48} className="text-gray-300" />}
+            title="加载失败"
+            description={error}
+          />
         ) : filteredProducts.length > 0 ? (
           <div className="grid grid-cols-2 gap-3">
             {filteredProducts.map((product) => (
@@ -242,7 +241,7 @@ const Market: React.FC<MarketProps> = ({ onProductSelect }) => {
                 onClick={() => onProductSelect && onProductSelect(product)}
               >
                 <div className="aspect-square bg-gray-100 relative">
-                  <img src={product.image} alt={product.title} className="w-full h-full object-cover" />
+                  <LazyImage src={product.image} alt={product.title} className="w-full h-full object-cover" />
                 </div>
                 <div className="p-2.5 flex flex-col flex-1 justify-between">
                   <div className="mb-2">
@@ -265,10 +264,11 @@ const Market: React.FC<MarketProps> = ({ onProductSelect }) => {
             ))}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-            <LayoutGrid size={40} className="mb-2 opacity-20" />
-            <p className="text-xs">暂无相关商品</p>
-          </div>
+          <EmptyState
+            icon={<LayoutGrid size={48} className="text-gray-300" />}
+            title="暂无相关商品"
+            description="换个关键词试试吧"
+          />
         )}
       </div>
     </div>

@@ -35,7 +35,7 @@ const resolveApiOrigin = () => {
     if (baseUrl.startsWith('http')) {
       try {
         return new URL(baseUrl).origin;
-      } catch {}
+      } catch { }
     }
   }
 
@@ -711,7 +711,7 @@ export async function register(params: RegisterParams): Promise<ApiResponse> {
     return data;
   } catch (error: any) {
     console.error('注册接口调用失败:', error);
-    
+
     // 提供更详细的错误信息
     if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
       // 这通常是 CORS 或网络问题
@@ -719,7 +719,7 @@ export async function register(params: RegisterParams): Promise<ApiResponse> {
       (corsError as any).isCorsError = true;
       throw corsError;
     }
-    
+
     throw error;
   }
 }
@@ -815,6 +815,7 @@ export async function cancelAccount(params: CancelAccountParams): Promise<ApiRes
 
 export interface TransferBalanceToServiceFeeParams {
   amount: number | string;
+  pay_type?: 'money' | 'withdraw';
   token?: string;
 }
 
@@ -841,7 +842,7 @@ export async function transferBalanceToServiceFee(
   }
 
   try {
-    const url = `${API_ENDPOINTS.account.transferBalanceToServiceFee}?amount=${params.amount}`;
+    const url = `${API_ENDPOINTS.account.transferBalanceToServiceFee}?amount=${params.amount}${params.pay_type ? `&pay_type=${params.pay_type}` : ''}`;
     const data = await apiFetch<TransferBalanceToServiceFeeResponse>(url, {
       method: 'POST',
       token,
@@ -1184,7 +1185,7 @@ export async function uploadImage(
   formData.append('topic', topic);
 
   try {
-    const data = await apiFetch<{ file?: UploadImageResult; [key: string]: any }>(API_ENDPOINTS.upload.image, {
+    const data = await apiFetch<{ file?: UploadImageResult;[key: string]: any }>(API_ENDPOINTS.upload.image, {
       method: 'POST',
       body: formData,
       token,
@@ -1842,8 +1843,8 @@ export async function createOrder(
     try {
       const defaultAddressResponse = await fetchDefaultAddress(token);
       if (defaultAddressResponse.code === 1 && defaultAddressResponse.data?.id) {
-        addressId = typeof defaultAddressResponse.data.id === 'string' 
-          ? parseInt(defaultAddressResponse.data.id, 10) 
+        addressId = typeof defaultAddressResponse.data.id === 'string'
+          ? parseInt(defaultAddressResponse.data.id, 10)
           : defaultAddressResponse.data.id;
       }
     } catch (error) {
@@ -1932,8 +1933,8 @@ export async function buyShopOrder(
     try {
       const defaultAddressResponse = await fetchDefaultAddress(token);
       if (defaultAddressResponse.code === 1 && defaultAddressResponse.data?.id) {
-        addressId = typeof defaultAddressResponse.data.id === 'string' 
-          ? parseInt(defaultAddressResponse.data.id, 10) 
+        addressId = typeof defaultAddressResponse.data.id === 'string'
+          ? parseInt(defaultAddressResponse.data.id, 10)
           : defaultAddressResponse.data.id;
       }
     } catch (error) {
@@ -2928,7 +2929,7 @@ export interface MyCollectionListData {
   consignment_coupon?: number;
 }
 
-export interface GetMyCollectionParams extends GetPurchaseRecordsParams {}
+export interface GetMyCollectionParams extends GetPurchaseRecordsParams { }
 
 export async function getMyCollection(
   params: GetMyCollectionParams = {},
@@ -2960,32 +2961,32 @@ export async function getMyCollection(
       // 判断是否已提货：如果 delivery_status 字段存在且不为空，说明已提货
       // delivery_status 可能是字符串（如"待发货"、"待收货"、"已签收"）或数字（1=已提货，0=未提货）
       const deliveryStatusValue = record.delivery_status;
-      
+
       // 检查 status_text 是否是提货状态（待发货/待收货/已签收）
       const statusText = record.status_text || '';
       const isDeliveryStatusText = statusText === '待发货' || statusText === '待收货' || statusText === '已签收';
-      
+
       // 尝试从提货订单列表中查找
-      const userCollectionId = (record as any).user_collection_id ?? 
-                               (record as any).collection_id ?? 
-                               (record as any).id ?? 
-                               record.order_id;
+      const userCollectionId = (record as any).user_collection_id ??
+        (record as any).collection_id ??
+        (record as any).id ??
+        record.order_id;
       const deliveryOrder = deliveryOrdersMap.get(userCollectionId);
-      
+
       // 如果 delivery_status 不为空，或者 status_text 是提货状态，或者找到提货订单，说明已提货
-      const isDelivered = (deliveryStatusValue !== undefined && 
-                         deliveryStatusValue !== null && 
-                         deliveryStatusValue !== '' &&
-                         (typeof deliveryStatusValue === 'string' 
-                           ? deliveryStatusValue.trim() !== '' 
-                           : deliveryStatusValue === 1)) || isDeliveryStatusText || !!deliveryOrder;
-      
+      const isDelivered = (deliveryStatusValue !== undefined &&
+        deliveryStatusValue !== null &&
+        deliveryStatusValue !== '' &&
+        (typeof deliveryStatusValue === 'string'
+          ? deliveryStatusValue.trim() !== ''
+          : deliveryStatusValue === 1)) || isDeliveryStatusText || !!deliveryOrder;
+
       // delivery_status 为数字类型时，1 表示已提货，0 表示未提货
       // 如果是字符串类型，说明已提货（包含提货状态文本）
-      const deliveryStatusNum = typeof deliveryStatusValue === 'number' 
-        ? deliveryStatusValue 
+      const deliveryStatusNum = typeof deliveryStatusValue === 'number'
+        ? deliveryStatusValue
         : (isDelivered ? 1 : 0);
-      
+
       // 提货状态文本：如果已提货，优先使用 delivery_status，然后使用提货订单状态，最后使用 status_text（如果是提货状态），否则显示"未提货"
       let deliveryStatusText = '未提货';
       if (isDelivered) {
@@ -3000,14 +3001,14 @@ export async function getMyCollection(
           deliveryStatusText = record.status_text || '已提货';
         }
       }
-      
+
       return {
         id: record.order_id,
         // 优先使用响应中的 user_collection_id，如果没有则尝试从其他字段获取
-        user_collection_id: (record as any).user_collection_id ?? 
-                           (record as any).collection_id ?? 
-                           (record as any).id ?? 
-                           record.order_id,
+        user_collection_id: (record as any).user_collection_id ??
+          (record as any).collection_id ??
+          (record as any).id ??
+          record.order_id,
         item_id: record.item_id,
         title: record.item_title,
         image: record.item_image,
@@ -3335,20 +3336,20 @@ export async function deliverCollectionItem(
 
   // 如果 address_id 为 null，尝试获取默认收货地址
   let addressId = params.address_id ?? null;
-  
+
   if (!addressId || addressId === null) {
     try {
       const defaultAddressResponse = await fetchDefaultAddress(token);
       if (defaultAddressResponse.code === 1 && defaultAddressResponse.data?.id) {
-        addressId = typeof defaultAddressResponse.data.id === 'string' 
-          ? parseInt(defaultAddressResponse.data.id, 10) 
+        addressId = typeof defaultAddressResponse.data.id === 'string'
+          ? parseInt(defaultAddressResponse.data.id, 10)
           : defaultAddressResponse.data.id;
       }
     } catch (error) {
       // 如果没有默认地址，抛出错误提示用户
       throw new Error('请先选择收货地址');
     }
-    
+
     // 再次检查，如果仍然没有地址ID，抛出错误
     if (!addressId || addressId === null) {
       throw new Error('请先选择收货地址');
@@ -4047,7 +4048,7 @@ export async function payOrder(
   // 由于 /shopOrder/buy 需要完整的订单信息，先获取订单详情
   try {
     const orderDetailResponse = await getOrderDetail({ id: params.id, token });
-    
+
     if (orderDetailResponse.code !== 1 || !orderDetailResponse.data) {
       throw new Error(orderDetailResponse.msg || '获取订单详情失败');
     }
@@ -4060,26 +4061,26 @@ export async function payOrder(
     }
 
     // 判断是否为实物商品
-    const isPhysicalProduct = order.product_type === 'physical' || 
-                             (order.items && order.items.some(item => item.is_physical === '1'));
+    const isPhysicalProduct = order.product_type === 'physical' ||
+      (order.items && order.items.some(item => item.is_physical === '1'));
 
     // 获取地址ID：如果订单有收货地址信息，说明创建时已有地址，尝试从订单中获取或使用默认地址
     // 注意：订单详情可能不包含 address_id 字段，需要从收货地址信息推断或使用默认地址
     let addressId = (order as any).address_id || null;
-    
+
     if (isPhysicalProduct && (!addressId || addressId === null)) {
       try {
         const defaultAddressResponse = await fetchDefaultAddress(token);
         if (defaultAddressResponse.code === 1 && defaultAddressResponse.data?.id) {
-          addressId = typeof defaultAddressResponse.data.id === 'string' 
-            ? parseInt(defaultAddressResponse.data.id, 10) 
+          addressId = typeof defaultAddressResponse.data.id === 'string'
+            ? parseInt(defaultAddressResponse.data.id, 10)
             : defaultAddressResponse.data.id;
         }
       } catch (error) {
         // 如果是实物商品但没有地址，抛出错误
         throw new Error('实物商品必须填写收货地址，请先添加收货地址');
       }
-      
+
       // 再次检查，如果是实物商品但仍然没有地址ID，抛出错误
       if (!addressId || addressId === null) {
         throw new Error('实物商品必须填写收货地址，请先添加收货地址');

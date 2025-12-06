@@ -1,6 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Clock } from 'lucide-react';
+import { Clock } from 'lucide-react';
+import PageContainer from '../components/layout/PageContainer';
+import { LoadingSpinner, EmptyState, LazyImage } from '../components/common';
+import { formatAmount } from '../utils/format';
 import { Product } from '../types';
 import {
   fetchCollectionSessions,
@@ -68,14 +71,14 @@ const TradingZone: React.FC<TradingZoneProps> = ({ onBack, onProductSelect }) =>
           typeof item.item_id === 'number'
             ? item.item_id
             : typeof item.id === 'number'
-            ? item.id
-            : Number(item.item_id ?? item.id ?? item.consignment_id ?? Date.now());
+              ? item.id
+              : Number(item.item_id ?? item.id ?? item.consignment_id ?? Date.now());
         const resolvedPrice =
           typeof item.consignment_price === 'number'
             ? item.consignment_price
             : typeof item.price === 'number'
-            ? item.price
-            : Number(item.consignment_price ?? item.price ?? 0) || 0;
+              ? item.price
+              : Number(item.consignment_price ?? item.price ?? 0) || 0;
 
         const hasStockInfo = typeof (item as any).stock === 'number';
         const resolvedStock = hasStockInfo ? Number((item as any).stock) : 1; // 默认视为可售 1 件
@@ -256,16 +259,10 @@ const TradingZone: React.FC<TradingZoneProps> = ({ onBack, onProductSelect }) =>
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-safe">
-      <header className="bg-white px-4 py-3 flex items-center sticky top-0 z-10 shadow-sm">
-        <button onClick={handleBack} className="absolute left-4 p-1 text-gray-600">
-          <ArrowLeft size={20} />
-        </button>
-        <h1 className="text-lg font-bold text-gray-800 w-full text-center">
-          {selectedSession ? `${selectedSession.title} · 专场详情` : '交易专区'}
-        </h1>
-      </header>
-
+    <PageContainer
+      title={selectedSession ? `${selectedSession.title} · 专场详情` : '交易专区'}
+      onBack={handleBack}
+    >
       <div className="p-4 space-y-4">
         {selectedSession ? (
           <>
@@ -373,9 +370,8 @@ const TradingZone: React.FC<TradingZoneProps> = ({ onBack, onProductSelect }) =>
                     return (
                       <div
                         key={itemKey}
-                        className={`bg-gray-50 rounded-lg overflow-hidden shadow-[0_1px_3px_rgba(15,23,42,0.08)] active:scale-[0.97] transition-transform flex flex-col relative ${
-                          isSoldOut ? 'opacity-60 pointer-events-none' : 'cursor-pointer'
-                        }`}
+                        className={`bg-gray-50 rounded-lg overflow-hidden shadow-[0_1px_3px_rgba(15,23,42,0.08)] active:scale-[0.97] transition-transform flex flex-col relative ${isSoldOut ? 'opacity-60 pointer-events-none' : 'cursor-pointer'
+                          }`}
                         onClick={() => {
                           if (!onProductSelect || isSoldOut) return;
                           const product: Product = {
@@ -547,7 +543,7 @@ const TradingZone: React.FC<TradingZoneProps> = ({ onBack, onProductSelect }) =>
           </>
         )}
       </div>
-    </div>
+    </PageContainer>
   );
 };
 

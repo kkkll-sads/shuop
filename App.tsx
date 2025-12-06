@@ -1,52 +1,62 @@
-
 import React, { useState, useEffect } from 'react';
 import BottomNav from './components/BottomNav';
-import Home from './pages/Home';
-import Market from './pages/Market';
-import News from './pages/News';
-import Orders from './pages/Orders';
-import OrderListPage from './pages/OrderListPage';
-import Profile from './pages/Profile';
-import AssetView from './pages/AssetView';
-import AddressList from './pages/AddressList';
-import RealNameAuth from './pages/RealNameAuth';
-import MyFriends from './pages/MyFriends';
-import TradingZone from './pages/TradingZone';
-import AnnouncementDetail from './pages/AnnouncementDetail';
-import AboutUs from './pages/AboutUs';
-import ArtistShowcase from './pages/ArtistShowcase';
-import ArtistDetail from './pages/ArtistDetail';
-import ArtistWorksShowcase from './pages/ArtistWorksShowcase';
-import PrivacyPolicy from './pages/PrivacyPolicy';
-import UserAgreement from './pages/UserAgreement';
-import ProductDetail from './pages/ProductDetail';
-import Settings from './pages/Settings';
-import ResetLoginPassword from './pages/ResetLoginPassword';
-import ResetPayPassword from './pages/ResetPayPassword';
-import EditProfile from './pages/EditProfile';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import NotificationSettings from './pages/NotificationSettings';
-import AccountDeletion from './pages/AccountDeletion';
-import ForgotPassword from './pages/ForgotPassword';
-import CardManagement from './pages/CardManagement';
-import AgentAuth from './pages/AgentAuth';
-import HelpCenter from './pages/HelpCenter';
-import UserSurvey from './pages/UserSurvey';
-import OnlineService from './pages/OnlineService';
-import BalanceRecharge from './pages/BalanceRecharge';
-import BalanceWithdraw from './pages/BalanceWithdraw';
-import ExtensionWithdraw from './pages/ExtensionWithdraw';
-import ServiceRecharge from './pages/ServiceRecharge';
-import AssetHistory from './pages/AssetHistory';
-import CumulativeRights from './pages/CumulativeRights';
-import ConsignmentVoucher from './pages/ConsignmentVoucher';
-import MessageCenter from './pages/MessageCenter';
-import MyCollection from './pages/MyCollection';
-import SignIn from './pages/SignIn';
-import InviteFriends from './pages/InviteFriends';
 import { Tab, Product, NewsItem, LoginSuccessPayload } from './types';
 import { AUTH_TOKEN_KEY, USER_INFO_KEY, fetchAnnouncements, AnnouncementItem } from './services/api';
+
+// Auth
+import Login from './pages/auth/Login';
+import Register from './pages/auth/Register';
+import ForgotPassword from './pages/auth/ForgotPassword';
+import ResetLoginPassword from './pages/auth/ResetLoginPassword';
+import ResetPayPassword from './pages/auth/ResetPayPassword';
+
+// User pages
+import Profile from './pages/user/Profile';
+import EditProfile from './pages/user/EditProfile';
+import AddressList from './pages/user/AddressList';
+import RealNameAuth from './pages/user/RealNameAuth';
+import Settings from './pages/user/Settings';
+import AgentAuth from './pages/user/AgentAuth';
+import MyFriends from './pages/user/MyFriends';
+import InviteFriends from './pages/user/InviteFriends';
+import AccountDeletion from './pages/user/AccountDeletion';
+import UserSurvey from './pages/user/UserSurvey';
+import NotificationSettings from './pages/user/NotificationSettings';
+
+// CMS / Static pages
+import Home from './pages/cms/Home';
+import SignIn from './pages/cms/SignIn';
+import News from './pages/cms/News';
+import MessageCenter from './pages/cms/MessageCenter';
+import OnlineService from './pages/cms/OnlineService';
+import HelpCenter from './pages/cms/HelpCenter';
+import AnnouncementDetail from './pages/cms/AnnouncementDetail';
+import AboutUs from './pages/cms/AboutUs';
+import PrivacyPolicy from './pages/cms/PrivacyPolicy';
+import UserAgreement from './pages/cms/UserAgreement';
+
+// Market pages
+import Market from './pages/market/Market';
+import ProductDetail from './pages/market/ProductDetail';
+import OrderListPage from './pages/market/OrderListPage';
+import Orders from './pages/market/Orders';
+import TradingZone from './pages/market/TradingZone';
+import ArtistShowcase from './pages/market/ArtistShowcase';
+import ArtistDetail from './pages/market/ArtistDetail';
+import ArtistWorksShowcase from './pages/market/ArtistWorksShowcase';
+import MasterpieceShowcase from './pages/market/MasterpieceShowcase';
+
+// Wallet pages
+import AssetView from './pages/wallet/AssetView';
+import AssetHistory from './pages/wallet/AssetHistory';
+import BalanceRecharge from './pages/wallet/BalanceRecharge';
+import BalanceWithdraw from './pages/wallet/BalanceWithdraw';
+import CardManagement from './pages/wallet/CardManagement';
+import ServiceRecharge from './pages/wallet/ServiceRecharge';
+import ExtensionWithdraw from './pages/wallet/ExtensionWithdraw';
+import ConsignmentVoucher from './pages/wallet/ConsignmentVoucher';
+import CumulativeRights from './pages/wallet/CumulativeRights';
+import MyCollection from './pages/wallet/MyCollection';
 
 const STORAGE_KEY = 'cat_read_news_ids';
 const AUTH_KEY = 'cat_is_logged_in';
@@ -303,7 +313,7 @@ const App: React.FC = () => {
       const artistId = subPage.split(':')[1];
       if (artistId) {
         return (
-          <ArtistDetail 
+          <ArtistDetail
             artistId={artistId}
             onBack={() => setSubPage(null)}
             onProductSelect={(product) => handleProductSelect(product, 'artist')}

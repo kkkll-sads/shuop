@@ -157,7 +157,7 @@ const Home: React.FC<HomeProps> = ({ onNavigate, onSwitchTab, announcements = []
       icon: Newspaper,
       color: 'text-orange-500',
       bgColor: 'bg-orange-50',
-      action: () => onSwitchTab('news')
+      action: () => onNavigate('news-center')
     },
     {
       label: '作家风采',

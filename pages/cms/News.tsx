@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Trash2, ArrowRight } from 'lucide-react';
+import { Trash2, ArrowRight, ChevronLeft } from 'lucide-react';
 import { EmptyState } from '../../components/common';
 import { NewsItem } from '../../types';
 
@@ -7,6 +7,7 @@ interface NewsProps {
   newsList: NewsItem[];
   onNavigate: (id: string) => void;
   onMarkAllRead: () => void;
+  onBack?: () => void;
 }
 
 /** 本地存储键名 */
@@ -15,7 +16,7 @@ const NEWS_TAB_STORAGE_KEY = 'cat_news_active_tab';
 /**
  * News 资讯页面组件
  */
-const News: React.FC<NewsProps> = ({ newsList, onNavigate, onMarkAllRead }) => {
+const News: React.FC<NewsProps> = ({ newsList, onNavigate, onMarkAllRead, onBack }) => {
   // 从 localStorage 恢复标签页状态
   const [activeTab, setActiveTab] = useState<'announcement' | 'dynamics'>(() => {
     try {
@@ -51,6 +52,14 @@ const News: React.FC<NewsProps> = ({ newsList, onNavigate, onMarkAllRead }) => {
       {/* 顶部导航 */}
       <header className="bg-white sticky top-0 z-10">
         <div className="flex items-center justify-center p-3 border-b border-gray-100 relative">
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="absolute left-3 p-1 text-gray-800 active:opacity-70"
+            >
+              <ChevronLeft size={24} />
+            </button>
+          )}
           <h1 className="font-bold text-lg">资讯</h1>
           <button
             onClick={hasUnread ? onMarkAllRead : undefined}

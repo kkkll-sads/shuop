@@ -40,8 +40,8 @@ interface PasswordFormProps {
     title: string;
     /** 返回回调 */
     onBack: () => void;
-    /** 提交成功回调 */
-    onSuccess?: () => void;
+    /** 跳转找回密码回调 (可选) */
+    onNavigateForgotPassword?: () => void;
 }
 
 /**
@@ -128,6 +128,7 @@ const PasswordForm: React.FC<PasswordFormProps> = ({
     title,
     onBack,
     onSuccess,
+    onNavigateForgotPassword,
 }) => {
     // 获取表单配置
     const config = getFormConfig(type);
@@ -256,15 +257,28 @@ const PasswordForm: React.FC<PasswordFormProps> = ({
     return (
         <div className="min-h-screen bg-gray-50 pb-safe">
             {/* 顶部导航栏 */}
-            <header className="bg-white px-4 py-3 flex items-center justify-center sticky top-0 z-10 shadow-sm">
-                <button
-                    className="absolute left-0 ml-1 p-1 active:opacity-70"
-                    onClick={onBack}
-                    aria-label="返回"
-                >
-                    <ChevronLeft size={22} className="text-gray-800" />
-                </button>
-                <h1 className="text-base font-bold text-gray-900">{title}</h1>
+            <header className="bg-white px-4 py-3 flex items-center justify-between sticky top-0 z-10 shadow-sm">
+                <div className="relative flex items-center justify-center w-full">
+                    <button
+                        className="absolute left-0 p-1 active:opacity-70"
+                        onClick={onBack}
+                        aria-label="返回"
+                    >
+                        <ChevronLeft size={22} className="text-gray-800" />
+                    </button>
+                    <h1 className="text-base font-bold text-gray-900">{title}</h1>
+
+                    {/* 忘记密码按钮 (仅在重置登录密码或支付密码时显示) */}
+                    {(type === 'reset_login' || type === 'reset_pay') && onNavigateForgotPassword && (
+                        <button
+                            type="button"
+                            className="absolute right-0 text-sm text-orange-500 font-medium active:opacity-70"
+                            onClick={onNavigateForgotPassword}
+                        >
+                            忘记密码？
+                        </button>
+                    )}
+                </div>
             </header>
 
             {/* 表单内容 */}

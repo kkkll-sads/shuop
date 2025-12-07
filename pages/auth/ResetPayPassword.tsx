@@ -16,17 +16,20 @@ import { PasswordForm } from '../../components/business';
 interface ResetPayPasswordProps {
   /** 返回回调 */
   onBack: () => void;
+  /** 跳转找回密码回调 */
+  onNavigateForgotPassword?: () => void;
 }
 
 /**
  * ResetPayPassword 修改支付密码页面组件
  */
-const ResetPayPassword: React.FC<ResetPayPasswordProps> = ({ onBack }) => {
+const ResetPayPassword: React.FC<ResetPayPasswordProps> = ({ onBack, onNavigateForgotPassword }) => {
   return (
     <PasswordForm
       type="reset_pay"
       title="修改支付密码"
       onBack={onBack}
+      onNavigateForgotPassword={onNavigateForgotPassword}
     />
   );
 };

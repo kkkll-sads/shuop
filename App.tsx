@@ -57,6 +57,7 @@ import ExtensionWithdraw from './pages/wallet/ExtensionWithdraw';
 import ConsignmentVoucher from './pages/wallet/ConsignmentVoucher';
 import CumulativeRights from './pages/wallet/CumulativeRights';
 import MyCollection from './pages/wallet/MyCollection';
+import ClaimStation from './pages/wallet/ClaimStation';
 
 const STORAGE_KEY = 'cat_read_news_ids';
 const AUTH_KEY = 'cat_is_logged_in';
@@ -345,9 +346,21 @@ const App: React.FC = () => {
           />
         );
       case 'service-center:reset-login-password':
-        return <ResetLoginPassword onBack={() => setSubPage('service-center:settings')} />;
+        return (
+          <ResetLoginPassword
+            onBack={() => setSubPage('service-center:settings')}
+            onNavigateForgotPassword={() => setSubPage('service-center:forgot-password')}
+          />
+        );
       case 'service-center:reset-pay-password':
-        return <ResetPayPassword onBack={() => setSubPage('service-center:settings')} />;
+        return (
+          <ResetPayPassword
+            onBack={() => setSubPage('service-center:settings')}
+            onNavigateForgotPassword={() => setSubPage('service-center:forgot-password')}
+          />
+        );
+      case 'service-center:forgot-password':
+        return <ForgotPassword onBack={() => setSubPage('service-center:settings')} />;
       case 'service-center:notification-settings':
         return <NotificationSettings onBack={() => setSubPage('service-center:settings')} />;
       case 'service-center:account-deletion':
@@ -445,6 +458,27 @@ const App: React.FC = () => {
         return <ConsignmentVoucher onBack={() => setSubPage(null)} />;
       case 'service-center:message':
         return <MessageCenter onBack={() => setSubPage(null)} />;
+      case 'news-center':
+        return (
+          <News
+            newsList={newsList}
+            onNavigate={(id) => {
+              // 根据新闻项类型保存标签页状态，确保返回时显示正确的标签
+              const newsItem = newsList.find(item => item.id === id);
+              if (newsItem) {
+                const targetTab = newsItem.type === 'announcement' ? 'announcement' : 'dynamics';
+                try {
+                  localStorage.setItem('cat_news_active_tab', targetTab);
+                } catch (e) {
+                  // 忽略存储错误
+                }
+              }
+              setSubPage(`news-detail:${id}`);
+            }}
+            onMarkAllRead={handleMarkAllRead}
+            onBack={() => setSubPage(null)}
+          />
+        );
       case 'invite-friends':
         return <InviteFriends onBack={() => setSubPage('my-friends')} />;
     }
@@ -466,26 +500,8 @@ const App: React.FC = () => {
         );
       case 'market':
         return <Market onProductSelect={(product) => handleProductSelect(product, 'market')} />;
-      case 'news':
-        return (
-          <News
-            newsList={newsList}
-            onNavigate={(id) => {
-              // 根据新闻项类型保存标签页状态，确保返回时显示正确的标签
-              const newsItem = newsList.find(item => item.id === id);
-              if (newsItem) {
-                const targetTab = newsItem.type === 'announcement' ? 'announcement' : 'dynamics';
-                try {
-                  localStorage.setItem('cat_news_active_tab', targetTab);
-                } catch (e) {
-                  // 忽略存储错误
-                }
-              }
-              setSubPage(`news-detail:${id}`);
-            }}
-            onMarkAllRead={handleMarkAllRead}
-          />
-        );
+      case 'rights':
+        return <ClaimStation />;
       case 'orders':
         return <Orders onNavigate={(page) => setSubPage(page)} />;
       case 'profile':

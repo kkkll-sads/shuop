@@ -39,15 +39,58 @@ const Login: React.FC<LoginProps> = ({
   const [agreed, setAgreed] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [verifyCode, setVerifyCode] = useState('');
+  const [loginType, setLoginType] = useState<'password' | 'code'>('password');
+  const [countdown, setCountdown] = useState(0);
+
+  /**
+   * 发送验证码
+   */
+  const handleSendCode = () => {
+    if (!phone) {
+      alert('请输入手机号');
+      return;
+    }
+    const phoneValidation = isValidPhone(phone);
+    if (!phoneValidation.valid) {
+      alert(phoneValidation.message);
+      return;
+    }
+
+    // 模拟发送验证码
+    setCountdown(60);
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    alert('验证码已发送（模拟）');
+  };
 
   /**
    * 处理登录
    */
   const handleLogin = async () => {
-    if (!phone || !password) {
-      alert('请输入手机号和密码');
+    if (!phone) {
+      alert('请输入手机号');
       return;
     }
+
+    if (loginType === 'password' && !password) {
+      alert('请输入密码');
+      return;
+    }
+
+    if (loginType === 'code' && !verifyCode) {
+      alert('请输入验证码');
+      return;
+    }
+
     if (!agreed) {
       alert('请阅读并同意用户协议');
       return;
@@ -64,8 +107,16 @@ const Login: React.FC<LoginProps> = ({
     try {
       const params: LoginParams = {
         mobile: phone,
-        password,
+        password: loginType === 'password' ? password : '', // 暂不支持验证码登录接口，需后端支持
       };
+
+      if (loginType === 'code') {
+        // 模拟验证码登录
+        alert('验证码登录暂未对接后端API');
+        setLoading(false);
+        return;
+      }
+
       const response = await loginApi(params);
       console.log('登录接口响应:', response);
 
@@ -94,16 +145,40 @@ const Login: React.FC<LoginProps> = ({
         alert('登录失败，请检查网络连接后重试');
       }
     } finally {
-      setLoading(false);
+      if (loginType !== 'code') {
+        setLoading(false);
+      }
     }
   };
 
   return (
     <div className="min-h-screen flex flex-col px-8 pt-20 pb-safe bg-gradient-to-br from-[#FFD6A5] via-[#FFC3A0] to-[#FFDEE9]">
       {/* 标题 */}
-      <div className="mb-16">
+      <div className="mb-10">
         <h1 className="text-4xl font-bold text-gray-800 mb-2">Hello!</h1>
         <h2 className="text-2xl font-bold text-gray-700">欢迎登录树交所</h2>
+      </div>
+
+      {/* Tab 切换 */}
+      <div className="flex items-center space-x-6 mb-8">
+        <button
+          onClick={() => setLoginType('password')}
+          className={`text-lg font-medium transition-colors relative pb-2 ${loginType === 'password'
+            ? 'text-gray-800 font-bold after:content-[""] after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:w-6 after:h-1 after:bg-orange-500 after:rounded-full'
+            : 'text-gray-500'
+            }`}
+        >
+          密码登录
+        </button>
+        <button
+          onClick={() => setLoginType('code')}
+          className={`text-lg font-medium transition-colors relative pb-2 ${loginType === 'code'
+            ? 'text-gray-800 font-bold after:content-[""] after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:w-6 after:h-1 after:bg-orange-500 after:rounded-full'
+            : 'text-gray-500'
+            }`}
+        >
+          验证码登录
+        </button>
       </div>
 
       {/* 表单 */}
@@ -127,20 +202,42 @@ const Login: React.FC<LoginProps> = ({
           )}
         </div>
 
-        {/* 密码输入 */}
-        <div className="bg-white rounded-lg flex items-center px-4 py-3 shadow-sm">
-          <Lock className="text-gray-500 mr-3" size={20} />
-          <input
-            type={showPassword ? "text" : "password"}
-            placeholder="请输入您的密码"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="flex-1 text-base outline-none placeholder-gray-400 bg-transparent text-gray-800"
-          />
-          <button onClick={() => setShowPassword(!showPassword)} className="text-gray-500 ml-2">
-            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-          </button>
-        </div>
+        {/* 密码/验证码输入 */}
+        {loginType === 'password' ? (
+          <div className="bg-white rounded-lg flex items-center px-4 py-3 shadow-sm">
+            <Lock className="text-gray-500 mr-3" size={20} />
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="请输入您的密码"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="flex-1 text-base outline-none placeholder-gray-400 bg-transparent text-gray-800"
+            />
+            <button onClick={() => setShowPassword(!showPassword)} className="text-gray-500 ml-2">
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
+          </div>
+        ) : (
+          <div className="bg-white rounded-lg flex items-center px-4 py-3 shadow-sm">
+            <div className="text-gray-500 mr-3">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+            </div>
+            <input
+              type="text"
+              placeholder="请输入验证码"
+              value={verifyCode}
+              onChange={(e) => setVerifyCode(e.target.value)}
+              className="flex-1 text-base outline-none placeholder-gray-400 bg-transparent text-gray-800"
+            />
+            <button
+              onClick={handleSendCode}
+              disabled={countdown > 0}
+              className={`ml-2 text-sm font-medium ${countdown > 0 ? 'text-gray-400' : 'text-orange-500'}`}
+            >
+              {countdown > 0 ? `${countdown}s后重发` : '获取验证码'}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* 选项 */}

@@ -58,7 +58,7 @@ export interface Banner {
   title?: string;
 }
 
-export type Tab = 'home' | 'market' | 'news' | 'orders' | 'profile';
+export type Tab = 'home' | 'market' | 'rights' | 'orders' | 'profile';
 
 export interface UserInfo {
   id: number;

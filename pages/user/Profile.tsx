@@ -1,6 +1,6 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Settings, MessageSquare, ShieldCheck, CreditCard, MapPin, Users, UserCheck, HelpCircle, FileText, HeadphonesIcon, ChevronRight, Wallet, Receipt, Box, Gem, Sprout, Award, CalendarCheck } from 'lucide-react';
+import { Settings, MessageSquare, ShieldCheck, CreditCard, MapPin, Users, UserCheck, HelpCircle, FileText, HeadphonesIcon, ChevronRight, Wallet, Receipt, Box, Gem, Sprout, Award, CalendarCheck, Newspaper } from 'lucide-react';
 import { formatAmount } from '../../utils/format';
 import { AUTH_TOKEN_KEY, USER_INFO_KEY, fetchProfile, normalizeAssetUrl } from '../../services/api';
 import { UserInfo } from '../../types';
@@ -288,6 +288,7 @@ const Profile: React.FC<ProfileProps> = ({ onNavigate }) => {
               { label: '规则协议', icon: FileText, action: () => onNavigate('profile:user-agreement') },
               { label: '用户问卷', icon: FileText, action: () => onNavigate('user-survey') },
               { label: '在线客服', icon: HeadphonesIcon, action: () => onNavigate('online-service') },
+              { label: '平台资讯', icon: Newspaper, action: () => onNavigate('news-center') },
             ].map((item, idx) => (
               <div key={idx} className="flex flex-col items-center cursor-pointer active:opacity-60" onClick={item.action}>
                 <item.icon size={24} className="text-gray-600 mb-2" strokeWidth={1.5} />

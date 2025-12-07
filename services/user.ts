@@ -228,16 +228,18 @@ export async function cancelAccount(params: CancelAccountParams): Promise<ApiRes
     }
 }
 
+
+
+
 // 实名认证相关
 export interface RealNameStatusData {
     real_name_status: number; // 0:未认证, 1:审核中, 2:已通过, 3:已驳回
     real_name?: string;
     id_card?: string;
-    status?: string;
-    review_reason?: string;
-    audit_reason?: string; // Add this if needed
+    audit_reason?: string;
     id_card_front?: string;
     id_card_back?: string;
+    audit_time?: string;
 }
 
 export async function fetchRealNameStatus(token: string): Promise<ApiResponse<RealNameStatusData>> {

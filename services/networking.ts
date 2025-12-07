@@ -57,6 +57,13 @@ export async function apiFetch<T = any>(
     // 需要带用户 token 的接口统一从这里注入
     if (token) {
         finalHeaders['ba-user-token'] = token;
+        // 如果 header 中未指定 ba-token，将 ba-token 默认设为与 ba-user-token 相同，或根据需求留空
+        // 此处根据通常惯例，ba-token有时也是需要的
+        if (!finalHeaders['ba-token']) {
+            finalHeaders['ba-token'] = ''; // 或者某些 API 可能需要把它设为 token? 暂时设为空字符或不设，视具体后端要求而定。
+            // 根据用户提供的文档: "ba-token string (必填? 只是列出)"
+            // 既然用户专门列出了 ba-token，我们应该允许传入，或者默认设为空
+        }
     }
 
     // 对非 FormData 自动补充 JSON Content-Type

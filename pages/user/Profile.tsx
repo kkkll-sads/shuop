@@ -210,11 +210,13 @@ const Profile: React.FC<ProfileProps> = ({ onNavigate }) => {
         </div>
       </div>
 
-      {error && !userInfo && !error.includes('登录态过期') && (
-        <div className="mx-4 mt-4 bg-red-50 text-red-600 text-sm px-4 py-2 rounded-lg shadow-sm">
-          {error}
-        </div>
-      )}
+      {
+        error && !userInfo && !error.includes('登录态过期') && (
+          <div className="mx-4 mt-4 bg-red-50 text-red-600 text-sm px-4 py-2 rounded-lg shadow-sm">
+            {error}
+          </div>
+        )
+      }
 
       <div className="px-4 -mt-8 relative z-10">
         {/* My Assets Section - Explicit Entry */}
@@ -298,7 +300,7 @@ const Profile: React.FC<ProfileProps> = ({ onNavigate }) => {
           </div>
         </div>
       </div>
-    </div>
+    </div >
   );
 };
 

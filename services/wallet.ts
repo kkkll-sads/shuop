@@ -295,8 +295,13 @@ export interface CompanyAccountItem {
     [key: string]: any;
 }
 
-export async function fetchCompanyAccountList(token: string): Promise<ApiResponse<{ list: CompanyAccountItem[] }>> {
-    return apiFetch<{ list: CompanyAccountItem[] }>(API_ENDPOINTS.recharge.companyAccountList, {
+export async function fetchCompanyAccountList(params: { usage?: string; token?: string } = {}): Promise<ApiResponse<{ list: CompanyAccountItem[] }>> {
+    const token = params.token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+    const search = new URLSearchParams();
+    if (params.usage) search.set('usage', params.usage);
+
+    const path = `${API_ENDPOINTS.recharge.companyAccountList}?${search.toString()}`;
+    return apiFetch<{ list: CompanyAccountItem[] }>(path, {
         method: 'GET',
         token,
     });

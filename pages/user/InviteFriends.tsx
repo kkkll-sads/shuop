@@ -11,7 +11,7 @@ import React, { useState, useEffect } from 'react';
 import { Copy, Share2 } from 'lucide-react';
 import PageContainer from '../../components/layout/PageContainer';
 import { LoadingSpinner } from '../../components/common';
-import { fetchPromotionCard } from '../../services/api';
+import { fetchPromotionCard, AUTH_TOKEN_KEY } from '../../services/api';
 
 /**
  * InviteFriends 组件属性接口
@@ -43,7 +43,7 @@ const InviteFriends: React.FC<InviteFriendsProps> = ({ onBack }) => {
             try {
                 setLoading(true);
                 setError(null);
-                const token = localStorage.getItem('auth_token') || '';
+                const token = localStorage.getItem(AUTH_TOKEN_KEY) || '';
                 if (!token) {
                     setError('请先登录');
                     return;

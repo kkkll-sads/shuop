@@ -41,6 +41,7 @@ const ServiceRecharge: React.FC<ServiceRechargeProps> = ({ onBack }) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [showConfirmModal, setShowConfirmModal] = useState<boolean>(false);
 
   // 加载用户信息
   useEffect(() => {
@@ -102,6 +103,7 @@ const ServiceRecharge: React.FC<ServiceRechargeProps> = ({ onBack }) => {
       });
 
       if (response.code === 1) {
+        setShowConfirmModal(false);
         setSuccess('充值成功');
         setAmount('');
 
@@ -112,10 +114,11 @@ const ServiceRecharge: React.FC<ServiceRechargeProps> = ({ onBack }) => {
           localStorage.setItem(USER_INFO_KEY, JSON.stringify(updatedResponse.data.userInfo));
         }
 
-        // 3秒后清除成功提示
+        // 3秒后清除成功提示并返回上一页
         setTimeout(() => {
           setSuccess(null);
-        }, 3000);
+          onBack();
+        }, 300);
       } else {
         setError(response.msg || '充值失败');
       }
@@ -212,14 +215,61 @@ const ServiceRecharge: React.FC<ServiceRechargeProps> = ({ onBack }) => {
         完成充值即视为同意相关服务协议与费用说明。请在操作前仔细阅读平台公布的服务条款及风险提示。
       </p>
 
+      {/* 确认弹窗 */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white w-full max-w-sm rounded-xl p-6 shadow-xl animate-in fade-in zoom-in duration-200">
+            <h3 className="text-lg font-bold text-gray-900 mb-4 text-center">确认充值服务费</h3>
+            <div className="bg-orange-50 text-orange-700 text-sm p-3 rounded-lg mb-6 leading-relaxed">
+              服务费仅用于订单寄售时使用，无法提现和转出，请按需充值
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowConfirmModal(false)}
+                className="flex-1 py-2.5 rounded-lg border border-gray-200 text-gray-600 font-medium active:bg-gray-50 transition-colors"
+                disabled={loading}
+              >
+                取消
+              </button>
+              <button
+                onClick={handleRecharge}
+                disabled={loading}
+                className="flex-1 py-2.5 rounded-lg bg-orange-600 text-white font-medium active:bg-orange-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+              >
+                {loading && <Loader2 size={16} className="animate-spin" />}
+                {loading ? '处理中...' : '确认充值'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 提交按钮 */}
       <button
-        onClick={handleRecharge}
+        onClick={() => {
+          setError(null);
+          // Pre-validation
+          const rechargeAmount = Number(amount);
+          if (!amount || rechargeAmount <= 0) {
+            setError('请输入有效的充值金额');
+            return;
+          }
+          const currentBalance = payType === 'money'
+            ? Number(userInfo?.balance_available || 0)
+            : Number(userInfo?.withdrawable_money || 0);
+
+          if (rechargeAmount > currentBalance) {
+            setError(`${payType === 'money' ? '可用余额' : '提现余额'}不足`);
+            return;
+          }
+
+          setShowConfirmModal(true);
+        }}
         disabled={loading || !amount || Number(amount) <= 0}
         className="w-full bg-orange-600 text-white rounded-full py-3 text-sm font-medium active:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
-        {loading && <Loader2 size={16} className="animate-spin" />}
-        {loading ? '充值中...' : '确认充值'}
+        确认充值
       </button>
     </PageContainer>
   );

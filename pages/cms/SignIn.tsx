@@ -175,7 +175,7 @@ const SignIn: React.FC<SignInProps> = ({ onBack, onNavigate }) => {
 
     const handleInvite = () => {
         if (onNavigate) {
-            onNavigate('invite-friends');
+            onNavigate('my-friends');
         }
     };
 

@@ -242,9 +242,9 @@ const Profile: React.FC<ProfileProps> = ({ onNavigate }) => {
           <div className="font-bold text-gray-800 text-sm mb-4 border-l-4 border-orange-300 pl-2">便捷服务</div>
           <div className="grid grid-cols-4 gap-4">
             {[
-              { label: '余额充值', icon: Wallet, color: 'text-orange-500', action: () => onNavigate('asset-view') },
+              { label: '余额充值', icon: Wallet, color: 'text-orange-500', action: () => onNavigate('asset:balance-recharge') },
               { label: '每日签到', icon: CalendarCheck, color: 'text-red-500', action: () => onNavigate('sign-in') },
-              { label: '余额提现', icon: Receipt, color: 'text-orange-500', action: () => onNavigate('asset-view') },
+              { label: '余额提现', icon: Receipt, color: 'text-orange-500', action: () => onNavigate('asset:balance-withdraw') },
               { label: '商品寄售', icon: Receipt, color: 'text-orange-500', action: () => onNavigate('order-list:transaction:0') },
               { label: '积分兑换', icon: CoinsIcon, color: 'text-orange-500', action: () => onNavigate('switch-to-market') }, // Link to Market for points exchange
             ].map((item, idx) => (

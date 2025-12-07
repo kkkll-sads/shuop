@@ -136,28 +136,47 @@ const AssetHistory: React.FC<AssetHistoryProps> = ({ onBack }) => {
     const displayAfter = isScore ? Math.abs(item.after_value) : item.after_value;
 
     return (
-      <div key={`log-${item.id}`} className="bg-white rounded-lg p-4 mb-3 shadow-sm">
-        <div className="flex justify-between items-start mb-2 gap-3">
-          <div className="flex items-start flex-1 min-w-0">
-            <div className={`w-10 h-10 rounded-full ${getTypeBgColor(item.type)} flex items-center justify-center mr-3 flex-shrink-0`}>
-              {getTypeIcon(item.type)}
+      <div key={`log-${item.id}`} className="bg-white rounded-xl p-4 mb-3 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+        <div className="flex items-center gap-3">
+          {/* Icon */}
+          <div className={`w-10 h-10 rounded-full ${getTypeBgColor(item.type)} flex items-center justify-center flex-shrink-0`}>
+            {getTypeIcon(item.type)}
+          </div>
+
+          {/* Middle: Title & Time */}
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-bold text-gray-900 mb-1 truncate">
+              {item.remark || getTypeLabel(item.type)}
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium text-gray-800 mb-1 break-words">{item.remark}</div>
-              <div className="flex items-center gap-2">
-                <div className="text-xs text-gray-500">{formatTime(item.create_time)}</div>
-                <div className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
-                  {getTypeLabel(item.type)}
-                </div>
-              </div>
+            <div className="text-xs text-gray-400">
+              {formatTime(item.create_time)}
             </div>
           </div>
-          <div className={`text-lg font-bold flex-shrink-0 ${item.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-            {item.amount >= 0 ? '+' : ''}{displayAmount.toFixed(isScore ? 0 : 2)}{isScore ? '' : '元'}
+
+          {/* Right: Amount & Balance */}
+          <div className="text-right flex-shrink-0">
+            <div className={`text-base font-bold mb-1 ${item.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {item.amount >= 0 ? '+' : ''}{displayAmount.toFixed(isScore ? 0 : 2)}{isScore ? '' : '元'}
+            </div>
+            <div className="text-[11px] text-gray-400">
+              余额: {displayAfter.toFixed(isScore ? 0 : 2)}
+            </div>
           </div>
         </div>
-        <div className="text-xs text-gray-400 ml-[52px] break-words">
-          {getTypeLabel(item.type)}: {displayBefore.toFixed(isScore ? 0 : 2)}{isScore ? '' : '元'} → {displayAfter.toFixed(isScore ? 0 : 2)}{isScore ? '' : '元'}
+
+        {/* Optional: Bottom details for clarity if needed, or keep compact. 
+            User request "Show balance change clearly" -> The '余额: xxx' above handles the current balance.
+            If user wants "Old -> New", we can add a small footer line or keep it compact.
+            The user example image showed "Service Fee Balance: 1323.00 -> 1446.00" at the bottom.
+            Let's add that specific footer style.
+        */}
+        <div className="mt-3 pt-2 border-t border-gray-50 flex justify-between items-center">
+          <span className="text-xs text-gray-400 bg-gray-50 px-2 py-0.5 rounded">
+            {getTypeLabel(item.type)}
+          </span>
+          <div className="text-xs text-gray-400">
+            {getTypeLabel(item.type)}余额: {displayBefore.toFixed(isScore ? 0 : 2)} → {displayAfter.toFixed(isScore ? 0 : 2)}
+          </div>
         </div>
       </div>
     );

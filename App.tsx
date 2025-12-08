@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import BottomNav from './components/BottomNav';
 import { Tab, Product, NewsItem, LoginSuccessPayload } from './types';
 import { AUTH_TOKEN_KEY, USER_INFO_KEY, fetchAnnouncements, AnnouncementItem } from './services/api';
+import useAuth from './hooks/useAuth';
 
 // Auth
 import Login from './pages/auth/Login';
@@ -58,6 +59,7 @@ import ConsignmentVoucher from './pages/wallet/ConsignmentVoucher';
 import CumulativeRights from './pages/wallet/CumulativeRights';
 import MyCollection from './pages/wallet/MyCollection';
 import ClaimStation from './pages/wallet/ClaimStation';
+import { RealNameRequiredModal } from './components/common';
 
 const STORAGE_KEY = 'cat_read_news_ids';
 const AUTH_KEY = 'cat_is_logged_in';
@@ -76,10 +78,16 @@ const saveReadNewsIds = (ids: string[]) => {
 };
 
 const App: React.FC = () => {
-  // Auth State
+  // Auth State (using useAuth hook)
+  const { isLoggedIn: isLoggedInFromHook, isRealNameVerified, login: loginFromHook } = useAuth();
+
+  // For backward compatibility, maintain local state
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
     return localStorage.getItem(AUTH_KEY) === 'true';
   });
+
+  // Modal state for real-name verification prompt
+  const [showRealNameModal, setShowRealNameModal] = useState<boolean>(false);
 
   const [activeTab, setActiveTab] = useState<Tab>('home');
   const [subPage, setSubPage] = useState<string | null>(null);
@@ -154,6 +162,10 @@ const App: React.FC = () => {
     if (payload?.userInfo) {
       localStorage.setItem(USER_INFO_KEY, JSON.stringify(payload.userInfo));
     }
+
+    // Call useAuth login to fetch real-name status
+    loginFromHook(payload);
+
     setSubPage(null);
     setActiveTab('home');
     setSelectedProduct(null);
@@ -275,6 +287,36 @@ const App: React.FC = () => {
   }
 
   const renderContent = () => {
+    // 页面访问控制：未实名用户只能访问首页和实名认证页面
+    if (!isRealNameVerified) {
+      // 允许访问的子页面
+      const allowedSubPages = [null, 'real-name-auth'];
+
+      // 检查是否在尝试访问非首页的tab
+      const isNavigatingToRestrictedTab = activeTab !== 'home' && !subPage;
+
+      // 检查是否在尝试访问受限子页面
+      const isNavigatingToRestrictedSubPage = subPage && !allowedSubPages.includes(subPage);
+
+      if (isNavigatingToRestrictedTab || isNavigatingToRestrictedSubPage) {
+        return (
+          <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <RealNameRequiredModal
+              open={true}
+              onNavigateToAuth={() => {
+                setActiveTab('home');
+                setSubPage('real-name-auth');
+              }}
+              onBackToHome={() => {
+                setActiveTab('home');
+                setSubPage(null);
+              }}
+            />
+          </div>
+        );
+      }
+    }
+
     // Handle Product Detail Page
     if (subPage === 'product-detail' && selectedProduct) {
       return (

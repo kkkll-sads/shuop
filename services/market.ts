@@ -136,13 +136,43 @@ export async function fetchCollectionItemDetail(id: number): Promise<ApiResponse
     });
 }
 
-export async function buyCollectionItem(params: { id: number; quantity: number; pay_password?: string; token?: string, pay_type?: 'money' | 'score' }): Promise<ApiResponse> {
+export async function buyCollectionItem(params: {
+    id?: number;
+    item_id?: number;
+    consignment_id?: number | string;
+    quantity?: number;
+    pay_password?: string;
+    token?: string;
+    pay_type?: 'money' | 'score';
+    product_id_record?: string;
+}): Promise<ApiResponse> {
     const token = params.token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
     const payload = new FormData();
-    payload.append('id', String(params.id));
-    payload.append('quantity', String(params.quantity));
-    if (params.pay_password) payload.append('pay_password', params.pay_password);
-    if (params.pay_type) payload.append('pay_type', params.pay_type);
+
+    // 使用 item_id 字段名（API 规范）
+    // 优先使用 item_id，其次使用 id
+    const itemId = params.item_id ?? params.id;
+    if (itemId) {
+        payload.append('item_id', String(itemId));
+    }
+
+    // 如果是寄售商品，需要传递 consignment_id（优先按寄售购买）
+    if (params.consignment_id) {
+        payload.append('consignment_id', String(params.consignment_id));
+    }
+
+    // 购买数量，默认为 1
+    payload.append('quantity', String(params.quantity ?? 1));
+
+    // 支付方式: money=余额, score=积分
+    if (params.pay_type) {
+        payload.append('pay_type', params.pay_type);
+    }
+
+    // 产品ID记录（如'第一天产品'）
+    if (params.product_id_record) {
+        payload.append('product_id_record', params.product_id_record);
+    }
 
     return apiFetch(API_ENDPOINTS.collectionItem.buy, {
         method: 'POST',

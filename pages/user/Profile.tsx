@@ -4,6 +4,7 @@ import { Settings, MessageSquare, ShieldCheck, CreditCard, MapPin, Users, UserCh
 import { formatAmount } from '../../utils/format';
 import { AUTH_TOKEN_KEY, USER_INFO_KEY, fetchProfile, normalizeAssetUrl } from '../../services/api';
 import { UserInfo } from '../../types';
+import useAuth from '../../hooks/useAuth';
 
 // Helper for custom coin icon
 const CoinsIcon = ({ size, className }: { size: number, className: string }) => (
@@ -83,7 +84,8 @@ const Profile: React.FC<ProfileProps> = ({ onNavigate }) => {
   }, []);
 
 
-  const displayName = userInfo?.nickname || userInfo?.username || '用户';
+  const { realName } = useAuth();
+  const displayName = realName || userInfo?.nickname || userInfo?.username || '用户';
   const displayAvatarText = displayName.slice(0, 1).toUpperCase();
   const displayAvatarUrl = normalizeAssetUrl(userInfo?.avatar);
 

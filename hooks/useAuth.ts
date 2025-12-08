@@ -13,6 +13,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { UserInfo, LoginSuccessPayload } from '../types';
+import { fetchRealNameStatus, RealNameStatusData } from '../services/api';
 
 /**
  * 认证相关的 localStorage 键名
@@ -20,6 +21,8 @@ import { UserInfo, LoginSuccessPayload } from '../types';
 const AUTH_KEY = 'cat_is_logged_in';
 const AUTH_TOKEN_KEY = 'cat_auth_token';
 const USER_INFO_KEY = 'cat_user_info';
+const REAL_NAME_STATUS_KEY = 'cat_real_name_status';
+const REAL_NAME_KEY = 'cat_real_name';
 
 /**
  * useAuth Hook 返回值接口
@@ -31,6 +34,12 @@ interface UseAuthResult {
     user: UserInfo | null;
     /** 认证令牌 */
     token: string | null;
+    /** 实名认证状态 */
+    realNameStatus: number | null;
+    /** 真实姓名 */
+    realName: string | null;
+    /** 是否已完成实名认证 */
+    isRealNameVerified: boolean;
     /** 登录方法 */
     login: (payload?: LoginSuccessPayload) => void;
     /** 登出方法 */
@@ -39,6 +48,8 @@ interface UseAuthResult {
     updateUser: (userInfo: UserInfo) => void;
     /** 更新 Token */
     updateToken: (token: string) => void;
+    /** 更新实名认证状态 */
+    updateRealNameStatus: (status: number, name?: string) => void;
 }
 
 /**
@@ -103,12 +114,41 @@ function useAuth(): UseAuthResult {
     });
 
     /**
+     * 从 localStorage 初始化实名认证状态
+     */
+    const [realNameStatus, setRealNameStatus] = useState<number | null>(() => {
+        try {
+            const stored = localStorage.getItem(REAL_NAME_STATUS_KEY);
+            return stored ? parseInt(stored, 10) : null;
+        } catch {
+            return null;
+        }
+    });
+
+    /**
+     * 从 localStorage 初始化真实姓名
+     */
+    const [realName, setRealName] = useState<string | null>(() => {
+        try {
+            return localStorage.getItem(REAL_NAME_KEY);
+        } catch {
+            return null;
+        }
+    });
+
+    /**
+     * 计算是否已完成实名认证
+     * real_name_status === 2 表示已通过实名认证
+     */
+    const isRealNameVerified = realNameStatus === 2;
+
+    /**
      * 登录方法
      * 保存认证信息到状态和 localStorage
      * 
      * @param payload - 登录成功后的数据，包含 token 和 userInfo
      */
-    const login = useCallback((payload?: LoginSuccessPayload) => {
+    const login = useCallback(async (payload?: LoginSuccessPayload) => {
         // 设置登录状态
         setIsLoggedIn(true);
         localStorage.setItem(AUTH_KEY, 'true');
@@ -117,6 +157,26 @@ function useAuth(): UseAuthResult {
         if (payload?.token) {
             setToken(payload.token);
             localStorage.setItem(AUTH_TOKEN_KEY, payload.token);
+
+            // 获取实名认证状态
+            try {
+                const response = await fetchRealNameStatus(payload.token);
+                if (response.code === 1 && response.data) {
+                    const status = response.data.real_name_status;
+                    const name = response.data.real_name;
+
+                    setRealNameStatus(status);
+                    localStorage.setItem(REAL_NAME_STATUS_KEY, String(status));
+
+                    if (name) {
+                        setRealName(name);
+                        localStorage.setItem(REAL_NAME_KEY, name);
+                    }
+                }
+            } catch (error) {
+                console.error('获取实名认证状态失败:', error);
+                // 失败时不阻止登录流程
+            }
         }
 
         // 保存用户信息
@@ -135,11 +195,15 @@ function useAuth(): UseAuthResult {
         setIsLoggedIn(false);
         setUser(null);
         setToken(null);
+        setRealNameStatus(null);
+        setRealName(null);
 
         // 清除 localStorage
         localStorage.removeItem(AUTH_KEY);
         localStorage.removeItem(AUTH_TOKEN_KEY);
         localStorage.removeItem(USER_INFO_KEY);
+        localStorage.removeItem(REAL_NAME_STATUS_KEY);
+        localStorage.removeItem(REAL_NAME_KEY);
     }, []);
 
     /**
@@ -162,6 +226,23 @@ function useAuth(): UseAuthResult {
     const updateToken = useCallback((newToken: string) => {
         setToken(newToken);
         localStorage.setItem(AUTH_TOKEN_KEY, newToken);
+    }, []);
+
+    /**
+     * 更新实名认证状态
+     * 用于实名认证完成后更新本地数据
+     * 
+     * @param status - 实名认证状态
+     * @param name - 真实姓名
+     */
+    const updateRealNameStatus = useCallback((status: number, name?: string) => {
+        setRealNameStatus(status);
+        localStorage.setItem(REAL_NAME_STATUS_KEY, String(status));
+
+        if (name) {
+            setRealName(name);
+            localStorage.setItem(REAL_NAME_KEY, name);
+        }
     }, []);
 
     /**
@@ -211,10 +292,14 @@ function useAuth(): UseAuthResult {
         isLoggedIn,
         user,
         token,
+        realNameStatus,
+        realName,
+        isRealNameVerified,
         login,
         logout,
         updateUser,
         updateToken,
+        updateRealNameStatus,
     };
 }
 

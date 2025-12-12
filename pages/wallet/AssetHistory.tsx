@@ -20,7 +20,7 @@ const AssetHistory: React.FC<AssetHistoryProps> = ({ onBack }) => {
   const [page, setPage] = useState<number>(1);
   const [hasMore, setHasMore] = useState<boolean>(false);
 
-  const tabs = ['全部', '可用余额', '提现余额', '服务费余额', '积分'];
+  const tabs = ['全部', '供应链专项金', '可调度收益', '确权金', '消费金'];
 
   // Reset page when tab changes
   useEffect(() => {
@@ -91,10 +91,10 @@ const AssetHistory: React.FC<AssetHistoryProps> = ({ onBack }) => {
 
   const getTypeLabel = (type: AllLogItem['type']): string => {
     const labels: Record<AllLogItem['type'], string> = {
-      balance_available: '可用余额',
-      withdrawable_money: '提现余额',
-      service_fee_balance: '服务费余额',
-      score: '积分',
+      balance_available: '供应链专项金',
+      withdrawable_money: '可调度收益',
+      service_fee_balance: '确权金',
+      score: '消费金',
     };
     return labels[type] || type;
   };
@@ -155,7 +155,7 @@ const AssetHistory: React.FC<AssetHistoryProps> = ({ onBack }) => {
 
           {/* Right: Amount & Balance */}
           <div className="text-right flex-shrink-0">
-            <div className={`text-base font-bold mb-1 ${item.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            <div className={`text-base font-bold mb-1 font-[DINAlternate-Bold,Roboto,sans-serif] ${item.amount >= 0 ? 'text-[#FF6B00]' : 'text-gray-900'}`}>
               {item.amount >= 0 ? '+' : ''}{displayAmount.toFixed(isScore ? 0 : 2)}{isScore ? '' : '元'}
             </div>
             <div className="text-[11px] text-gray-400">

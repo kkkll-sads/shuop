@@ -1,550 +1,441 @@
 
 import React, { useState, useEffect } from 'react';
-import { Clock } from 'lucide-react';
+import { Clock, Globe, Database, Zap, Cpu, Activity, Lock, ArrowRight, ArrowLeft, Layers, Gem, Crown, Coins, TrendingUp } from 'lucide-react';
 import PageContainer from '../../components/layout/PageContainer';
-import { LoadingSpinner, EmptyState, LazyImage } from '../../components/common';
-import { formatAmount } from '../../utils/format';
+import { LoadingSpinner, LazyImage } from '../../components/common';
 import { Product } from '../../types';
 import {
-  fetchCollectionSessions,
-  fetchCollectionSessionDetail,
-  fetchCollectionItemsBySession,
-  CollectionSessionItem,
-  CollectionItem,
-  getConsignmentList,
-  ConsignmentItem,
+    fetchCollectionSessions,
+    fetchCollectionSessionDetail,
+    fetchCollectionItemsBySession,
+    getConsignmentList,
+    CollectionSessionItem,
+    CollectionItem,
+    ConsignmentItem,
 } from '../../services/api';
 
 interface TradingZoneProps {
-  onBack: () => void;
-  onProductSelect?: (product: Product) => void;
+    onBack: () => void;
+    onProductSelect?: (product: Product) => void;
 }
 
 interface TradingSession {
-  id: string;
-  title: string;
-  image: string;
-  startTime: string; // HH:mm
-  endTime: string;   // HH:mm
+    id: string;
+    title: string;
+    image: string;
+    startTime: string; // HH:mm
+    endTime: string;   // HH:mm
 }
 
 type TradingDisplayItem = CollectionItem & {
-  source?: 'collection' | 'consignment';
-  consignment_id?: number;
-  displayKey: string;
-  hasStockInfo?: boolean;
+    source?: 'collection' | 'consignment';
+    consignment_id?: number;
+    displayKey: string;
+    hasStockInfo?: boolean;
 };
 
-type ConsignmentRecord = ConsignmentItem & {
-  consignment_id?: number;
-  consignment_price?: number;
-  session_id?: number | string;
+// 极简 + 高级感配置
+const POOL_CONFIGS: Record<string, any> = {
+    morning: {
+        code: 'Pool-A',
+        name: '数字鲁商资产池',
+        subName: '山东产业带数字化营销权益',
+        roi: '+5.5%',
+        quota: '100万',
+        icon: Globe,
+        themeColor: 'text-blue-600',
+        gradient: 'from-blue-600 to-cyan-500',
+        softBg: 'bg-blue-50',
+        dataBg: 'bg-[#F0F7FF]', // 专属数据底色
+        buttonClass: 'bg-gradient-to-r from-blue-600 to-cyan-600 shadow-blue-200',
+    },
+    afternoon: {
+        code: 'Pool-B',
+        name: '助农供应链资产池',
+        subName: '优质果蔬集群应收账款确权',
+        roi: '+8.2%',
+        quota: '500万',
+        icon: Coins,
+        themeColor: 'text-orange-600',
+        gradient: 'from-orange-500 to-red-500',
+        softBg: 'bg-orange-50',
+        dataBg: 'bg-[#FFF7F0]',
+        buttonClass: 'bg-gradient-to-r from-orange-500 to-red-500 shadow-orange-200',
+    },
+    evening: {
+        code: 'Pool-C',
+        name: '林业碳汇权益池',
+        subName: '林业碳汇数据资产映射',
+        roi: '+12.0%',
+        quota: '200万',
+        icon: Gem,
+        themeColor: 'text-emerald-600',
+        gradient: 'from-emerald-600 to-teal-600',
+        softBg: 'bg-emerald-50',
+        dataBg: 'bg-[#F0FDF4]',
+        buttonClass: 'bg-gradient-to-r from-emerald-600 to-teal-500 shadow-emerald-200',
+    },
+    default: {
+        code: 'D-Asset',
+        name: '新手体验试炼场',
+        subName: '虚拟资产确权体验专区',
+        roi: '+3.0%',
+        quota: '不限',
+        icon: Crown,
+        themeColor: 'text-purple-600',
+        gradient: 'from-purple-600 to-pink-500',
+        softBg: 'bg-purple-50',
+        dataBg: 'bg-[#FAF5FF]',
+        buttonClass: 'bg-gradient-to-r from-purple-600 to-pink-500 shadow-purple-200',
+    }
 };
 
+const getPoolType = (startTime: string) => {
+    const hour = parseInt(startTime.split(':')[0]);
+    if (hour >= 9 && hour < 12) return 'morning';
+    if (hour >= 13 && hour < 16) return 'afternoon';
+    if (hour >= 18 && hour < 21) return 'evening';
+    return 'default';
+};
 
 const TradingZone: React.FC<TradingZoneProps> = ({ onBack, onProductSelect }) => {
-  const [now, setNow] = useState(new Date());
-  const [selectedSession, setSelectedSession] = useState<TradingSession | null>(null);
-  const [priceFilter, setPriceFilter] = useState<'all' | '0-1k' | '1-4k' | '4-8k' | '8k+'>('all');
-  const [sessions, setSessions] = useState<TradingSession[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [tradingItems, setTradingItems] = useState<TradingDisplayItem[]>([]);
-  const [itemsLoading, setItemsLoading] = useState(false);
-  const [itemsError, setItemsError] = useState<string | null>(null);
+    const [now, setNow] = useState(new Date());
+    const [selectedSession, setSelectedSession] = useState<TradingSession | null>(null);
+    const [sessions, setSessions] = useState<TradingSession[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [tradingItems, setTradingItems] = useState<TradingDisplayItem[]>([]);
+    const [itemsLoading, setItemsLoading] = useState(false);
+    const [itemsError, setItemsError] = useState<string | null>(null);
 
-  const mapCollectionItems = (items: CollectionItem[] = []): TradingDisplayItem[] =>
-    items.map((item) => ({
-      ...item,
-      price: typeof item.price === 'number' ? item.price : Number(item.price) || 0,
-      stock: typeof item.stock === 'number' ? item.stock : 0,
-      source: 'collection',
-      displayKey: `collection-${item.id}`,
-      hasStockInfo: true,
-    }));
-
-  const mapConsignmentItems = (items: ConsignmentRecord[] = [], sessionId: string): TradingDisplayItem[] =>
-    items
-      .filter((item) => String(item.session_id ?? '') === sessionId)
-      .map((item) => {
-        const resolvedId =
-          typeof item.item_id === 'number'
-            ? item.item_id
-            : typeof item.id === 'number'
-              ? item.id
-              : Number(item.item_id ?? item.id ?? item.consignment_id ?? Date.now());
-        const resolvedPrice =
-          typeof item.consignment_price === 'number'
-            ? item.consignment_price
-            : typeof item.price === 'number'
-              ? item.price
-              : Number(item.consignment_price ?? item.price ?? 0) || 0;
-
-        const hasStockInfo = typeof (item as any).stock === 'number';
-        const resolvedStock = hasStockInfo ? Number((item as any).stock) : 1; // 默认视为可售 1 件
-
-        return {
-          id: resolvedId,
-          session_id: Number(item.session_id ?? sessionId),
-          title: item.title,
-          image: item.image,
-          price: resolvedPrice,
-          stock: resolvedStock,
-          sales: Number((item as any).sales ?? 0),
-          source: 'consignment',
-          consignment_id: (item as any).consignment_id ?? resolvedId,
-          displayKey: `consignment-${(item as any).consignment_id ?? resolvedId}`,
-          hasStockInfo,
+    useEffect(() => {
+        const loadSessions = async () => {
+            try {
+                setLoading(true);
+                setError(null);
+                const response = await fetchCollectionSessions();
+                if (response.code === 1 && response.data?.list) {
+                    const sessionList: TradingSession[] = response.data.list.map((item: CollectionSessionItem) => ({
+                        id: String(item.id),
+                        title: item.title,
+                        image: item.image,
+                        startTime: item.start_time,
+                        endTime: item.end_time,
+                    }));
+                    setSessions(sessionList);
+                } else {
+                    setError(response.msg || '获取数据资产池失败');
+                }
+            } catch (err: any) {
+                console.error('加载专场列表失败:', err);
+                setError(err?.msg || '网络连接异常');
+            } finally {
+                setLoading(false);
+            }
         };
-      });
+        loadSessions();
+    }, []);
 
-  // 获取专场列表
-  useEffect(() => {
-    const loadSessions = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const response = await fetchCollectionSessions();
-        if (response.code === 1 && response.data?.list) {
-          const sessionList: TradingSession[] = response.data.list.map((item: CollectionSessionItem) => ({
-            id: String(item.id),
-            title: item.title,
-            image: item.image,
-            startTime: item.start_time,
-            endTime: item.end_time,
-          }));
-          setSessions(sessionList);
+    useEffect(() => {
+        const timer = setInterval(() => setNow(new Date()), 1000);
+        return () => clearInterval(timer);
+    }, []);
+
+    const handleBack = () => {
+        if (selectedSession) {
+            setSelectedSession(null);
+            setTradingItems([]);
+            setItemsError(null);
         } else {
-          setError(response.msg || '获取专场列表失败');
+            onBack();
         }
-      } catch (err: any) {
-        console.error('加载专场列表失败:', err);
-        // 优先使用接口返回的错误消息
-        setError(err?.msg || err?.response?.msg || err?.message || '加载专场列表失败，请稍后重试');
-      } finally {
-        setLoading(false);
-      }
     };
 
-    loadSessions();
-  }, []);
+    const handleSessionSelect = async (session: TradingSession) => {
+        try {
+            setItemsLoading(true);
+            setItemsError(null);
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setNow(new Date());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
+            const itemsRes = await fetchCollectionItemsBySession(session.id, { page: 1, limit: 50 });
 
-  const handleBack = () => {
+            if (itemsRes.code === 1 && itemsRes.data?.list) {
+                setTradingItems(itemsRes.data.list.map((item: any) => ({
+                    ...item,
+                    price: Number(item.price),
+                    displayKey: `col-${item.id}`,
+                    source: 'collection',
+                    hasStockInfo: true
+                })));
+            } else {
+                setItemsError('暂无上链资产');
+            }
+
+            setSelectedSession(session);
+        } catch (err: any) {
+            console.error('获取资产数据失败:', err);
+            setItemsError('数据同步延迟，请重试');
+            setSelectedSession(session);
+        } finally {
+            setItemsLoading(false);
+        }
+    };
+
+    const getSessionStatus = (session: TradingSession) => {
+        const [startH, startM] = session.startTime.split(':').map(Number);
+        const [endH, endM] = session.endTime.split(':').map(Number);
+        const startDate = new Date(now); startDate.setHours(startH, startM, 0, 0);
+        const endDate = new Date(now); endDate.setHours(endH, endM, 0, 0);
+
+        if (now < startDate) return { status: 'waiting', target: startDate };
+        else if (now >= startDate && now < endDate) return { status: 'active', target: endDate };
+        else return { status: 'ended', target: null };
+    };
+
+    const formatDuration = (ms: number) => {
+        if (ms < 0) return "00:00:00";
+        const totalSeconds = Math.floor(ms / 1000);
+        const h = Math.floor(totalSeconds / 3600);
+        const m = Math.floor((totalSeconds % 3600) / 60);
+        const s = totalSeconds % 60;
+        return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    };
+
+    // 1. 详情页渲染
     if (selectedSession) {
-      setSelectedSession(null);
-      setTradingItems([]);
-      setItemsError(null);
-    } else {
-      onBack();
-    }
-  };
+        const poolType = getPoolType(selectedSession.startTime);
+        const config = POOL_CONFIGS[poolType];
+        const { status, target } = getSessionStatus(selectedSession);
 
-  const handleSessionSelect = async (session: TradingSession) => {
-    try {
-      setItemsLoading(true);
-      setItemsError(null);
+        return (
+            <div className="min-h-screen bg-[#F8F9FA] text-gray-900 font-sans pb-safe">
+                {/* 顶部背景渐变 */}
+                <div className="absolute top-0 left-0 right-0 h-72 bg-gradient-to-b from-[#FFE4C4] via-[#FFF0E0] to-[#F8F9FA] z-0" />
 
-      const [_, itemsResult, consignmentResult] = await Promise.allSettled([
-        fetchCollectionSessionDetail(Number(session.id)),
-        fetchCollectionItemsBySession(session.id, {
-          page: 1,
-          limit: 100,
-        }),
-        getConsignmentList({
-          page: 1,
-          limit: 100,
-        }),
-      ]);
-
-      const combinedItems: TradingDisplayItem[] = [];
-      const tempErrors: string[] = [];
-
-      if (itemsResult.status === 'fulfilled') {
-        const response = itemsResult.value;
-        if (response.code === 1 && response.data?.list) {
-          combinedItems.push(...mapCollectionItems(response.data.list));
-        } else {
-          tempErrors.push(response.msg || '获取商品列表失败');
-        }
-      } else if (itemsResult.reason) {
-        const message =
-          itemsResult.reason?.msg ||
-          itemsResult.reason?.message ||
-          (typeof itemsResult.reason === 'string' ? itemsResult.reason : '');
-        tempErrors.push(message || '获取商品列表失败');
-      }
-
-      if (consignmentResult.status === 'fulfilled') {
-        const response = consignmentResult.value;
-        if (response.code === 1 && response.data?.list) {
-          combinedItems.push(...mapConsignmentItems(response.data.list as ConsignmentRecord[], session.id));
-        } else if (response.msg) {
-          tempErrors.push(response.msg);
-        }
-      } else if (consignmentResult.reason) {
-        const message =
-          consignmentResult.reason?.msg ||
-          consignmentResult.reason?.message ||
-          (typeof consignmentResult.reason === 'string' ? consignmentResult.reason : '');
-        if (message && /登录/.test(message)) {
-          console.warn('获取寄售列表失败（未登录或无权限）:', message);
-        } else if (message) {
-          tempErrors.push(message);
-        }
-      }
-
-      setTradingItems(combinedItems);
-      setSelectedSession(session);
-
-      if (!combinedItems.length && tempErrors.length) {
-        setItemsError(tempErrors.join('；'));
-      } else {
-        setItemsError(null);
-      }
-    } catch (err: any) {
-      console.error('获取专场数据失败:', err);
-      setItemsError(err?.msg || err?.response?.msg || err?.message || '加载专场数据失败，请稍后重试');
-      setSelectedSession(session);
-    } finally {
-      setItemsLoading(false);
-    }
-  };
-
-  const getSessionStatus = (session: TradingSession) => {
-    const [startH, startM] = session.startTime.split(':').map(Number);
-    const [endH, endM] = session.endTime.split(':').map(Number);
-
-    const startDate = new Date(now);
-    startDate.setHours(startH, startM, 0, 0);
-
-    const endDate = new Date(now);
-    endDate.setHours(endH, endM, 0, 0);
-
-    // If currently past the end time for today, it's ended
-    // If we wanted to handle "tomorrow's session", we would check date logic, 
-    // but for a daily trading view, "ended" is correct for the rest of the day.
-
-    if (now < startDate) {
-      return { status: 'waiting', target: startDate };
-    } else if (now >= startDate && now < endDate) {
-      return { status: 'active', target: endDate };
-    } else {
-      return { status: 'ended', target: null };
-    }
-  };
-
-  const formatDuration = (ms: number) => {
-    if (ms < 0) return "00:00:00";
-    const totalSeconds = Math.floor(ms / 1000);
-    const h = Math.floor(totalSeconds / 3600);
-    const m = Math.floor((totalSeconds % 3600) / 60);
-    const s = totalSeconds % 60;
-    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-  };
-
-  const filteredTradingItems = tradingItems.filter((item) => {
-    const priceValue = typeof item.price === 'number' ? item.price : Number(item.price) || 0;
-    if (priceFilter === 'all') return true;
-    if (priceFilter === '0-1k') return priceValue < 1000;
-    if (priceFilter === '1-4k') return priceValue >= 1000 && priceValue < 4000;
-    if (priceFilter === '4-8k') return priceValue >= 4000 && priceValue < 8000;
-    return priceValue >= 8000;
-  });
-
-  return (
-    <PageContainer
-      title={selectedSession ? `${selectedSession.title} · 专场详情` : '交易专区'}
-      onBack={handleBack}
-    >
-      <div className="p-4 space-y-4">
-        {selectedSession ? (
-          <>
-            {/* 顶部蓝色头部 + 倒计时（参考截图） */}
-            <div className="w-full rounded-xl overflow-hidden shadow-md bg-orange-500 text-white">
-              <div className="px-4 pt-3 pb-3 flex items-center justify-between">
-                <div className="text-left">
-                  <p className="text-xs opacity-90 mb-0.5">商品专区</p>
-                  <p className="text-sm font-semibold truncate max-w-[8rem]">
-                    {selectedSession.title}
-                  </p>
-                </div>
-                <div className="flex flex-col items-end text-xs">
-                  {(() => {
-                    const { target } = getSessionStatus(selectedSession);
-                    let display = '00:00:00';
-                    if (target) {
-                      const diff = target.getTime() - now.getTime();
-                      display = formatDuration(diff);
-                    }
-                    return (
-                      <>
-                        <span className="mb-1">距离本场次结束</span>
-                        <div className="flex items-center bg-white rounded-md px-1.5 py-0.5 text-orange-600 font-mono text-xs gap-0.5 shadow-sm">
-                          {display.split('').map((ch, idx) =>
-                            ch === ':' ? (
-                              <span key={idx} className="px-0.5">
-                                :
-                              </span>
-                            ) : (
-                              <span
-                                key={idx}
-                                className="w-4 h-5 rounded-[3px] bg-orange-500 text-white flex items-center justify-center text-[11px]"
-                              >
-                                {ch}
-                              </span>
-                            ),
-                          )}
-                        </div>
-                      </>
-                    );
-                  })()}
-                </div>
-              </div>
-
-              {/* 价格区间 Tabs */}
-              <div className="bg-orange-400/95 px-4 pb-2">
-                <div className="flex justify-between text-xs text-white/80">
-                  {[
-                    { id: 'all', label: '全部' },
-                    { id: '0-1k', label: '0–1K' },
-                    { id: '1-4k', label: '1–4K' },
-                    { id: '4-8k', label: '4–8K' },
-                    { id: '8k+', label: '8K+' },
-                  ].map((tab) => {
-                    const active = priceFilter === tab.id;
-                    return (
-                      <button
-                        key={tab.id}
-                        onClick={() => setPriceFilter(tab.id as any)}
-                        className={`flex-1 text-center py-1 mx-0.5 rounded-full border border-white/40 ${active ? 'bg-white text-orange-500 font-semibold' : 'bg-transparent'
-                          }`}
-                      >
-                        {tab.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            {/* 专场内在售藏品（参考积分商城，一排三个） */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3">
-              <div className="flex justify-between items-center mb-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-1 h-4 bg-orange-500 rounded-full" />
-                  <span className="text-sm font-bold text-gray-800">场内在售藏品</span>
-                </div>
-                <span className="text-[11px] text-gray-400">
-                  {itemsLoading ? '加载中...' : `共 ${tradingItems.length} 件`}
-                </span>
-              </div>
-
-              {itemsLoading ? (
-                <div className="py-8 text-center text-gray-500 text-sm">
-                  加载商品中...
-                </div>
-              ) : itemsError ? (
-                <div className="py-8 text-center text-red-500 text-sm">
-                  {itemsError}
-                </div>
-              ) : filteredTradingItems.length === 0 ? (
-                <div className="py-8 text-center text-gray-500 text-sm">
-                  暂无商品
-                </div>
-              ) : (
-                <div className="grid grid-cols-3 gap-3">
-                  {filteredTradingItems.map((item) => {
-                    const priceValue = typeof item.price === 'number' ? item.price : Number(item.price) || 0;
-                    const stockValue = typeof item.stock === 'number' ? item.stock : null;
-                    const showStock = (item.hasStockInfo ?? (stockValue !== null)) && stockValue !== null;
-                    const isSoldOut = showStock && stockValue <= 0;
-                    const itemKey =
-                      item.displayKey || `${item.source ?? 'collection'}-${item.consignment_id ?? item.id}`;
-                    return (
-                      <div
-                        key={itemKey}
-                        className={`bg-gray-50 rounded-lg overflow-hidden shadow-[0_1px_3px_rgba(15,23,42,0.08)] active:scale-[0.97] transition-transform flex flex-col relative ${isSoldOut ? 'opacity-60 pointer-events-none' : 'cursor-pointer'
-                          }`}
-                        onClick={() => {
-                          if (!onProductSelect || isSoldOut) return;
-                          const product: Product = {
-                            id: String(item.id),
-                            title: item.title,
-                            artist: selectedSession ? selectedSession.title : '交易专区',
-                            price: priceValue,
-                            image: item.image,
-                            category: '交易专区',
-                            productType: 'collection', // 标记为藏品商城商品
-                            consignmentId: item.source === 'consignment' ? item.consignment_id : undefined,
-                          };
-                          onProductSelect(product);
-                        }}
-                      >
-                        {/* 顶部"交易开始"角标 */}
-                        <div className="absolute top-0 left-0 z-10">
-                          <div className="bg-orange-500 text-[10px] text-white px-2 py-0.5 rounded-br-lg rounded-tl-none rounded-tr-none">
-                            交易开始
-                          </div>
-                        </div>
-                        {isSoldOut && (
-                          <div className="absolute inset-0 z-20 flex items-center justify-center">
-                            <span className="bg-black/60 text-white text-xs px-3 py-1.5 rounded-full">
-                              已售罄
-                            </span>
-                          </div>
-                        )}
-                        <div className="w-full aspect-[3/4] bg-gray-100">
-                          <img
-                            src={item.image}
-                            alt={item.title}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <div className="px-1.5 pt-1.5 pb-2 flex-1 flex flex-col justify-between">
-                          <div className="h-8 mb-1">
-                            <p className="text-[11px] text-gray-800 font-medium line-clamp-2 leading-4">
-                              {item.title}
-                            </p>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <div className="text-[11px] text-red-500 font-bold">
-                              <span className="text-[9px] mr-0.5">¥</span>
-                              {priceValue.toFixed(2)}
-                            </div>
-                            {showStock && (
-                              <div className="text-[10px] text-gray-500">
-                                库存 {Math.max(stockValue, 0)}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </>
-        ) : (
-          <>
-            {/* Blue Banner */}
-            <div className="w-full h-40 rounded-xl overflow-hidden relative shadow-md bg-orange-600">
-              <img
-                src="https://picsum.photos/seed/banner1/800/400"
-                alt="Banner"
-                className="w-full h-full object-cover opacity-50 mix-blend-overlay"
-              />
-              <div className="absolute inset-0 bg-gradient-to-r from-orange-900/80 to-transparent flex flex-col justify-center p-6">
-                <h2 className="font-bold text-2xl text-white mb-2 shadow-black drop-shadow-md">文化商品数字化交易</h2>
-                <p className="text-orange-100 text-xs">畅游万亿蓝海市场 共享无限行业空间</p>
-              </div>
-            </div>
-
-            {/* Session List */}
-            {loading ? (
-              <div className="bg-white rounded-xl p-8 text-center text-gray-500">
-                加载中...
-              </div>
-            ) : error ? (
-              <div className="bg-white rounded-xl p-8 text-center text-red-500">
-                {error}
-              </div>
-            ) : sessions.length === 0 ? (
-              <div className="bg-white rounded-xl p-8 text-center text-gray-500">
-                暂无专场数据
-              </div>
-            ) : (
-              sessions.map((session) => {
-                const { status, target } = getSessionStatus(session);
-
-                let timerDisplay = null;
-                if (target) {
-                  const diff = target.getTime() - now.getTime();
-                  timerDisplay = formatDuration(diff);
-                }
-
-                return (
-                  <div key={session.id} className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100">
-                    <div className="relative h-40">
-                      <img src={session.image} className="w-full h-full object-cover" alt={session.title} />
-                      <div className="absolute top-3 left-0 bg-orange-500 text-white text-xs px-3 py-1 rounded-r-full">
-                        交易时间: {session.startTime} - {session.endTime}
-                      </div>
-                      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/60 to-transparent">
-                        <div className="text-white font-bold text-2xl drop-shadow-md font-serif tracking-wide">
-                          {session.title}
-                        </div>
-                      </div>
-
-                      {/* Status Badge Overlay if Active */}
-                      {status === 'active' && (
-                        <div className="absolute top-3 right-3 bg-green-500 text-white text-xs px-2 py-1 rounded animate-pulse">
-                          进行中
-                        </div>
-                      )}
+                {/* 内容区域 */}
+                <div className="relative z-10 p-5">
+                    {/* 顶部导航 */}
+                    <div className="flex justify-between items-center mb-6">
+                        <button onClick={handleBack} className="p-2 bg-white/60 backdrop-blur rounded-full shadow-sm hover:bg-white transition-all text-gray-700">
+                            <ArrowLeft size={20} />
+                        </button>
+                        <div className="text-xs font-bold text-gray-500/50 font-serif tracking-widest uppercase">ASSET POOL</div>
                     </div>
 
-                    <div className="p-3 flex justify-between items-center">
-                      <div className="flex items-center gap-1.5">
-                        {status === 'waiting' && (
-                          <>
-                            <Clock size={14} className="text-orange-500" />
-                            <div className="text-orange-500 text-sm font-medium">
-                              距交易开始: <span className="font-mono font-bold">{timerDisplay}</span>
-                            </div>
-                          </>
-                        )}
-                        {status === 'active' && (
-                          <>
-                            <Clock size={14} className="text-green-600" />
-                            <div className="text-green-600 text-sm font-medium">
-                              距交易结束: <span className="font-mono font-bold">{timerDisplay}</span>
-                            </div>
-                          </>
-                        )}
-                        {status === 'ended' && (
-                          <div className="text-gray-400 text-sm font-medium">
-                            今日交易已结束
-                          </div>
-                        )}
-                      </div>
+                    {/* 头部大标题卡片 */}
+                    <div className="bg-white rounded-[32px] p-6 shadow-xl shadow-gray-200/60 mb-8 border border-white/60 relative overflow-hidden ring-1 ring-gray-50">
+                        {/* 装饰圆环 */}
+                        <div className={`absolute -right-8 -top-8 w-40 h-40 rounded-full opacity-10 ${config.softBg}`}></div>
 
-                      {/* Button Logic */}
-                      {status === 'waiting' && (
-                        <button className="bg-orange-500 text-white text-sm px-5 py-1.5 rounded-full font-medium shadow-sm opacity-90 cursor-not-allowed">
-                          等待开始
-                        </button>
-                      )}
-                      {status === 'active' && (
-                        <button
-                          className="bg-green-600 text-white text-sm px-5 py-1.5 rounded-full font-medium shadow-md active:scale-95 transition-transform"
-                          onClick={() => handleSessionSelect(session)}
+                        <div className="flex justify-between items-start mb-6">
+                            <div>
+                                <span className={`text-[10px] font-bold px-3 py-1 rounded-full ${config.softBg} ${config.themeColor} mb-3 inline-block shadow-sm`}>
+                                    {config.code}
+                                </span>
+                                <h1 className="text-2xl font-bold text-gray-900 leading-tight mb-1 tracking-tight">{config.name}</h1>
+                                <p className="text-sm text-gray-500 font-medium">{config.subName}</p>
+                            </div>
+                            <div className={`p-4 rounded-2xl ${config.softBg} ${config.themeColor} shadow-inner`}>
+                                <config.icon size={28} />
+                            </div>
+                        </div>
+
+                        {/* 核心指标区域 - 移除英文标签，保留纯中文提示 */}
+                        <div className={`flex items-center gap-6 p-4 rounded-2xl ${config.dataBg} border border-white/50 shadow-sm`}>
+                            <div className="flex-1 border-r border-gray-200/50 pr-4">
+                                <div className="text-xs text-gray-400 mb-1 font-bold">预期收益</div>
+                                <div className={`text-3xl font-black bg-clip-text text-transparent bg-gradient-to-r ${config.gradient} tracking-tight`}>
+                                    {config.roi}
+                                </div>
+                            </div>
+                            <div className="pl-2">
+                                <div className="text-xs text-gray-400 mb-1 font-bold">剩余额度</div>
+                                <div className="text-xl font-bold text-gray-800">{config.quota}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 列表头部 */}
+                    <div className="flex items-center justify-between mb-5 px-2">
+                        <div className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                            <span className="w-1 h-5 rounded-full bg-orange-500"></span>
+                            <span>挂牌资产列表</span>
+                        </div>
+                        {status === 'active' && target && (
+                            <div className="text-xs font-mono text-white bg-red-500 px-3 py-1.5 rounded-full shadow-md shadow-red-200 flex items-center gap-1.5 animate-pulse">
+                                <Clock size={12} />
+                                <span className="font-bold tracking-wide">{formatDuration(target.getTime() - now.getTime())}</span>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* 列表内容 */}
+                    {itemsLoading ? (
+                        <div className="py-20 flex justify-center"><LoadingSpinner /></div>
+                    ) : itemsError ? (
+                        <div className="py-12 text-center text-gray-400 text-sm">{itemsError}</div>
+                    ) : tradingItems.length === 0 ? (
+                        <div className="py-12 text-center text-gray-400 text-sm">暂无资产</div>
+                    ) : (
+                        <div className="grid grid-cols-2 gap-4">
+                            {tradingItems.map((item) => (
+                                <div
+                                    key={item.displayKey}
+                                    className="bg-white rounded-2xl overflow-hidden shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100 hover:border-gray-200 hover:shadow-lg transition-all active:scale-[0.98] group"
+                                    onClick={() => onProductSelect && onProductSelect({
+                                        id: String(item.id),
+                                        title: item.title,
+                                        price: item.price,
+                                        image: item.image,
+                                        artist: config.name,
+                                        category: 'Data Asset',
+                                        productType: 'collection'
+                                    } as Product)}
+                                >
+                                    <div className="aspect-square bg-gray-50 relative overflow-hidden">
+                                        <LazyImage src={item.image} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                                        <div className="absolute top-2 right-2 bg-black/40 backdrop-blur-md text-white text-[10px] px-2 py-1 rounded-full font-bold shadow-sm border border-white/20">
+                                            ID.{item.id}
+                                        </div>
+                                    </div>
+                                    <div className="p-4">
+                                        <h3 className="text-gray-900 text-sm font-bold line-clamp-1 mb-3">{item.title}</h3>
+                                        <div className="flex justify-between items-center">
+                                            <div className="text-red-500 font-extrabold text-base flex items-baseline gap-0.5">
+                                                <span className="text-xs">¥</span>
+                                                <span>{item.price.toLocaleString()}</span>
+                                            </div>
+                                            <button className="bg-gray-50 hover:bg-gray-100 p-2 rounded-full text-gray-400 transition-colors">
+                                                <ArrowRight size={14} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    }
+
+    // 2. 列表页渲染 (主界面)
+    return (
+        <div className="min-h-screen bg-[#F8F9FA] text-gray-900 font-sans pb-safe">
+            {/* 顶部背景渐变 */}
+            <div className="absolute top-0 left-0 right-0 h-64 bg-gradient-to-b from-[#FFE4C4] via-[#FFF0E0] to-[#F8F9FA] z-0" />
+
+            {/* 顶部导航区 */}
+            <div className="relative z-10 px-5 pt-4 pb-2 flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                    <button onClick={handleBack} className="p-2 -ml-2 text-gray-700 active:bg-black/5 rounded-full transition-colors">
+                        <ArrowLeft size={24} />
+                    </button>
+                    <h1 className="font-bold text-xl text-gray-900 tracking-tight">资产交易</h1>
+                </div>
+                <div className="flex items-center gap-1.5 bg-white/90 backdrop-blur px-3 py-1.5 rounded-full shadow-sm border border-white/60">
+                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse ring-4 ring-green-100"></div>
+                    <span className="text-xs font-bold text-gray-700 font-sans tracking-wide">LIVE</span>
+                </div>
+            </div>
+
+            {/* 滚动列表 */}
+            <div className="relative z-10 p-5 space-y-6"> {/* 增加间距 space-y-6 */}
+                {loading ? (
+                    <div className="mt-20"><LoadingSpinner /></div>
+                ) : error ? (
+                    <div className="mt-20 text-center text-red-500 text-sm">{error}</div>
+                ) : sessions.map(session => {
+                    const poolType = getPoolType(session.startTime);
+                    const config = POOL_CONFIGS[poolType];
+                    const { status, target } = getSessionStatus(session);
+
+                    return (
+                        <div
+                            key={session.id}
+                            className="bg-white rounded-[28px] p-6 shadow-[0_12px_24px_rgb(0,0,0,0.06)] border border-white relative overflow-hidden transition-all duration-300 active:scale-[0.99]"
                         >
-                          进入交易
-                        </button>
-                      )}
-                      {status === 'ended' && (
-                        <button className="bg-gray-200 text-gray-400 text-sm px-5 py-1.5 rounded-full font-medium cursor-not-allowed">
-                          交易结束
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </>
-        )}
-      </div>
-    </PageContainer>
-  );
+                            {/* 水印图标 - 仅装饰，放在最底层 */}
+                            <div className={`absolute -right-6 -bottom-6 opacity-[0.03] pointer-events-none`}>
+                                <config.icon size={180} />
+                            </div>
+
+                            {/* 1. 头部区域：标签 + 标题 + 状态 */}
+                            <div className="relative z-10 flex justify-between items-start mb-6">
+                                <div>
+                                    {/* 胶囊标签 */}
+                                    <div className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold ${config.softBg} ${config.themeColor} mb-2.5 border border-transparent`}>
+                                        {config.code}
+                                    </div>
+                                    <h2 className="text-xl font-bold text-gray-900 leading-none mb-2">{config.name}</h2>
+                                    <p className="text-xs text-gray-400 font-medium">{config.subName}</p>
+                                </div>
+
+                                {/* 状态胶囊 */}
+                                {/* 状态显示优化：抢购中状态增强视觉冲击力 */}
+                                {status === 'active' ? (
+                                    <div className="flex flex-col items-end">
+                                        {/* 抢购中状态 - 红色高亮脉冲效果 */}
+                                        <span className="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 mb-2 shadow-lg shadow-red-200 animate-[pulse_2s_infinite]">
+                                            <span className="w-2 h-2 rounded-full bg-white animate-ping"></span>
+                                            <span className="animate-bounce">🔥</span> 正在抢购
+                                        </span>
+                                        {/* 倒计时 - 放大字号，增加紧迫感 */}
+                                        {target && (
+                                            <div className="flex flex-col items-end">
+                                                <span className="text-[10px] text-red-500 font-bold mb-0.5">距结束仅剩</span>
+                                                <span className="font-mono text-2xl font-black text-red-600 tracking-tighter tabular-nums drop-shadow-sm">
+                                                    {formatDuration(target.getTime() - now.getTime())}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <span className={`text-[10px] font-bold px-3 py-1.5 rounded-full border ${status === 'waiting' ? 'bg-orange-50 border-orange-100 text-orange-500' : 'bg-gray-50 border-gray-100 text-gray-400'}`}>
+                                        {status === 'waiting' ? '即将开始' : '已结束'}
+                                    </span>
+                                )}
+                            </div>
+
+                            {/* 2. 数据展示区 - 移除英文标签 */}
+                            <div className={`relative z-10 flex items-stretch rounded-2xl ${config.dataBg} p-4 mb-5 border border-black/[0.02]`}>
+                                <div className="flex-1">
+                                    <div className="text-xs text-gray-500 font-bold mb-1">预期收益率</div>
+                                    <div className={`text-2xl font-black ${config.themeColor} tracking-tight leading-none pt-1`}>
+                                        {config.roi}
+                                    </div>
+                                </div>
+                                <div className="w-px bg-black/[0.06] mx-4 self-center h-8"></div>
+                                <div className="flex-1">
+                                    <div className="text-xs text-gray-500 font-bold mb-1">本期额度</div>
+                                    <div className="text-lg font-extrabold text-gray-700 leading-none pt-1">
+                                        {config.quota}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* 3. 底部区域：全宽强按钮 */}
+                            <div className="relative z-10">
+                                <button
+                                    onClick={() => status !== 'ended' && handleSessionSelect(session)}
+                                    disabled={status === 'ended'}
+                                    className={`w-full h-12 rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98]
+                           ${status === 'active'
+                                            ? `${config.buttonClass} text-white`
+                                            : status === 'waiting'
+                                                ? 'bg-white border text-orange-500 border-orange-200 shadow-sm'
+                                                : 'bg-gray-100 text-gray-400 border border-gray-200 shadow-none cursor-not-allowed'
+                                        }`}
+                                >
+                                    {status === 'active' ? '立即抢购 · ACCESS' : status === 'waiting' ? '预约开场 · WAITLIST' : '本场结束 · CLOSED'}
+                                    {status !== 'ended' && <ArrowRight size={16} />}
+                                </button>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
 };
 
 export default TradingZone;

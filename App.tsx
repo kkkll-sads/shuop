@@ -59,6 +59,7 @@ import ConsignmentVoucher from './pages/wallet/ConsignmentVoucher';
 import CumulativeRights from './pages/wallet/CumulativeRights';
 import MyCollection from './pages/wallet/MyCollection';
 import ClaimStation from './pages/wallet/ClaimStation';
+import HashrateExchange from './pages/wallet/HashrateExchange';
 import { RealNameRequiredModal } from './components/common';
 
 const STORAGE_KEY = 'cat_read_news_ids';
@@ -448,8 +449,14 @@ const App: React.FC = () => {
           />
         );
       case 'asset-view':
+      case 'asset-view:0':
+      case 'asset-view:1':
+      case 'asset-view:2':
+      case 'asset-view:3':
+        const initialTab = subPage?.split(':')[1] ? parseInt(subPage.split(':')[1]) : 0;
         return (
           <AssetView
+            initialTab={initialTab}
             onBack={() => setSubPage(null)}
             onNavigate={(page) => setSubPage(page)}
             onProductSelect={(product) => handleProductSelect(product, 'market')}
@@ -473,19 +480,42 @@ const App: React.FC = () => {
         return <UserSurvey onBack={() => setSubPage(null)} />;
       case 'online-service':
         return <OnlineService onBack={() => setSubPage(null)} />;
-      case 'asset:balance-recharge':
-        return <BalanceRecharge onBack={() => setSubPage('asset-view')} />;
-      case 'asset:balance-withdraw':
-        return (
-          <BalanceWithdraw
-            onBack={() => setSubPage('asset-view')}
-            onNavigate={(page) => setSubPage(page)}
-          />
-        );
+    }
+
+    if (subPage?.startsWith('wallet:hashrate_exchange')) {
+      // Check for return path: wallet:hashrate_exchange:fromPath
+      const isFromProfile = subPage.includes(':profile');
+      return (
+        <HashrateExchange
+          onBack={() => setSubPage(isFromProfile ? null : 'asset-view')}
+          onNavigate={(page) => setSubPage(page)}
+        />
+      );
+    }
+
+    if (subPage?.startsWith('asset:balance-recharge')) {
+      const isFromProfile = subPage.includes(':profile');
+      return <BalanceRecharge onBack={() => setSubPage(isFromProfile ? null : 'asset-view')} />;
+    }
+
+    if (subPage?.startsWith('asset:balance-withdraw')) {
+      const isFromProfile = subPage.includes(':profile');
+      return (
+        <BalanceWithdraw
+          onBack={() => setSubPage(isFromProfile ? null : 'asset-view')}
+          onNavigate={(page) => setSubPage(page)}
+        />
+      );
+    }
+
+    if (subPage?.startsWith('asset:service-recharge')) {
+      const isFromProfile = subPage.includes(':profile');
+      return <ServiceRecharge onBack={() => setSubPage(isFromProfile ? null : 'asset-view')} />;
+    }
+
+    switch (subPage) {
       case 'asset:extension-withdraw':
         return <ExtensionWithdraw onBack={() => setSubPage('asset-view')} />;
-      case 'asset:service-recharge':
-        return <ServiceRecharge onBack={() => setSubPage('asset-view')} />;
       case 'sign-in':
         return <SignIn onBack={() => setSubPage(null)} onNavigate={(page) => setSubPage(page)} />;
       case 'asset-history':

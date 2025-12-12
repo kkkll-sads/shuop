@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { X, ChevronRight } from 'lucide-react';
-import PageContainer from '../../components/layout/PageContainer';
+import { X, ChevronLeft, ChevronRight, CreditCard, Wallet, AlertCircle } from 'lucide-react';
 import {
   fetchPaymentAccountList,
   PaymentAccountItem,
@@ -33,83 +32,59 @@ const BalanceWithdraw: React.FC<BalanceWithdrawProps> = ({ onBack, onNavigate })
   const feeRate = 0.01; // 1%
   const serviceFee = amount ? (parseFloat(amount) * feeRate).toFixed(2) : '0';
 
-  // 加载收款账户列表
   useEffect(() => {
-    const loadAccounts = async () => {
-      const token = localStorage.getItem(AUTH_TOKEN_KEY);
-      if (!token) {
-        setError('未检测到登录信息，请重新登录');
-        setLoading(false);
-        return;
-      }
-
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await fetchPaymentAccountList(token);
-        if (res.code === 1 && res.data?.list) {
-          setAccounts(res.data.list || []);
-          // 自动选择默认账户
-          const defaultAcc = res.data.list.find((acc: PaymentAccountItem) => Number(acc.is_default) === 1);
-          if (defaultAcc) {
-            setSelectedAccount(defaultAcc);
-          }
-        } else {
-          setError(res.msg || '获取收款账户信息失败');
-        }
-      } catch (e: any) {
-        setError(e?.msg || e?.response?.msg || e?.message || '获取收款账户信息失败');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadAccounts();
-  }, []);
-
-  // 加载用户余额
-  useEffect(() => {
-    const loadBalance = async () => {
-      const token = localStorage.getItem(AUTH_TOKEN_KEY);
-      if (!token) {
-        setBalance('0.00');
-        return;
-      }
-
-      setLoadingBalance(true);
-      try {
-        const response = await fetchProfile(token);
-        if (response.code === 1 && response.data?.userInfo) {
-          const userInfo = response.data.userInfo;
-          setBalance(parseFloat(userInfo.withdrawable_money || '0').toFixed(2));
-          localStorage.setItem(USER_INFO_KEY, JSON.stringify(userInfo));
-        }
-      } catch (err: any) {
-        console.error('获取余额失败:', err);
-      } finally {
-        setLoadingBalance(false);
-      }
-    };
-
     loadBalance();
   }, []);
+
+  const loadAccounts = async () => {
+    const token = localStorage.getItem(AUTH_TOKEN_KEY);
+    if (!token) return;
+    setLoading(true);
+    try {
+      const res = await fetchPaymentAccountList(token);
+      if (res.code === 1 && res.data?.list) {
+        setAccounts(res.data.list || []);
+        const defaultAcc = res.data.list.find((acc: PaymentAccountItem) => Number(acc.is_default) === 1);
+        if (defaultAcc) setSelectedAccount(defaultAcc);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadBalance = async () => {
+    const token = localStorage.getItem(AUTH_TOKEN_KEY);
+    if (!token) return;
+    setLoadingBalance(true);
+    try {
+      const response = await fetchProfile(token);
+      if (response.code === 1 && response.data?.userInfo) {
+        const userInfo = response.data.userInfo;
+        setBalance(parseFloat(userInfo.withdrawable_money || '0').toFixed(2));
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingBalance(false);
+    }
+  };
 
   const handleWithdrawClick = () => {
     if (!amount || parseFloat(amount) <= 0) {
       setSubmitError('请输入有效的提现金额');
       return;
     }
-
     if (parseFloat(amount) > parseFloat(balance)) {
       setSubmitError('提现金额不能超过可提现余额');
       return;
     }
-
     if (!selectedAccount) {
       setSubmitError('请选择提现账户');
       return;
     }
-
     setSubmitError(null);
     setShowPasswordModal(true);
   };
@@ -119,280 +94,228 @@ const BalanceWithdraw: React.FC<BalanceWithdrawProps> = ({ onBack, onNavigate })
       setSubmitError('请输入支付密码');
       return;
     }
-
     setSubmitting(true);
     setSubmitError(null);
-
     try {
-      const accountId = selectedAccount!.id;
-
       const res = await submitWithdraw({
         amount: parseFloat(amount),
-        payment_account_id: typeof accountId === 'string' ? parseInt(accountId, 10) : accountId,
+        payment_account_id: selectedAccount!.id,
         pay_password: payPassword,
       });
-
       if (res.code === 1) {
-        alert(res.msg || '提现申请提交成功，请等待审核');
+        alert(res.msg || '提现申请提交成功');
         setAmount('');
         setPayPassword('');
         setSelectedAccount(null);
         setShowPasswordModal(false);
-        // 重新加载余额
-        const token = localStorage.getItem(AUTH_TOKEN_KEY);
-        if (token) {
-          const response = await fetchProfile(token);
-          if (response.code === 1 && response.data?.userInfo) {
-            const userInfo = response.data.userInfo;
-            setBalance(parseFloat(userInfo.withdrawable_money || '0').toFixed(2));
-            localStorage.setItem(USER_INFO_KEY, JSON.stringify(userInfo));
-          }
-        }
+        loadBalance();
       } else {
-        setSubmitError(res.msg || '提交失败，请重试');
+        setSubmitError(res.msg || '提交失败');
       }
     } catch (e: any) {
-      setSubmitError(e?.msg || e?.response?.msg || e?.message || '提交失败，请重试');
+      setSubmitError(e?.msg || '提交失败');
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <PageContainer title="提现" onBack={onBack}>
-      <div className="p-3 space-y-3">
-        {/* 选择提现账户 */}
-        <div
-          className="bg-white rounded-xl p-3 shadow-sm flex justify-between items-center cursor-pointer active:bg-gray-50"
-          onClick={() => setShowAccountModal(true)}
-        >
-          <span className="text-base text-gray-800">
-            {selectedAccount
-              ? `${selectedAccount.account_name || selectedAccount.type_text || '账户'} - ${selectedAccount.account?.slice(-4) || ''}`
-              : '选择提现账户'}
-          </span>
-          <ChevronRight size={20} className="text-gray-400" />
+    <div className="min-h-screen bg-gray-50 flex flex-col font-sans text-gray-900 pb-safe">
+      {/* Header */}
+      <div className="bg-gradient-to-b from-orange-100 to-gray-50 p-5 pt-4">
+        <div className="flex items-center gap-3 mb-6">
+          <button onClick={onBack} className="w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-sm text-gray-700">
+            <ChevronLeft size={20} />
+          </button>
+          <h1 className="text-xl font-bold text-gray-900">收益提现</h1>
+          <div className="ml-auto text-xs text-orange-600 font-medium bg-white/50 px-3 py-1 rounded-full backdrop-blur-sm border border-orange-100/50">
+            费率 {feeRate * 100}%
+          </div>
         </div>
 
-        {/* 提现金额 */}
-        <div className="bg-white rounded-xl p-3 shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
-            <span className="text-base text-gray-800 font-medium">提现金额</span>
-            <span className="text-xs text-gray-400">（费率 {feeRate * 100}%）</span>
-          </div>
+        {/* Amount Card */}
+        <div className="bg-white rounded-[24px] p-6 shadow-xl shadow-orange-100/50 mb-6 border border-orange-50 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-orange-50 rounded-bl-[100px] -z-0 opacity-50"></div>
 
-          <div className="flex items-center border-b border-gray-100 pb-4">
-            <span className="text-3xl text-gray-800 mr-2">¥</span>
-            <input
-              type="number"
-              placeholder=""
-              className="flex-1 bg-transparent outline-none text-3xl text-gray-900"
-              value={amount}
-              onChange={(e) => {
-                const val = e.target.value;
-                if (val === '') {
-                  setAmount('');
-                  setSubmitError(null);
-                  return;
-                }
+          <div className="relative z-10">
+            <div className="flex justify-between items-center mb-4">
+              <div className="text-sm font-bold text-gray-400 tracking-wide flex items-center gap-2">
+                <Wallet size={14} />
+                提现金额
+              </div>
+              <div className="text-xs text-gray-400">
+                可提现: {loadingBalance ? '...' : balance}
+              </div>
+            </div>
 
-                if (!isNaN(parseFloat(val)) && parseFloat(val) >= 0) {
-                  const numVal = parseFloat(val);
-                  const numBal = parseFloat(balance);
-
-                  if (numVal > numBal) {
+            <div className="flex items-baseline gap-2 border-b-2 border-orange-50 pb-2 focus-within:border-orange-500 transition-colors">
+              <span className="text-3xl font-bold text-gray-900">¥</span>
+              <input
+                type="number"
+                value={amount}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (parseFloat(val) > parseFloat(balance)) {
                     setAmount(balance);
                   } else {
                     setAmount(val);
                   }
                   setSubmitError(null);
-                }
-              }}
-            />
-          </div>
-
-          <div className="mt-3 text-sm">
-            <span className="text-gray-500">服务费 </span>
-            <span className="text-orange-500">¥{serviceFee}</span>
-            <span className="text-gray-500">，可用 </span>
-            <span className="text-gray-800">{loadingBalance ? '...' : balance}</span>
-          </div>
-        </div>
-
-        {submitError && (
-          <div className="text-xs text-red-500 bg-red-50 px-3 py-2 rounded">
-            {submitError}
-          </div>
-        )}
-
-        {/* 提现按钮 */}
-        <button
-          className={`w-full rounded-full py-3.5 text-base font-medium ${submitting
-            ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-            : 'bg-orange-500 text-white active:bg-orange-600'
-            }`}
-          onClick={handleWithdrawClick}
-          disabled={submitting}
-        >
-          提现
-        </button>
-
-
-      </div>
-
-      {/* 收款账户选择弹窗 */}
-      {showAccountModal && (
-        <div
-          className="fixed inset-0 z-20 bg-black/70 flex items-end justify-center"
-          onClick={() => setShowAccountModal(false)}
-        >
-          <div
-            className="bg-white rounded-t-2xl w-full max-h-[70vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between p-4 border-b border-gray-100">
-              <span className="font-bold text-gray-900">选择提现账户</span>
-              <button onClick={() => setShowAccountModal(false)}>
-                <X size={20} className="text-gray-400" />
+                }}
+                placeholder="0.00"
+                className="flex-1 text-4xl font-black text-gray-900 bg-transparent outline-none placeholder:text-gray-200 font-[DINAlternate-Bold]"
+              />
+              <button
+                onClick={() => setAmount(balance)}
+                className="text-xs font-bold text-orange-600 px-2 py-1 bg-orange-50 rounded-md"
+              >
+                全部
               </button>
             </div>
 
-            {loading && (
-              <div className="text-center py-8 text-gray-500 text-sm">加载中...</div>
-            )}
+            <div className="mt-4 flex justify-between text-xs">
+              <span className="text-gray-400">预计到账</span>
+              <span className="text-gray-900 font-bold">
+                ¥ {amount ? (parseFloat(amount) * (1 - feeRate)).toFixed(2) : '0.00'}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
 
-            {error && (
-              <div className="text-xs text-red-500 bg-red-50 px-4 py-2 m-4 rounded">
-                {error}
+      {/* Account Selection */}
+      <div className="px-5 flex-1 space-y-4">
+        <h2 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+          <span className="w-1 h-4 bg-orange-500 rounded-full"></span>
+          收款账户
+        </h2>
+
+        <div
+          onClick={() => setShowAccountModal(true)}
+          className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between active:scale-[0.99] transition-transform cursor-pointer"
+        >
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${selectedAccount ? 'bg-orange-50 text-orange-600' : 'bg-gray-100 text-gray-400'}`}>
+              <CreditCard size={20} />
+            </div>
+            <div>
+              <div className="text-sm font-bold text-gray-900">
+                {selectedAccount ? (selectedAccount.account_name || '已选账户') : '选择收款账户'}
               </div>
-            )}
-
-            {!loading && !error && accounts.length === 0 && (
-              <div className="text-center py-8 space-y-3">
-                <div className="text-gray-400 text-sm">暂无绑定的收款账户</div>
-                {onNavigate && (
-                  <button
-                    className="text-sm text-orange-600 bg-orange-50 px-4 py-2 rounded-lg"
-                    onClick={() => {
-                      setShowAccountModal(false);
-                      onNavigate('card-management');
-                    }}
-                  >
-                    去添加收款账户
-                  </button>
-                )}
+              <div className="text-xs text-gray-500 mt-0.5">
+                {selectedAccount ? `${selectedAccount.type_text} (${selectedAccount.account.slice(-4)})` : '点击选择绑定的银行卡/支付宝'}
               </div>
-            )}
+            </div>
+          </div>
+          <ChevronRight size={18} className="text-gray-300" />
+        </div>
 
-            {!loading && !error && accounts.length > 0 && (
-              <div className="p-4 space-y-3">
-                {accounts.map((item) => {
-                  const isSelected = selectedAccount?.id === item.id;
-                  return (
-                    <div
-                      key={item.id}
-                      className={`border rounded-lg p-3 cursor-pointer transition-colors ${isSelected ? 'border-orange-500 bg-orange-50' : 'border-gray-100 bg-gray-50'
-                        }`}
-                      onClick={() => {
-                        setSelectedAccount(item);
-                        setShowAccountModal(false);
-                      }}
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm font-medium text-gray-800">
-                          {item.account_name || item.type_text}
-                        </span>
-                        <span className="text-xs text-orange-600">{item.type_text}</span>
-                      </div>
-                      <div className="text-xs text-gray-600">{item.account}</div>
+        {submitError && (
+          <div className="bg-red-50 p-3 rounded-xl flex items-start gap-2">
+            <AlertCircle size={16} className="text-red-500 shrink-0 mt-0.5" />
+            <span className="text-xs text-red-600 font-medium">{submitError}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Bottom Action */}
+      <div className="p-5 safe-area-bottom bg-white/80 backdrop-blur border-t border-gray-100">
+        <button
+          onClick={handleWithdrawClick}
+          className="w-full py-4 rounded-xl bg-gradient-to-r from-[#FF6B35] to-[#FF9F2E] text-white font-bold text-lg shadow-lg shadow-orange-200 active:scale-[0.98] transition-transform flex items-center justify-center gap-2 disabled:opacity-50 disabled:shadow-none"
+          disabled={submitting}
+        >
+          {submitting ? '处理中...' : '确认提现资金'}
+        </button>
+        <div className="text-center mt-3 text-[10px] text-gray-400">
+          资金提现 T+1 到账 | 每日限额 ¥50,000
+        </div>
+      </div>
+
+      {/* Account Modal */}
+      {showAccountModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end justify-center animate-in fade-in" onClick={() => setShowAccountModal(false)}>
+          <div className="bg-white w-full rounded-t-[32px] p-6 pb-safe animate-in slide-in-from-bottom duration-300" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-bold text-gray-900">选择收款账户</h3>
+              <button onClick={() => setShowAccountModal(false)} className="p-2 bg-gray-100 rounded-full text-gray-500">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+              {accounts.map(acc => (
+                <div
+                  key={acc.id}
+                  onClick={() => { setSelectedAccount(acc); setShowAccountModal(false); }}
+                  className={`p-4 rounded-xl border flex items-center gap-4 transition-all ${selectedAccount?.id === acc.id
+                    ? 'border-orange-500 bg-orange-50/50 shadow-sm'
+                    : 'border-gray-100 bg-white'
+                    }`}
+                >
+                  <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 font-bold text-xs">
+                    {acc.type === 'alipay' ? '支' : acc.type === 'wechat' ? '微' : '银'}
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-bold text-gray-900 flex items-center gap-2">
+                      {acc.account_name}
+                      {acc.is_default === 1 && <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded">默认</span>}
                     </div>
-                  );
-                })}
+                    <div className="text-xs text-gray-500 mt-0.5">{acc.type_text} • {acc.account}</div>
+                  </div>
+                  <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${selectedAccount?.id === acc.id ? 'border-orange-500 bg-orange-500' : 'border-gray-300'}`}>
+                    {selectedAccount?.id === acc.id && <div className="w-2 h-2 bg-white rounded-full" />}
+                  </div>
+                </div>
+              ))}
 
-                {onNavigate && (
-                  <button
-                    className="w-full text-center text-sm text-orange-600 py-2"
-                    onClick={() => {
-                      setShowAccountModal(false);
-                      onNavigate('card-management');
-                    }}
-                  >
-                    管理账户
-                  </button>
-                )}
-              </div>
-            )}
+              <button
+                onClick={() => { setShowAccountModal(false); onNavigate?.('card-management'); }}
+                className="w-full py-3 rounded-xl border border-dashed border-gray-300 text-gray-500 text-sm font-medium hover:bg-gray-50 flex items-center justify-center gap-2"
+              >
+                + 添加新账户
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* 支付密码弹窗 */}
+      {/* Password Modal */}
       {showPasswordModal && (
-        <div
-          className="fixed inset-0 z-20 bg-black/70 flex items-center justify-center p-4"
-          onClick={() => {
-            setShowPasswordModal(false);
-            setPayPassword('');
-            setSubmitError(null);
-          }}
-        >
-          <div
-            className="bg-white rounded-xl p-6 w-full max-w-sm"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between mb-6">
-              <span className="font-bold text-lg text-gray-900">输入支付密码</span>
-              <button
-                onClick={() => {
-                  setShowPasswordModal(false);
-                  setPayPassword('');
-                  setSubmitError(null);
-                }}
-              >
-                <X size={20} className="text-gray-400" />
-              </button>
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in" onClick={() => setShowPasswordModal(false)}>
+          <div className="bg-white w-full max-w-sm rounded-[24px] p-6 shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="text-center mb-6">
+              <h3 className="text-lg font-bold text-gray-900">安全验证</h3>
+              <p className="text-xs text-gray-400 mt-1">请输入支付密码以确认操作</p>
             </div>
 
-            <div className="mb-4">
-              <div className="text-sm text-gray-500 mb-2">提现金额</div>
-              <div className="text-2xl font-bold text-gray-900">¥ {amount}</div>
-              <div className="text-xs text-gray-400 mt-1">
-                服务费 ¥{serviceFee}，实际到账 ¥{(parseFloat(amount || '0') - parseFloat(serviceFee)).toFixed(2)}
-              </div>
+            <div className="bg-gray-50 rounded-xl p-4 mb-6 text-center">
+              <div className="text-xs text-gray-500 mb-1">本次提现金额</div>
+              <div className="text-2xl font-black text-gray-900 font-[DINAlternate-Bold]">¥ {amount}</div>
             </div>
 
             <input
               type="password"
-              placeholder="请输入支付密码"
-              className="w-full border border-gray-200 rounded-lg px-4 py-3 text-base outline-none focus:border-orange-500 mb-4"
-              value={payPassword}
-              onChange={(e) => {
-                setPayPassword(e.target.value);
-                setSubmitError(null);
-              }}
               autoFocus
+              value={payPassword}
+              onChange={(e) => { setPayPassword(e.target.value); setSubmitError(null); }}
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-center text-lg tracking-[8px] font-bold outline-none focus:border-orange-500 focus:bg-white transition-all mb-4"
+              placeholder="••••••"
+              maxLength={6}
             />
 
             {submitError && (
-              <div className="text-xs text-red-500 bg-red-50 px-3 py-2 rounded mb-4">
-                {submitError}
-              </div>
+              <div className="text-xs text-center text-red-500 mb-4">{submitError}</div>
             )}
 
-            <button
-              className={`w-full rounded-lg py-3 text-base font-medium ${submitting
-                ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                : 'bg-orange-500 text-white active:bg-orange-600'
-                }`}
-              onClick={handleConfirmWithdraw}
-              disabled={submitting}
-            >
-              {submitting ? '提交中...' : '确认提现'}
-            </button>
+            <div className="flex gap-3">
+              <button onClick={() => setShowPasswordModal(false)} className="flex-1 py-3 rounded-xl bg-gray-100 text-gray-600 font-bold text-sm">取消</button>
+              <button onClick={handleConfirmWithdraw} className="flex-1 py-3 rounded-xl bg-gray-900 text-white font-bold text-sm shadow-lg shadow-gray-200">确认提交</button>
+            </div>
           </div>
         </div>
       )}
-    </PageContainer>
+    </div>
   );
 };
 

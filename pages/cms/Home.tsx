@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Building2, Newspaper, Palette, Trophy, ChevronRight } from 'lucide-react';
+import { Building2, Newspaper, Palette, Trophy, ChevronRight, UserCheck } from 'lucide-react';
 import { Banner, Artist, NewsItem } from '../../types';
 import { fetchBanners, fetchArtists, normalizeAssetUrl, ArtistApiItem } from '../../services/api';
 
@@ -173,6 +173,13 @@ const Home: React.FC<HomeProps> = ({ onNavigate, onSwitchTab, announcements = []
       bgColor: 'bg-orange-50',
       action: () => onNavigate('masterpiece-showcase')
     },
+    {
+      label: '代理中心',
+      icon: UserCheck,
+      color: 'text-orange-500',
+      bgColor: 'bg-orange-50',
+      action: () => onNavigate('agent-auth')
+    },
   ];
 
   return (
@@ -261,17 +268,17 @@ const Home: React.FC<HomeProps> = ({ onNavigate, onSwitchTab, announcements = []
 
       {/* Quick Actions */}
       <div className="pb-4 pt-4 relative z-0">
-        <div className="grid grid-cols-4 gap-4 px-4">
+        <div className="grid grid-cols-5 gap-2 px-2">
           {quickActions.map((item, index) => (
             <div
               key={index}
               className="flex flex-col items-center cursor-pointer active:opacity-70 transition-opacity"
               onClick={item.action}
             >
-              <div className={`w-12 h-12 rounded-full ${item.bgColor} flex items-center justify-center mb-2 ${item.color} shadow-sm`}>
-                <item.icon size={24} />
+              <div className={`w-10 h-10 rounded-full ${item.bgColor} flex items-center justify-center mb-1 ${item.color} shadow-sm`}>
+                <item.icon size={20} />
               </div>
-              <span className="text-xs text-gray-700 font-medium">{item.label}</span>
+              <span className="text-[10px] text-gray-700 font-medium whitespace-nowrap">{item.label}</span>
             </div>
           ))}
         </div>

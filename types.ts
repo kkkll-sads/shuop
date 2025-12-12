@@ -87,6 +87,10 @@ export interface UserInfo {
   refresh_token: string;
   /** 代理商审核状态(-1=未申请,0=待审核,1=已通过,2=已拒绝) */
   agent_review_status?: number;
+  /** 绿色算力 */
+  carbon_quota?: number | string;
+  /** 待激活确权金 */
+  pending_service_fee?: number | string;
 }
 
 export interface ProfileResponse {

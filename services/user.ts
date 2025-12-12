@@ -250,22 +250,97 @@ export async function fetchRealNameStatus(token: string): Promise<ApiResponse<Re
 }
 
 export interface SubmitRealNameParams {
-    real_name: string;
-    id_card: string;
+    real_name?: string;
+    id_card?: string;
     id_card_front?: string;
     id_card_back?: string;
+    auth_token?: string; // H5人脸核身返回的token
     token?: string;
 }
 
-export async function submitRealName(params: SubmitRealNameParams): Promise<ApiResponse> {
+export async function submitRealName(params: SubmitRealNameParams): Promise<ApiResponse<{ real_name_status?: number }>> {
+    const token = params.token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+    const payload = new FormData();
+
+    if (params.auth_token) {
+        payload.append('auth_token', params.auth_token);
+    } else {
+        if (params.real_name) payload.append('real_name', params.real_name);
+        if (params.id_card) payload.append('id_card', params.id_card);
+        if (params.id_card_front) payload.append('id_card_front', params.id_card_front);
+        if (params.id_card_back) payload.append('id_card_back', params.id_card_back);
+    }
+
+    return apiFetch(API_ENDPOINTS.user.submitRealName, {
+        method: 'POST',
+        body: payload,
+        token,
+    });
+}
+
+export interface LivePersonCheckParams {
+    name: string;
+    cardNo: string;
+    token: string;
+    needAvatar?: boolean | string; // 'true'/'false' or boolean
+    picType?: number;
+    dataId?: string;
+    userToken?: string; // Optional user token override
+}
+
+export interface LivePersonCheckResult {
+    status: number; // 1=pass, 2=fail, 0=pending
+    statusDesc?: string;
+    faceMatched?: number; // 1=pass, 2=fail, 0=uncertain
+    similarityScore?: number;
+    reasonTypeDesc?: string;
+    [key: string]: any;
+}
+
+export async function livePersonCheck(params: LivePersonCheckParams): Promise<ApiResponse<LivePersonCheckResult>> {
+    const token = params.userToken || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+    const payload = new FormData();
+    payload.append('name', params.name);
+    payload.append('cardNo', params.cardNo);
+    payload.append('token', params.token);
+
+    if (params.needAvatar !== undefined) {
+        payload.append('needAvatar', String(params.needAvatar));
+    }
+    if (params.picType !== undefined) {
+        payload.append('picType', String(params.picType));
+    }
+    if (params.dataId) {
+        payload.append('dataId', params.dataId);
+    }
+
+    return apiFetch<LivePersonCheckResult>(API_ENDPOINTS.yidun.livePersonCheck, {
+        method: 'POST',
+        body: payload,
+        token,
+    });
+}
+
+export interface H5AuthTokenParams {
+    real_name: string;
+    id_card: string;
+    redirect_url: string;
+    token?: string;
+}
+
+export interface H5AuthTokenResult {
+    authUrl: string;
+    authToken: string;
+}
+
+export async function fetchH5AuthToken(params: H5AuthTokenParams): Promise<ApiResponse<H5AuthTokenResult>> {
     const token = params.token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
     const payload = new FormData();
     payload.append('real_name', params.real_name);
     payload.append('id_card', params.id_card);
-    if (params.id_card_front) payload.append('id_card_front', params.id_card_front);
-    if (params.id_card_back) payload.append('id_card_back', params.id_card_back);
+    payload.append('redirect_url', params.redirect_url);
 
-    return apiFetch(API_ENDPOINTS.user.submitRealName, {
+    return apiFetch<H5AuthTokenResult>(API_ENDPOINTS.user.getH5AuthToken, {
         method: 'POST',
         body: payload,
         token,

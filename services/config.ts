@@ -5,7 +5,7 @@ export const API_PREFIX = '/api';
 // - 开发环境：使用 Vite 代理，走相对路径 /api
 // - 生产环境：优先使用环境变量 VITE_API_BASE_URL，其次降级到写死的线上地址
 
-const DEFAULT_API_ORIGIN = 'http://18.166.211.131';
+const DEFAULT_API_ORIGIN = 'https://18.166.211.131';
 const rawEnv = (import.meta as any).env ?? {};
 
 const resolveApiBaseUrl = () => {
@@ -111,9 +111,16 @@ export const API_ENDPOINTS = {
         setDefaultPaymentAccount: '/User/setDefaultPaymentAccount',
         agentReviewStatus: '/User/agentReviewStatus',
         submitAgentReview: '/User/submitAgentReview',
+        getH5AuthToken: '/User/getH5AuthToken',
+    },
+    yidun: {
+        livePersonCheck: '/YidunOcr/livePersonCheck',
     },
     upload: {
         image: '/ajax/upload',
+    },
+    sms: {
+        send: '/Sms/send',
     },
     announcement: {
         /** 平台公告列表 */

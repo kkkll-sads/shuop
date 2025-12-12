@@ -22,3 +22,29 @@ export async function uploadImage(file: File, token?: string): Promise<ApiRespon
         token: authToken,
     });
 }
+
+export interface SendSmsParams {
+    mobile: string;
+    event: string;
+    password?: string;
+}
+
+export async function sendSmsCode(params: SendSmsParams, token?: string): Promise<ApiResponse<any>> {
+    const authToken = token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+
+    // Construct body
+    const body: Record<string, any> = {
+        mobile: params.mobile,
+        event: params.event,
+    };
+
+    if (params.password) {
+        body.password = params.password;
+    }
+
+    return apiFetch(API_ENDPOINTS.sms.send, {
+        method: 'POST',
+        body: JSON.stringify(body),
+        token: authToken,
+    });
+}

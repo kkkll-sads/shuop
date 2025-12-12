@@ -32,7 +32,7 @@ export async function register(params: RegisterParams): Promise<ApiResponse> {
             method: 'POST',
             body: formData,
         });
-        console.log('API 原始响应:', data);
+        console.log('注册接口原始响应:', data);
         return data;
     } catch (error: any) {
         console.error('注册接口调用失败:', error);
@@ -57,7 +57,7 @@ export async function login(params: LoginParams): Promise<ApiResponse> {
     try {
         const formData = new FormData();
         formData.append('tab', 'login');
-        formData.append('mobile', params.mobile);
+        formData.append('username', params.mobile);
         formData.append('password', params.password);
 
         const data = await apiFetch(API_ENDPOINTS.auth.checkIn, {

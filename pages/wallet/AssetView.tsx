@@ -221,7 +221,7 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
   };
 
   const renderBalanceLogItem = (item: BalanceLogItem) => (
-    <div key={item.id} className="bg-white rounded-lg p-4 mb-3 shadow-sm">
+    <div key={item.id} className="bg-white rounded-lg p-3 mb-3 shadow-sm">
       <div className="flex justify-between items-start mb-2">
         <div className="flex-1">
           <div className="text-sm font-medium text-gray-800 mb-1">{item.remark}</div>
@@ -238,7 +238,7 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
   );
 
   const renderRechargeOrderItem = (item: RechargeOrderItem) => (
-    <div key={item.id} className="bg-white rounded-lg p-4 mb-3 shadow-sm">
+    <div key={item.id} className="bg-white rounded-lg p-3 mb-3 shadow-sm">
       <div className="flex justify-between items-start mb-2">
         <div className="flex-1">
           <div className="text-sm font-medium text-gray-800 mb-1">充值订单</div>
@@ -267,7 +267,7 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
   );
 
   const renderWithdrawOrderItem = (item: WithdrawOrderItem) => (
-    <div key={item.id} className="bg-white rounded-lg p-4 mb-3 shadow-sm">
+    <div key={item.id} className="bg-white rounded-lg p-3 mb-3 shadow-sm">
       <div className="flex justify-between items-start mb-2">
         <div className="flex-1">
           <div className="text-sm font-medium text-gray-800 mb-1">提现申请</div>
@@ -300,7 +300,7 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
   );
 
   const renderServiceFeeLogItem = (item: ServiceFeeLogItem) => (
-    <div key={item.id} className="bg-white rounded-lg p-4 mb-3 shadow-sm">
+    <div key={item.id} className="bg-white rounded-lg p-3 mb-3 shadow-sm">
       <div className="flex justify-between items-start mb-2">
         <div className="flex-1">
           <div className="text-sm font-medium text-gray-800 mb-1">{item.remark}</div>
@@ -652,7 +652,7 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
   const renderCollectionItem = (item: MyCollectionItem) => (
     <div
       key={item.id}
-      className="bg-white rounded-lg p-4 mb-3 shadow-sm cursor-pointer active:bg-gray-50 transition-colors"
+      className="bg-white rounded-lg p-3 mb-3 shadow-sm cursor-pointer active:bg-gray-50 transition-colors"
       onClick={() => handleItemClick(item)}
     >
       <div className="flex gap-3">
@@ -853,10 +853,11 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
           历史记录
         </button>
       }
+      padding={false}
     >
-      <div className="p-4">
+      <div className="p-3">
         {/* Asset Card */}
-        <div className="bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl p-6 text-white shadow-lg mb-6 relative overflow-hidden">
+        <div className="bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl p-5 text-white shadow-lg mb-4 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
           <div className="relative z-10">
             <div className="text-sm opacity-90 mb-1">可用余额 (元)</div>
@@ -886,7 +887,7 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
         </div>
 
         {/* Actions */}
-        <div className="grid grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-4 gap-3 mb-4">
           {[
             { label: '余额充值', icon: Wallet, page: 'asset:balance-recharge' },
             { label: '余额提现', icon: Receipt, page: 'asset:balance-withdraw' },
@@ -908,7 +909,7 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
         </div>
 
         {/* Tabs */}
-        <div className="flex justify-between bg-white p-1 rounded-full mb-8">
+        <div className="flex justify-between bg-white p-1 rounded-full mb-4">
           {tabs.map((tab, idx) => (
             <button
               key={idx}

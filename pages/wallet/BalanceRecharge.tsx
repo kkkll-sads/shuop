@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { X, Upload, ChevronRight, CreditCard, Smartphone, Zap, MessageSquare, Wallet } from 'lucide-react';
+import { X, Upload, ChevronRight, CreditCard, Smartphone, Zap, MessageSquare, Wallet, RotateCcw } from 'lucide-react';
 import PageContainer from '../../components/layout/PageContainer';
 import { LoadingSpinner } from '../../components/common';
 import { isValidAmount } from '../../utils/validation';
@@ -13,14 +13,14 @@ import {
 
 interface BalanceRechargeProps {
   onBack: () => void;
+  onNavigate: (page: string) => void;
 }
 
-const BalanceRecharge: React.FC<BalanceRechargeProps> = ({ onBack }) => {
+const BalanceRecharge: React.FC<BalanceRechargeProps> = ({ onBack, onNavigate }) => {
   const [accounts, setAccounts] = useState<CompanyAccountItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedAccount, setSelectedAccount] = useState<CompanyAccountItem | null>(null);
-  const [showAccountModal, setShowAccountModal] = useState<boolean>(false); // 账户选择弹窗
   const [showConfirmModal, setShowConfirmModal] = useState<boolean>(false); // 提交确认弹窗
   const [amount, setAmount] = useState<string>('');
   const [paymentScreenshot, setPaymentScreenshot] = useState<File | null>(null);
@@ -28,6 +28,9 @@ const BalanceRecharge: React.FC<BalanceRechargeProps> = ({ onBack }) => {
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 便捷输入金额
+  const [quickAmounts, setQuickAmounts] = useState<number[]>([]);
 
   useEffect(() => {
     const loadAccounts = async () => {
@@ -52,20 +55,32 @@ const BalanceRecharge: React.FC<BalanceRechargeProps> = ({ onBack }) => {
     };
 
     loadAccounts();
+    generateRandomAmounts();
   }, []);
+
+  // 生成随机金额
+  const generateRandomAmounts = () => {
+    const amounts: number[] = [];
+    for (let i = 0; i < 4; i++) {
+      // 生成 100 - 50000 之间的随机整数
+      const randomVal = Math.floor(Math.random() * (50000 - 100 + 1)) + 100;
+      amounts.push(randomVal);
+    }
+    setQuickAmounts(amounts);
+  };
 
   // 获取支付方式图标
   const getPaymentIcon = (type: string) => {
     const iconClass = "w-6 h-6 object-contain";
     switch (type) {
       case 'alipay':
-        return <img src="https://oss.spyggw.cc/zhifub.png" alt="Alipay" className={iconClass} />;
+        return <img src="http://oss.spyggw.cc/zhifub.png" alt="Alipay" className={iconClass} />;
       case 'wechat':
-        return <img src="https://oss.spyggw.cc/weix.png" alt="WeChat" className={iconClass} />;
+        return <img src="http://oss.spyggw.cc/weix.png" alt="WeChat" className={iconClass} />;
       case 'bank_card':
-        return <img src="https://oss.spyggw.cc/%E9%93%B6%E8%81%94.png" alt="UnionPay" className={iconClass} />;
+        return <img src="http://oss.spyggw.cc/%E9%93%B6%E8%81%94.png" alt="UnionPay" className={iconClass} />;
       case 'cloud_flash':
-        return <img src="https://oss.spyggw.cc/unnamed.png" alt="CloudFlash" className={iconClass} />;
+        return <img src="http://oss.spyggw.cc/unnamed.png" alt="CloudFlash" className={iconClass} />;
       default:
         return <Wallet size={24} className="text-gray-500" />;
     }
@@ -84,42 +99,92 @@ const BalanceRecharge: React.FC<BalanceRechargeProps> = ({ onBack }) => {
   };
 
   return (
-    <PageContainer title="余额充值" onBack={onBack}>
-      <div className="p-3 space-y-3">
-        {/* 选择充值账户 */}
-        <div
-          className="bg-white rounded-xl p-3 shadow-sm flex justify-between items-center cursor-pointer active:bg-gray-50"
-          onClick={() => setShowAccountModal(true)}
+    <PageContainer
+      title="充值"
+      onBack={onBack}
+      rightAction={
+        <button
+          onClick={() => onNavigate('asset-history')}
+          className="text-sm text-blue-500"
         >
-          <div className="flex items-center gap-3">
-            {selectedAccount ? (
-              <>
-                {getPaymentIcon(selectedAccount.type)}
-                <div className="flex flex-col">
-                  <span className="text-base text-gray-800 font-medium">
-                    {getPaymentTypeName(selectedAccount)}
-                  </span>
-                  <span className="text-xs text-gray-500">
-                    {selectedAccount.account_name || selectedAccount.account_number}
-                  </span>
-                </div>
-              </>
-            ) : (
-              <span className="text-base text-gray-800">选择充值方式</span>
+          充值记录
+        </button>
+      }
+      bgColor="bg-white"
+    >
+      <div className="p-4 space-y-6">
+        {/* 支付方式列表 */}
+        <div>
+          <div className="text-sm text-gray-800 mb-3 ml-1">支付方式</div>
+          <div className="space-y-0 divide-y divide-gray-100">
+            {loading && (
+              <div className="text-center py-4 text-gray-500 text-xs">加载支付方式中...</div>
             )}
+            {!loading && accounts.map((item) => {
+              const isSelected = selectedAccount?.id === item.id;
+              return (
+                <div
+                  key={item.id}
+                  className="py-4 flex items-center justify-between cursor-pointer active:bg-gray-50"
+                  onClick={() => setSelectedAccount(item)}
+                >
+                  <div className="flex items-center gap-3">
+                    {getPaymentIcon(item.type)}
+                    <span className="text-base text-gray-800 font-medium">
+                      {getPaymentTypeName(item)}
+                    </span>
+                  </div>
+                  <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${isSelected
+                    ? 'border-red-500'
+                    : 'border-gray-300'
+                    }`}>
+                    {isSelected && <div className="w-3 h-3 rounded-full bg-red-500" />}
+                  </div>
+                </div>
+              );
+            })}
           </div>
-          <ChevronRight size={20} className="text-gray-400" />
         </div>
 
-        {/* 充值金额 */}
-        <div className="bg-white rounded-xl p-3 shadow-sm">
-          <div className="text-base text-gray-800 font-medium mb-4">充值金额</div>
-          <div className="flex items-center border-b border-gray-100 pb-4">
-            <span className="text-3xl text-gray-800 mr-2">¥</span>
+        <div className="h-px bg-gray-100 w-full" />
+
+        {/* 便捷输入金额 */}
+        <div>
+          <div className="flex justify-between items-center mb-3">
+            <div className="text-sm text-gray-800 ml-1">便捷输入金额</div>
+            <button
+              onClick={generateRandomAmounts}
+              className="flex items-center gap-1 text-xs text-gray-500 active:opacity-70"
+            >
+              <RotateCcw size={12} />
+              <span>换一批</span>
+            </button>
+          </div>
+          <div className="grid grid-cols-4 gap-3">
+            {quickAmounts.map((val, idx) => (
+              <button
+                key={idx}
+                className="bg-gray-200 rounded py-2 text-sm font-bold text-gray-800 active:bg-gray-300 transition-colors"
+                onClick={() => {
+                  setAmount(val.toString());
+                  setSubmitError(null);
+                }}
+              >
+                {val}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* 充值金额输入 */}
+        <div className="mt-8">
+          <div className="text-sm text-gray-800 mb-4 ml-1">充值金额</div>
+          <div className="flex items-center border-b border-gray-100 pb-2">
+            <span className="text-3xl font-medium text-gray-900 mr-2">¥</span>
             <input
               type="number"
               placeholder=""
-              className="flex-1 bg-transparent outline-none text-3xl text-gray-900"
+              className="flex-1 bg-transparent outline-none text-4xl font-medium text-gray-900 placeholder-gray-300"
               value={amount}
               onChange={(e) => {
                 const val = e.target.value;
@@ -130,89 +195,34 @@ const BalanceRecharge: React.FC<BalanceRechargeProps> = ({ onBack }) => {
               }}
             />
           </div>
-        </div>
-
-        {/* 充值说明 */}
-        <p className="text-xs text-gray-400 leading-relaxed px-1">
-          充值资金仅用于平台内相关业务。实际到账时间以支付渠道为准，若长时间未到账，请保留凭证并联系平台客服处理。
-        </p>
-
-        {/* 充值按钮 */}
-        <button
-          className={`w-full rounded-full py-3.5 text-base font-medium ${selectedAccount && amount && parseFloat(amount) > 0
-            ? 'bg-orange-600 text-white active:bg-orange-700'
-            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-            }`}
-          onClick={() => {
-            if (selectedAccount && amount && parseFloat(amount) > 0) {
-              setShowConfirmModal(true);
-            }
-          }}
-          disabled={!selectedAccount || !amount || parseFloat(amount) <= 0}
-        >
-          下一步
-        </button>
-      </div>
-
-      {/* 账户选择弹窗 */}
-      {showAccountModal && (
-        <div
-          className="fixed inset-0 z-20 bg-black/70 flex items-end justify-center"
-          onClick={() => setShowAccountModal(false)}
-        >
-          <div
-            className="bg-white rounded-t-2xl w-full max-h-[70vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between p-4 border-b border-gray-100">
-              <span className="font-bold text-gray-900">选择充值方式</span>
-              <button onClick={() => setShowAccountModal(false)}>
-                <X size={20} className="text-gray-400" />
-              </button>
-            </div>
-
-            {loading && (
-              <div className="text-center py-8 text-gray-500 text-sm">加载中...</div>
-            )}
-
-            {!loading && accounts.length === 0 && (
-              <div className="text-center py-8 text-gray-500 text-sm">暂无可用充值账户</div>
-            )}
-
-            <div className="p-4 space-y-3">
-              {accounts.map((item) => {
-                const isSelected = selectedAccount?.id === item.id;
-                return (
-                  <div
-                    key={item.id}
-                    className={`border rounded-xl p-3 cursor-pointer transition-colors flex items-center justify-between ${isSelected
-                      ? 'border-orange-500 bg-orange-50'
-                      : 'border-gray-100 bg-white'}`}
-                    onClick={() => {
-                      setSelectedAccount(item);
-                      setShowAccountModal(false);
-                    }}
-                  >
-                    <div className="flex items-center gap-3">
-                      {getPaymentIcon(item.type)}
-                      <div className="flex flex-col">
-                        <span className="text-sm font-medium text-gray-900">{getPaymentTypeName(item)}</span>
-                        <span className="text-xs text-gray-500 text-left">{item.account_name || item.account_number}</span>
-                      </div>
-                    </div>
-                    {isSelected && <div className="w-2 h-2 rounded-full bg-orange-500"></div>}
-                  </div>
-                );
-              })}
-            </div>
+          <div className="mt-2 text-xs text-gray-400">
+            当前可用： ¥ 0.00
           </div>
         </div>
-      )}
+
+        {/* 底部按钮 */}
+        <div className="fixed bottom-8 left-0 right-0 px-4">
+          <button
+            className={`w-full rounded-md py-3 text-base font-medium text-white shadow-lg shadow-blue-500/30 ${selectedAccount && amount && parseFloat(amount) > 0
+              ? 'bg-blue-500 active:bg-blue-600'
+              : 'bg-blue-300 cursor-not-allowed'
+              }`}
+            onClick={() => {
+              if (selectedAccount && amount && parseFloat(amount) > 0) {
+                setShowConfirmModal(true);
+              }
+            }}
+            disabled={!selectedAccount || !amount || parseFloat(amount) <= 0}
+          >
+            确认支付
+          </button>
+        </div>
+      </div>
 
       {/* 确认提交/上传凭证弹窗 */}
       {showConfirmModal && selectedAccount && (
         <div
-          className="fixed inset-0 z-20 bg-black/70 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
           onClick={() => setShowConfirmModal(false)}
         >
           <div
@@ -333,7 +343,7 @@ const BalanceRecharge: React.FC<BalanceRechargeProps> = ({ onBack }) => {
 
             <button
               type="button"
-              className={`w-full bg-orange-600 text-white rounded-full py-3 text-base font-medium active:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed`}
+              className={`w-full bg-blue-500 text-white rounded-full py-3 text-base font-medium active:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed`}
               onClick={async () => {
                 setSubmitting(true);
                 setSubmitError(null);
@@ -388,7 +398,7 @@ const BalanceRecharge: React.FC<BalanceRechargeProps> = ({ onBack }) => {
               }}
               disabled={submitting}
             >
-              {submitting ? '提交中...' : '确认提交'}
+              {submitting ? '提交中...' : '确认支付'}
             </button>
           </div>
         </div>

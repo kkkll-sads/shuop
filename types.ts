@@ -1,0 +1,138 @@
+import React from 'react';
+
+export interface Product {
+  id: string;
+  title: string;
+  artist: string;
+  price: number;
+  image: string;
+  category: string;
+  /** 商品类型：'shop' 为积分商城商品，'collection' 为藏品商城商品 */
+  productType?: 'shop' | 'collection';
+  /** 寄售商品对应的 consignment_id，用于购买接口 */
+  consignmentId?: number | string;
+}
+
+export interface Artist {
+  id: string;
+  name: string;
+  image: string;
+  title?: string;
+  bio?: string;
+}
+
+export interface NewsItem {
+  id: string;
+  date: string;
+  title: string;
+  isUnread: boolean;
+  type: 'announcement' | 'dynamic';
+  content?: string;
+}
+
+export interface OrderCategory {
+  title: string;
+  items: {
+    label: string;
+    icon: React.ReactNode;
+  }[];
+}
+
+export interface Order {
+  id: string;
+  productName: string;
+  productImage: string;
+  price: number;
+  quantity: number;
+  total: number;
+  status: string;
+  date: string;
+  type: 'product' | 'transaction' | 'delivery' | 'points'; // To filter by section
+  subStatusIndex: number; // To filter by tab index within the section
+}
+
+export interface Banner {
+  id: string;
+  image: string;
+  tag?: string;
+  title?: string;
+}
+
+export type Tab = 'home' | 'market' | 'rights' | 'orders' | 'profile';
+
+export interface UserInfo {
+  id: number;
+  username: string;
+  nickname: string;
+  email: string;
+  mobile: string;
+  avatar: string;
+  gender: number;
+  birthday: string | null;
+  money: string;
+  balance_available: string;
+  service_fee_balance: string;
+  withdrawable_money: string;
+  usdt: string;
+  static_income: string;
+  dynamic_income: string;
+  score: number;
+  last_login_time: number;
+  last_login_ip: string;
+  join_time: number;
+  motto: string;
+  draw_count: number;
+  user_type: number;
+  token: string;
+  refresh_token: string;
+  /** 代理商审核状态(-1=未申请,0=待审核,1=已通过,2=已拒绝) */
+  agent_review_status?: number;
+  /** 绿色算力 */
+  carbon_quota?: number | string;
+  /** 待激活确权金 */
+  pending_service_fee?: number | string;
+}
+
+export interface ProfileResponse {
+  userInfo: UserInfo;
+  accountVerificationType: any[];
+}
+
+export interface LoginSuccessPayload {
+  token?: string;
+  userInfo?: UserInfo | null;
+}
+
+export interface PromotionCardUserInfo {
+  id: number;
+  username: string;
+  nickname: string;
+  avatar: string;
+  mobile: string;
+}
+
+export interface PromotionCardData {
+  user_info: PromotionCardUserInfo;
+  invite_code: string;
+  invite_link: string;
+  qrcode_url: string;
+  team_count: number;
+  total_performance: number;
+}
+
+export interface TeamMember {
+  id: number;
+  username: string;
+  nickname: string;
+  avatar: string;
+  mobile: string;
+  join_time?: number;
+  join_date?: string;
+}
+
+export interface TeamMembersListData {
+  total: number;
+  page: number;
+  page_size: number;
+  list: TeamMember[];
+}

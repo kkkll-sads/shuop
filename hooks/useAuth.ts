@@ -1,0 +1,306 @@
+/**
+ * useAuth - 认证状态 Hook
+ * 
+ * 功能说明：
+ * - 集中管理用户认证状态
+ * - 从 localStorage 读取和持久化认证信息
+ * - 提供登录、登出方法
+ * - 提供 Token 和用户信息访问
+ * 
+ * @author 树交所前端团队
+ * @version 1.0.0
+ */
+
+import { useState, useCallback, useEffect } from 'react';
+import { UserInfo, LoginSuccessPayload } from '../types';
+import { fetchRealNameStatus, RealNameStatusData } from '../services/api';
+
+/**
+ * 认证相关的 localStorage 键名
+ */
+const AUTH_KEY = 'cat_is_logged_in';
+const AUTH_TOKEN_KEY = 'cat_auth_token';
+const USER_INFO_KEY = 'cat_user_info';
+const REAL_NAME_STATUS_KEY = 'cat_real_name_status';
+const REAL_NAME_KEY = 'cat_real_name';
+
+/**
+ * useAuth Hook 返回值接口
+ */
+interface UseAuthResult {
+    /** 是否已登录 */
+    isLoggedIn: boolean;
+    /** 用户信息 */
+    user: UserInfo | null;
+    /** 认证令牌 */
+    token: string | null;
+    /** 实名认证状态 */
+    realNameStatus: number | null;
+    /** 真实姓名 */
+    realName: string | null;
+    /** 是否已完成实名认证 */
+    isRealNameVerified: boolean;
+    /** 登录方法 */
+    login: (payload?: LoginSuccessPayload) => void;
+    /** 登出方法 */
+    logout: () => void;
+    /** 更新用户信息 */
+    updateUser: (userInfo: UserInfo) => void;
+    /** 更新 Token */
+    updateToken: (token: string) => void;
+    /** 更新实名认证状态 */
+    updateRealNameStatus: (status: number, name?: string) => void;
+}
+
+/**
+ * useAuth 认证状态 Hook
+ * 
+ * @returns 认证状态和控制方法
+ * 
+ * @example
+ * // 在组件中使用
+ * const { isLoggedIn, user, login, logout } = useAuth();
+ * 
+ * // 登录
+ * const handleLogin = async (phone, password) => {
+ *   const response = await loginApi({ mobile: phone, password });
+ *   if (response.code === 1) {
+ *     login({
+ *       token: response.data.userInfo.token,
+ *       userInfo: response.data.userInfo,
+ *     });
+ *   }
+ * };
+ * 
+ * // 登出
+ * const handleLogout = () => {
+ *   logout();
+ *   navigate('/login');
+ * };
+ */
+function useAuth(): UseAuthResult {
+    /**
+     * 从 localStorage 初始化登录状态
+     */
+    const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
+        try {
+            return localStorage.getItem(AUTH_KEY) === 'true';
+        } catch {
+            return false;
+        }
+    });
+
+    /**
+     * 从 localStorage 初始化用户信息
+     */
+    const [user, setUser] = useState<UserInfo | null>(() => {
+        try {
+            const stored = localStorage.getItem(USER_INFO_KEY);
+            return stored ? JSON.parse(stored) : null;
+        } catch {
+            return null;
+        }
+    });
+
+    /**
+     * 从 localStorage 初始化 Token
+     */
+    const [token, setToken] = useState<string | null>(() => {
+        try {
+            return localStorage.getItem(AUTH_TOKEN_KEY);
+        } catch {
+            return null;
+        }
+    });
+
+    /**
+     * 从 localStorage 初始化实名认证状态
+     */
+    const [realNameStatus, setRealNameStatus] = useState<number | null>(() => {
+        try {
+            const stored = localStorage.getItem(REAL_NAME_STATUS_KEY);
+            return stored ? parseInt(stored, 10) : null;
+        } catch {
+            return null;
+        }
+    });
+
+    /**
+     * 从 localStorage 初始化真实姓名
+     */
+    const [realName, setRealName] = useState<string | null>(() => {
+        try {
+            return localStorage.getItem(REAL_NAME_KEY);
+        } catch {
+            return null;
+        }
+    });
+
+    /**
+     * 计算是否已完成实名认证
+     * real_name_status === 2 表示已通过实名认证
+     */
+    const isRealNameVerified = realNameStatus === 2;
+
+    /**
+     * 登录方法
+     * 保存认证信息到状态和 localStorage
+     * 
+     * @param payload - 登录成功后的数据，包含 token 和 userInfo
+     */
+    const login = useCallback(async (payload?: LoginSuccessPayload) => {
+        // 设置登录状态
+        setIsLoggedIn(true);
+        localStorage.setItem(AUTH_KEY, 'true');
+
+        // 保存 Token
+        if (payload?.token) {
+            setToken(payload.token);
+            localStorage.setItem(AUTH_TOKEN_KEY, payload.token);
+
+            // 获取实名认证状态
+            try {
+                const response = await fetchRealNameStatus(payload.token);
+                if (response.code === 1 && response.data) {
+                    const status = response.data.real_name_status;
+                    const name = response.data.real_name;
+
+                    setRealNameStatus(status);
+                    localStorage.setItem(REAL_NAME_STATUS_KEY, String(status));
+
+                    if (name) {
+                        setRealName(name);
+                        localStorage.setItem(REAL_NAME_KEY, name);
+                    }
+                }
+            } catch (error) {
+                console.error('获取实名认证状态失败:', error);
+                // 失败时不阻止登录流程
+            }
+        }
+
+        // 保存用户信息
+        if (payload?.userInfo) {
+            setUser(payload.userInfo);
+            localStorage.setItem(USER_INFO_KEY, JSON.stringify(payload.userInfo));
+        }
+    }, []);
+
+    /**
+     * 登出方法
+     * 清除所有认证信息
+     */
+    const logout = useCallback(() => {
+        // 清除状态
+        setIsLoggedIn(false);
+        setUser(null);
+        setToken(null);
+        setRealNameStatus(null);
+        setRealName(null);
+
+        // 清除 localStorage
+        localStorage.removeItem(AUTH_KEY);
+        localStorage.removeItem(AUTH_TOKEN_KEY);
+        localStorage.removeItem(USER_INFO_KEY);
+        localStorage.removeItem(REAL_NAME_STATUS_KEY);
+        localStorage.removeItem(REAL_NAME_KEY);
+    }, []);
+
+    /**
+     * 更新用户信息
+     * 用于用户修改资料后更新本地数据
+     * 
+     * @param userInfo - 新的用户信息
+     */
+    const updateUser = useCallback((userInfo: UserInfo) => {
+        setUser(userInfo);
+        localStorage.setItem(USER_INFO_KEY, JSON.stringify(userInfo));
+    }, []);
+
+    /**
+     * 更新 Token
+     * 用于刷新 Token 后更新本地数据
+     * 
+     * @param newToken - 新的 Token
+     */
+    const updateToken = useCallback((newToken: string) => {
+        setToken(newToken);
+        localStorage.setItem(AUTH_TOKEN_KEY, newToken);
+    }, []);
+
+    /**
+     * 更新实名认证状态
+     * 用于实名认证完成后更新本地数据
+     * 
+     * @param status - 实名认证状态
+     * @param name - 真实姓名
+     */
+    const updateRealNameStatus = useCallback((status: number, name?: string) => {
+        setRealNameStatus(status);
+        localStorage.setItem(REAL_NAME_STATUS_KEY, String(status));
+
+        if (name) {
+            setRealName(name);
+            localStorage.setItem(REAL_NAME_KEY, name);
+        }
+    }, []);
+
+    /**
+     * 监听其他标签页的登录状态变化
+     * 实现多标签页同步登出
+     */
+    useEffect(() => {
+        const handleStorageChange = (event: StorageEvent) => {
+            // 监听登录状态变化
+            if (event.key === AUTH_KEY) {
+                const newIsLoggedIn = event.newValue === 'true';
+                setIsLoggedIn(newIsLoggedIn);
+
+                // 如果在其他标签页登出，同步清除本页状态
+                if (!newIsLoggedIn) {
+                    setUser(null);
+                    setToken(null);
+                }
+            }
+
+            // 监听用户信息变化
+            if (event.key === USER_INFO_KEY) {
+                try {
+                    const newUser = event.newValue ? JSON.parse(event.newValue) : null;
+                    setUser(newUser);
+                } catch {
+                    setUser(null);
+                }
+            }
+
+            // 监听 Token 变化
+            if (event.key === AUTH_TOKEN_KEY) {
+                setToken(event.newValue);
+            }
+        };
+
+        // 添加监听器
+        window.addEventListener('storage', handleStorageChange);
+
+        // 清理监听器
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+        };
+    }, []);
+
+    return {
+        isLoggedIn,
+        user,
+        token,
+        realNameStatus,
+        realName,
+        isRealNameVerified,
+        login,
+        logout,
+        updateUser,
+        updateToken,
+        updateRealNameStatus,
+    };
+}
+
+export default useAuth;

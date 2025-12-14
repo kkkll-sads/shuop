@@ -9,7 +9,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { ShieldCheck, CreditCard, User, Image as ImageIcon, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { ShieldCheck, Clock, CheckCircle, AlertCircle, UserCheck } from 'lucide-react';
 import PageContainer from '../../components/layout/PageContainer';
 import { LoadingSpinner } from '../../components/common';
 import {
@@ -17,7 +17,10 @@ import {
   fetchRealNameStatus,
   RealNameStatusData,
   submitRealName,
-  uploadImage,
+  fetchH5AuthToken,
+  h5Recheck,
+  H5RecheckResult,
+  H5AuthTokenResult,
 } from '../../services/api';
 import { formatIdCard } from '../../utils/format';
 
@@ -34,17 +37,12 @@ interface RealNameAuthProps {
 const RealNameAuth: React.FC<RealNameAuthProps> = ({ onBack }) => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [uploadingFront, setUploadingFront] = useState(false);
-  const [uploadingBack, setUploadingBack] = useState(false);
+  const [verifying, setVerifying] = useState(false);
 
   const [status, setStatus] = useState<RealNameStatusData | null>(null);
 
   const [realName, setRealName] = useState('');
   const [idCard, setIdCard] = useState('');
-  const [idCardFront, setIdCardFront] = useState('');
-  const [idCardBack, setIdCardBack] = useState('');
-  const [idCardFrontPreview, setIdCardFrontPreview] = useState('');
-  const [idCardBackPreview, setIdCardBackPreview] = useState('');
 
   const [error, setError] = useState<string | null>(null);
 
@@ -52,132 +50,255 @@ const RealNameAuth: React.FC<RealNameAuthProps> = ({ onBack }) => {
   const isAuthed = status?.real_name_status === 2;
   const isPending = status?.real_name_status === 1;
 
-  // 加载实名认证状态
+  // 处理从H5核身页面返回的逻辑
   useEffect(() => {
-    const init = async () => {
-      const token = localStorage.getItem(AUTH_TOKEN_KEY) || '';
-      if (!token) {
-        setError('未找到登录信息，请先登录');
-        setLoading(false);
+    const handleAuthCallback = async () => {
+      // 检查URL参数，判断是否从核身页面返回
+      const urlParams = new URLSearchParams(window.location.search);
+      const authToken = urlParams.get('authToken');
+      const code = urlParams.get('code');
+      const success = urlParams.get('success');
+
+      if (!authToken) {
+        // 不是从核身页面返回，正常加载状态
+        loadRealNameStatus();
         return;
       }
 
+      // 从核身页面返回，处理核身结果
       try {
-        const res = await fetchRealNameStatus(token);
-        if (res.code === 1 || typeof res.code === 'undefined') {
-          const data = res.data as RealNameStatusData;
-          setStatus(data);
+        setLoading(true);
+        setError(null);
 
-          if (data) {
-            setRealName(data.real_name || '');
-            setIdCard(data.id_card || '');
-            setIdCardFront(data.id_card_front || '');
-            setIdCardBack(data.id_card_back || '');
-            setIdCardFrontPreview(data.id_card_front || '');
-            setIdCardBackPreview(data.id_card_back || '');
+        const token = localStorage.getItem(AUTH_TOKEN_KEY) || '';
+        if (!token) {
+          setError('未找到登录信息，请先登录');
+          setLoading(false);
+          return;
+        }
+
+        // 清除URL参数，避免重复处理
+        window.history.replaceState({}, '', window.location.pathname);
+
+        // 如果URL中有错误码，先检查
+        if (code && code !== '0') {
+          const errorMsg = getErrorMsgByCode(code);
+          setError(errorMsg);
+          setLoading(false);
+          return;
+        }
+
+        if (success === 'false') {
+          setError('人脸核身验证失败，请重试');
+          setLoading(false);
+          return;
+        }
+
+        // 调用校验接口获取核身结果
+        const recheckRes = await h5Recheck({ authToken, token });
+        
+        if (recheckRes.code === 1 || typeof recheckRes.code === 'undefined') {
+          // 后端返回的数据在 data 字段中
+          const result = recheckRes.data as H5RecheckResult;
+          
+          if (!result) {
+            setError('获取核身结果失败，返回数据为空');
+            setLoading(false);
+            return;
+          }
+          
+          if (result.status === 1) {
+            // 核身通过，提交实名认证
+            await submitRealNameWithAuthToken(authToken, token);
+          } else {
+            // 核身不通过
+            const errorMsg = result.reasonTypeDesc || result.statusDesc || getErrorMsgByStatus(result.status, result.reasonType);
+            setError(errorMsg);
           }
         } else {
-          setError(res.msg || '获取实名认证状态失败');
+          setError(recheckRes.msg || '获取核身结果失败');
         }
       } catch (e: any) {
-        console.error('获取实名认证状态异常:', e);
-        setError(e?.msg || e?.response?.msg || e?.message || '获取实名认证状态失败，请稍后重试');
+        console.error('处理核身回调失败:', e);
+        const errorMsg = e?.msg || e?.response?.msg || e?.message || '处理核身结果失败，请稍后重试';
+        setError(errorMsg);
       } finally {
         setLoading(false);
       }
     };
 
-    init();
+    handleAuthCallback();
   }, []);
 
   /**
-   * 处理图片上传
+   * 加载实名认证状态
    */
-  const handleUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>,
-    type: 'front' | 'back'
-  ) => {
-    const file = event.target.files?.[0];
-    event.target.value = '';
-
-    if (!file) return;
+  const loadRealNameStatus = async () => {
+    const token = localStorage.getItem(AUTH_TOKEN_KEY) || '';
+    if (!token) {
+      setError('未找到登录信息，请先登录');
+      setLoading(false);
+      return;
+    }
 
     try {
-      if (type === 'front') {
-        setUploadingFront(true);
+      const res = await fetchRealNameStatus(token);
+      if (res.code === 1 || typeof res.code === 'undefined') {
+        const data = res.data as RealNameStatusData;
+        setStatus(data);
+
+        if (data) {
+          setRealName(data.real_name || '');
+          setIdCard(data.id_card || '');
+        }
       } else {
-        setUploadingBack(true);
-      }
-
-      const res = await uploadImage(file);
-      const data = res.data || {};
-      const path = data.url || data.path || data.filepath || '';
-      const fullUrl = data.fullurl || data.fullUrl || data.url || path;
-
-      if (!path && !fullUrl) {
-        throw new Error('上传失败，返回数据为空');
-      }
-
-      if (type === 'front') {
-        setIdCardFront(path || fullUrl);
-        setIdCardFrontPreview(fullUrl || path);
-      } else {
-        setIdCardBack(path || fullUrl);
-        setIdCardBackPreview(fullUrl || path);
+        setError(res.msg || '获取实名认证状态失败');
       }
     } catch (e: any) {
-      console.error('身份证图片上传失败:', e);
-      const errorMsg = e?.msg || e?.response?.msg || e?.message || '图片上传失败，请稍后重试';
-      alert(errorMsg);
+      console.error('获取实名认证状态异常:', e);
+      setError(e?.msg || e?.response?.msg || e?.message || '获取实名认证状态失败，请稍后重试');
     } finally {
-      if (type === 'front') {
-        setUploadingFront(false);
-      } else {
-        setUploadingBack(false);
-      }
+      setLoading(false);
     }
   };
 
   /**
-   * 处理提交
+   * 根据错误码获取错误信息
    */
-  const handleSubmit = async () => {
-    if (submitting) return;
+  const getErrorMsgByCode = (code: string): string => {
+    const errorMap: Record<string, string> = {
+      '2': '身份信息不匹配',
+      '3': '身份信息不匹配',
+      '4': '活体检测不通过',
+      '5': '活体检测超时，请重试',
+      '6': '身份信息不一致',
+      '7': '无身份证照片',
+      '8': '照片过大',
+      '9': '权威数据错误，请重试',
+      '10': '活体检测不通过',
+      '11': '识别到未成年人',
+    };
+    return errorMap[code] || '人脸核身验证失败';
+  };
 
+  /**
+   * 根据状态码和原因类型获取错误信息
+   */
+  const getErrorMsgByStatus = (status: number, reasonType?: number): string => {
+    if (status === 2) {
+      // 核身不通过
+      if (reasonType) {
+        return getErrorMsgByCode(String(reasonType));
+      }
+      return '人脸核身验证失败';
+    }
+    if (status === 0) {
+      return '核身待定，请稍后重试';
+    }
+    return '人脸核身验证失败';
+  };
+
+  /**
+   * 使用 authToken 提交实名认证
+   */
+  const submitRealNameWithAuthToken = async (authToken: string, token: string) => {
     try {
       setSubmitting(true);
-      setError(null);
-
-      const token = localStorage.getItem(AUTH_TOKEN_KEY) || '';
+      
       const res = await submitRealName({
-        real_name: realName,
-        id_card: idCard,
-        id_card_front: idCardFront,
-        id_card_back: idCardBack,
+        auth_token: authToken,
         token,
       });
 
       const success = res?.code === 1 || typeof res?.code === 'undefined';
-      const message = res?.msg || (success ? '提交成功，请等待审核' : '提交实名认证失败，请稍后重试');
-      alert(message);
-
-      if (!success) return;
-
-      // 刷新状态
-      try {
-        const res = await fetchRealNameStatus(token);
-        if (res.code === 1 || typeof res.code === 'undefined') {
-          setStatus(res.data as RealNameStatusData);
-        }
-      } catch (e) {
-        console.warn('刷新实名认证状态失败:', e);
+      const message = res?.msg || (success ? '实名认证提交成功，请等待审核' : '提交实名认证失败，请稍后重试');
+      
+      if (success) {
+        alert(message);
+        // 刷新状态
+        await loadRealNameStatus();
+      } else {
+        setError(message);
+        alert(message);
       }
     } catch (e: any) {
       console.error('提交实名认证失败:', e);
       const errorMsg = e?.msg || e?.response?.msg || e?.message || '提交实名认证失败，请稍后重试';
+      setError(errorMsg);
       alert(errorMsg);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+
+  /**
+   * 处理提交 - 获取H5认证地址并跳转
+   */
+  const handleSubmit = async () => {
+    if (submitting || verifying) return;
+
+    // 表单验证
+    if (!realName?.trim()) {
+      setError('请输入真实姓名');
+      return;
+    }
+
+    if (!idCard?.trim()) {
+      setError('请输入身份证号码');
+      return;
+    }
+
+
+    try {
+      setError(null);
+      setVerifying(true);
+
+      const token = localStorage.getItem(AUTH_TOKEN_KEY) || '';
+      if (!token) {
+        setError('未找到登录信息，请先登录');
+        setVerifying(false);
+        return;
+      }
+
+      // 构建重定向URL（当前页面URL，用于核身完成后返回）
+      const redirectUrl = `${window.location.origin}${window.location.pathname}`;
+
+      // 调用后端接口获取 authToken 和 authUrl
+      const res = await fetchH5AuthToken({
+        real_name: realName.trim(),
+        id_card: idCard.trim(),
+        redirect_url: redirectUrl,
+        token,
+      });
+
+      // 检查接口返回状态
+      if (res.code === 1 || typeof res.code === 'undefined') {
+        // 后端返回的数据在 data 字段中
+        const data = res.data as H5AuthTokenResult;
+        const authUrl = data?.authUrl;
+        
+        if (!authUrl) {
+          setError('获取认证地址失败，返回数据为空');
+          setVerifying(false);
+          return;
+        }
+
+        // 只有在成功获取到 authUrl 时才跳转
+        window.location.href = authUrl;
+      } else {
+        // 接口返回错误，不跳转，显示错误信息
+        const errorMsg = res.msg || '获取认证地址失败';
+        setError(errorMsg);
+        setVerifying(false);
+        return;
+      }
+    } catch (e: any) {
+      console.error('获取认证地址失败:', e);
+      // 网络错误或其他异常，不跳转
+      const errorMsg = e?.msg || e?.response?.msg || e?.message || '获取认证地址失败，请稍后重试';
+      setError(errorMsg);
+      setVerifying(false);
     }
   };
 
@@ -194,7 +315,7 @@ const RealNameAuth: React.FC<RealNameAuthProps> = ({ onBack }) => {
       )}
 
       {/* 内容区域 */}
-      {!loading && !error && (
+      {!loading && (
         <>
           {/* 已认证状态 */}
           {isAuthed && (
@@ -280,75 +401,16 @@ const RealNameAuth: React.FC<RealNameAuthProps> = ({ onBack }) => {
                 </div>
               </div>
 
-              {/* 身份证上传 */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6 p-4">
-                <div className="text-sm font-bold text-gray-800 mb-3">上传身份证照片</div>
-                <div className="grid grid-cols-2 gap-3">
-                  {/* 人像面 */}
-                  <label className="border border-dashed border-gray-200 rounded-lg flex flex-col items-center justify-center h-32 text-xs text-gray-400 active:bg-gray-50 transition-colors cursor-pointer relative overflow-hidden bg-gray-50/50">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => handleUpload(e, 'front')}
-                      disabled={uploadingFront}
-                    />
-                    {idCardFrontPreview ? (
-                      <img
-                        src={idCardFrontPreview}
-                        alt="身份证人像面"
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <>
-                        <ImageIcon size={24} className="mb-2 text-gray-300" />
-                        <span className="text-gray-500">人像面</span>
-                      </>
-                    )}
-                    {uploadingFront && (
-                      <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
-                        <LoadingSpinner size={20} />
-                      </div>
-                    )}
-                  </label>
-
-                  {/* 国徽面 */}
-                  <label className="border border-dashed border-gray-200 rounded-lg flex flex-col items-center justify-center h-32 text-xs text-gray-400 active:bg-gray-50 transition-colors cursor-pointer relative overflow-hidden bg-gray-50/50">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => handleUpload(e, 'back')}
-                      disabled={uploadingBack}
-                    />
-                    {idCardBackPreview ? (
-                      <img
-                        src={idCardBackPreview}
-                        alt="身份证国徽面"
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <>
-                        <ImageIcon size={24} className="mb-2 text-gray-300" />
-                        <span className="text-gray-500">国徽面</span>
-                      </>
-                    )}
-                    {uploadingBack && (
-                      <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
-                        <LoadingSpinner size={20} />
-                      </div>
-                    )}
-                  </label>
-                </div>
-              </div>
+              {/* 人脸核身说明 */}
+            
 
               {/* 提交按钮 */}
               <button
                 className="w-full bg-orange-600 text-white text-base font-semibold py-3.5 rounded-full shadow-lg shadow-orange-200 active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:shadow-none"
                 onClick={handleSubmit}
-                disabled={submitting || uploadingFront || uploadingBack}
+                disabled={submitting || verifying}
               >
-                {submitting ? '提交中...' : '提交实名认证'}
+                {verifying ? '正在跳转...' : submitting ? '提交中...' : '开始人脸核身认证'}
               </button>
             </>
           )}

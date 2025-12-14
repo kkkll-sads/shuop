@@ -299,7 +299,7 @@ export interface LivePersonCheckResult {
 
 export async function livePersonCheck(params: LivePersonCheckParams): Promise<ApiResponse<LivePersonCheckResult>> {
     const token = params.userToken || localStorage.getItem(AUTH_TOKEN_KEY) || '';
-    const payload = new FormData();
+    const payload = new URLSearchParams();
     payload.append('name', params.name);
     payload.append('cardNo', params.cardNo);
     payload.append('token', params.token);
@@ -316,7 +316,10 @@ export async function livePersonCheck(params: LivePersonCheckParams): Promise<Ap
 
     return apiFetch<LivePersonCheckResult>(API_ENDPOINTS.yidun.livePersonCheck, {
         method: 'POST',
-        body: payload,
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: payload.toString(),
         token,
     });
 }
@@ -343,6 +346,45 @@ export async function fetchH5AuthToken(params: H5AuthTokenParams): Promise<ApiRe
     return apiFetch<H5AuthTokenResult>(API_ENDPOINTS.user.getH5AuthToken, {
         method: 'POST',
         body: payload,
+        token,
+    });
+}
+
+/**
+ * H5人脸核身校验接口
+ * 使用 authToken 获取核身结果
+ */
+export interface H5RecheckParams {
+    authToken: string;
+    token?: string;
+}
+
+export interface H5RecheckResult {
+    taskId?: string;
+    picType?: number;
+    avatar?: string;
+    status: number; // 1=通过, 2=不通过, 0=待定
+    reasonType?: number;
+    isPayed?: number;
+    similarityScore?: number;
+    faceMatched?: number; // 1=通过, 2=不通过, 0=不确定
+    faceAttributeInfo?: any;
+    extInfo?: any;
+    reasonTypeDesc?: string;
+    statusDesc?: string;
+}
+
+export async function h5Recheck(params: H5RecheckParams): Promise<ApiResponse<H5RecheckResult>> {
+    const token = params.token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
+    const payload = new URLSearchParams();
+    payload.append('authToken', params.authToken);
+
+    return apiFetch<H5RecheckResult>(API_ENDPOINTS.yidun.h5Recheck, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: payload.toString(),
         token,
     });
 }

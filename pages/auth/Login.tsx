@@ -37,7 +37,6 @@ const Login: React.FC<LoginProps> = ({
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [agreed, setAgreed] = useState(false);
-  const [rememberPassword, setRememberPassword] = useState(false); // 记住密码状态
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [verifyCode, setVerifyCode] = useState('');
@@ -106,18 +105,17 @@ const Login: React.FC<LoginProps> = ({
 
     setLoading(true);
     try {
+      const params: LoginParams = {
+        mobile: phone,
+        password: loginType === 'password' ? password : '', // 暂不支持验证码登录接口，需后端支持
+      };
+
       if (loginType === 'code') {
-        // 验证码登录暂未对接后端API
+        // 模拟验证码登录
         alert('验证码登录暂未对接后端API');
         setLoading(false);
         return;
       }
-
-      const params: LoginParams = {
-        username: phone, // 使用 username 字段
-        password: password,
-        keep: rememberPassword ? 1 : 0, // 记住密码参数
-      };
 
       const response = await loginApi(params);
       console.log('登录接口响应:', response);
@@ -246,20 +244,9 @@ const Login: React.FC<LoginProps> = ({
       <div className="flex justify-between items-center mb-10 text-sm">
         <label className="flex items-center text-gray-700 gap-2 cursor-pointer select-none">
           <div className="relative">
-            <input
-              type="checkbox"
-              className="peer sr-only"
-              checked={rememberPassword}
-              onChange={(e) => setRememberPassword(e.target.checked)}
-            />
-            <div className={`w-4 h-4 border rounded transition-colors ${
-              rememberPassword
-                ? 'bg-orange-400 border-orange-400'
-                : 'bg-transparent border-orange-400'
-            }`}></div>
-            <Check size={12} className={`absolute top-0.5 left-0.5 text-white ${
-              rememberPassword ? 'opacity-100' : 'opacity-0'
-            }`} />
+            <input type="checkbox" className="peer sr-only" />
+            <div className="w-4 h-4 border border-orange-400 rounded bg-transparent peer-checked:bg-orange-400 peer-checked:border-orange-400 transition-colors"></div>
+            <Check size={12} className="absolute top-0.5 left-0.5 text-white opacity-0 peer-checked:opacity-100" />
           </div>
           <span>记住密码</span>
         </label>

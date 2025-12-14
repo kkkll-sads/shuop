@@ -115,6 +115,7 @@ export const API_ENDPOINTS = {
     },
     yidun: {
         livePersonCheck: '/YidunOcr/livePersonCheck',
+        h5Recheck: '/YidunOcr/h5Recheck', // H5人脸核身校验接口
     },
     upload: {
         image: '/ajax/upload',

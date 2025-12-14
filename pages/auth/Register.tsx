@@ -10,7 +10,6 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, XCircle, User, Lock, Smartphone, CreditCard, ShieldCheck, Check } from 'lucide-react';
 import { register, RegisterParams } from '../../services/api';
-import { sendSmsCode } from '../../services/common';
 import { isValidPhone } from '../../utils/validation';
 
 /**
@@ -45,11 +44,9 @@ const Register: React.FC<RegisterProps> = ({
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [payPassword, setPayPassword] = useState('');
-  const [verifyCode, setVerifyCode] = useState('');
+  const [verifyCode, setVerifyCode] = useState('888888');
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [sendingCode, setSendingCode] = useState(false);
-  const [countdown, setCountdown] = useState(0);
 
   // 组件加载时从URL参数中读取邀请码
   useEffect(() => {
@@ -58,63 +55,6 @@ const Register: React.FC<RegisterProps> = ({
       setInviteCode(urlInviteCode);
     }
   }, []);
-
-  // 倒计时效果
-  useEffect(() => {
-    if (countdown > 0) {
-      const timer = setTimeout(() => {
-        setCountdown(countdown - 1);
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [countdown]);
-
-  /**
-   * 发送短信验证码
-   */
-  const handleSendCode = async () => {
-    if (!phone) {
-      alert('请输入手机号');
-      return;
-    }
-
-    const phoneValidation = isValidPhone(phone);
-    if (!phoneValidation.valid) {
-      alert(phoneValidation.message);
-      return;
-    }
-
-    if (countdown > 0) {
-      return;
-    }
-
-    setSendingCode(true);
-    try {
-      const response = await sendSmsCode({
-        mobile: phone,
-        event: 'user_register', // 用户注册事件类型
-      });
-
-      if (response.code === 1) {
-        alert('验证码已发送，请查收');
-        setCountdown(60); // 开始60秒倒计时
-      } else {
-        const errorMsg = response.msg || response.message || '发送验证码失败，请稍后重试';
-        alert(errorMsg);
-      }
-    } catch (error: any) {
-      console.error('发送验证码失败:', error);
-      if (error.isCorsError) {
-        alert(error.message);
-      } else if (error.message) {
-        alert(`发送验证码失败: ${error.message}`);
-      } else {
-        alert('发送验证码失败，请检查网络连接后重试');
-      }
-    } finally {
-      setSendingCode(false);
-    }
-  };
 
   /**
    * 处理注册
@@ -143,7 +83,6 @@ const Register: React.FC<RegisterProps> = ({
         password: password,
         pay_password: payPassword,
         invite_code: inviteCode,
-        captcha: verifyCode, // 添加验证码参数
       };
 
       const response = await register(params);
@@ -251,20 +190,8 @@ const Register: React.FC<RegisterProps> = ({
             onChange={(e) => setVerifyCode(e.target.value)}
             className="flex-1 text-base outline-none placeholder-gray-400 bg-transparent text-gray-800"
           />
-          <button
-            onClick={handleSendCode}
-            disabled={sendingCode || countdown > 0}
-            className={`text-sm font-medium whitespace-nowrap pl-3 border-l border-gray-200 ${
-              sendingCode || countdown > 0
-                ? 'text-gray-400 cursor-not-allowed'
-                : 'text-orange-500'
-            }`}
-          >
-            {sendingCode
-              ? '发送中...'
-              : countdown > 0
-              ? `${countdown}s后重发`
-              : '获取验证码'}
+          <button className="text-orange-500 text-sm font-medium whitespace-nowrap pl-3 border-l border-gray-200">
+            获取验证码
           </button>
         </div>
       </div>

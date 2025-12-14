@@ -7,13 +7,11 @@ export interface RegisterParams {
     password: string;
     pay_password: string;
     invite_code: string;
-    captcha: string; // 短信验证码
 }
 
 export interface LoginParams {
-    username: string; // 登录时使用 username 字段
+    mobile: string;
     password: string;
-    keep?: number; // 记住密码，1表示记住，0或不传表示不记住
 }
 
 /**
@@ -29,7 +27,6 @@ export async function register(params: RegisterParams): Promise<ApiResponse> {
         formData.append('password', params.password);
         formData.append('pay_password', params.pay_password);
         formData.append('invite_code', params.invite_code);
-        formData.append('captcha', params.captcha); // 添加验证码参数
 
         const data = await apiFetch(API_ENDPOINTS.auth.checkIn, {
             method: 'POST',
@@ -60,12 +57,8 @@ export async function login(params: LoginParams): Promise<ApiResponse> {
     try {
         const formData = new FormData();
         formData.append('tab', 'login');
-        formData.append('username', params.username);
+        formData.append('username', params.mobile);
         formData.append('password', params.password);
-        // 添加 keep 参数，1表示记住密码
-        if (params.keep !== undefined) {
-            formData.append('keep', params.keep.toString());
-        }
 
         const data = await apiFetch(API_ENDPOINTS.auth.checkIn, {
             method: 'POST',

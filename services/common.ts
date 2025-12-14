@@ -32,18 +32,19 @@ export interface SendSmsParams {
 export async function sendSmsCode(params: SendSmsParams, token?: string): Promise<ApiResponse<any>> {
     const authToken = token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
 
-    // 使用 FormData 格式发送，与后端接口保持一致
-    const formData = new FormData();
-    formData.append('mobile', params.mobile);
-    formData.append('event', params.event);
+    // Construct body
+    const body: Record<string, any> = {
+        mobile: params.mobile,
+        event: params.event,
+    };
 
     if (params.password) {
-        formData.append('password', params.password);
+        body.password = params.password;
     }
 
     return apiFetch(API_ENDPOINTS.sms.send, {
         method: 'POST',
-        body: formData,
+        body: JSON.stringify(body),
         token: authToken,
     });
 }

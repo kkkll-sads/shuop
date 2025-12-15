@@ -1,5 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, Plus, XCircle, AlertCircle, History, Check, Image as ImageIcon } from 'lucide-react';
+import { fetchProfile, AUTH_TOKEN_KEY } from '../../services/api';
+import { UserInfo } from '../../types';
 
 interface ClaimStationProps {
     onBack?: () => void;
@@ -28,6 +30,25 @@ const ClaimStation: React.FC<ClaimStationProps> = ({ onBack }) => {
         { id: '2', type: 'transfer', amount: 948.00, status: 'success', time: '2023-10-26 14:30' },
         { id: '3', type: 'other', amount: 3000.00, status: 'rejected', time: '2023-10-25 09:15', reason: '审核失败为什么...' },
     ]);
+
+    const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+
+    useEffect(() => {
+        const loadData = async () => {
+            const token = localStorage.getItem(AUTH_TOKEN_KEY);
+            if (token) {
+                try {
+                    const res = await fetchProfile(token);
+                    if (res.code === 1 && res.data) {
+                        setUserInfo(res.data.userInfo);
+                    }
+                } catch (error) {
+                    console.error('获取用户信息失败:', error);
+                }
+            }
+        };
+        loadData();
+    }, []);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -155,6 +176,10 @@ const ClaimStation: React.FC<ClaimStationProps> = ({ onBack }) => {
 
                         {/* Amount Input */}
                         <div>
+                            <div className="flex justify-between items-center mb-2">
+                                <span className="text-[#8B4513] font-bold text-sm border-l-4 border-[#D48E58] pl-2">确权金额</span>
+                                <span className="text-xs text-[#8B4513]">当前余额: <span className="font-bold">¥{userInfo?.money || '0.00'}</span></span>
+                            </div>
                             <input
                                 type="number"
                                 className="w-full bg-white border border-[#D48E58] text-[#5C3D2E] text-sm rounded-lg px-4 py-3 focus:outline-none focus:ring-1 focus:ring-[#D48E58] shadow-sm placeholder-[#D2B48C]"

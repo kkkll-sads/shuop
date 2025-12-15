@@ -45,10 +45,10 @@ export async function addPaymentAccount(params: AddPaymentAccountParams): Promis
     payload.append('type', params.type);
     payload.append('account_type', params.account_type);
     payload.append('bank_name', params.bank_name);
-    payload.append('real_name', params.account_name); // 对应后端 real_name
-    payload.append('account', params.account_number); // 对应后端 account
-    if (params.bank_branch) payload.append('bank_code', params.bank_branch); // 对应后端 bank_code
-    if (params.screenshot) payload.append('qrcode', params.screenshot);
+    payload.append('account_name', params.account_name);
+    payload.append('account_number', params.account_number);
+    if (params.bank_branch) payload.append('bank_branch', params.bank_branch);
+    if (params.screenshot) payload.append('screenshot', params.screenshot);
 
     return apiFetch(API_ENDPOINTS.user.addPaymentAccount, {
         method: 'POST',
@@ -72,10 +72,10 @@ export async function editPaymentAccount(params: EditPaymentAccountParams): Prom
     const payload = new FormData();
     payload.append('id', params.id);
     payload.append('bank_name', params.bank_name);
-    payload.append('real_name', params.account_name);
-    payload.append('account', params.account_number);
-    if (params.bank_branch) payload.append('bank_code', params.bank_branch);
-    if (params.screenshot) payload.append('qrcode', params.screenshot);
+    payload.append('account_name', params.account_name);
+    payload.append('account_number', params.account_number);
+    if (params.bank_branch) payload.append('bank_branch', params.bank_branch);
+    if (params.screenshot) payload.append('screenshot', params.screenshot);
 
     return apiFetch(API_ENDPOINTS.user.editPaymentAccount, {
         method: 'POST',

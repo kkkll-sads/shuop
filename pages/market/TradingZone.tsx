@@ -107,6 +107,7 @@ const TradingZone: React.FC<TradingZoneProps> = ({ onBack, onProductSelect }) =>
     const [tradingItems, setTradingItems] = useState<TradingDisplayItem[]>([]);
     const [itemsLoading, setItemsLoading] = useState(false);
     const [itemsError, setItemsError] = useState<string | null>(null);
+    const [activePriceZone, setActivePriceZone] = useState<string>('all');
 
     useEffect(() => {
         const loadSessions = async () => {
@@ -258,7 +259,7 @@ const TradingZone: React.FC<TradingZoneProps> = ({ onBack, onProductSelect }) =>
                     <div className="flex items-center justify-between mb-5 px-2">
                         <div className="text-lg font-bold text-gray-900 flex items-center gap-2">
                             <span className="w-1 h-5 rounded-full bg-orange-500"></span>
-                            <span>挂牌资产列表</span>
+                            <span>资产申购列表</span>
                         </div>
                         {status === 'active' && target && (
                             <div className="text-xs font-mono text-white bg-red-500 px-3 py-1.5 rounded-full shadow-md shadow-red-200 flex items-center gap-1.5 animate-pulse">
@@ -266,6 +267,28 @@ const TradingZone: React.FC<TradingZoneProps> = ({ onBack, onProductSelect }) =>
                                 <span className="font-bold tracking-wide">{formatDuration(target.getTime() - now.getTime())}</span>
                             </div>
                         )}
+                    </div>
+
+                    {/* Price Partition Filters */}
+                    <div className="flex gap-2 mb-5 px-2 overflow-x-auto pb-1 scrollbar-none">
+                        {[
+                            { id: 'all', label: '全部' },
+                            { id: '1k', label: '1k区' },
+                            { id: '2k', label: '2k区' },
+                            { id: '3k', label: '3k区' },
+                            { id: '4k', label: '4k区' }
+                        ].map((zone) => (
+                            <button
+                                key={zone.id}
+                                onClick={() => setActivePriceZone(zone.id)}
+                                className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all ${activePriceZone === zone.id
+                                    ? 'bg-orange-500 text-white shadow-md shadow-orange-200'
+                                    : 'bg-white text-gray-500 border border-gray-100 hover:bg-gray-50'
+                                    }`}
+                            >
+                                {zone.label}
+                            </button>
+                        ))}
                     </div>
 
                     {/* 列表内容 */}
@@ -277,40 +300,52 @@ const TradingZone: React.FC<TradingZoneProps> = ({ onBack, onProductSelect }) =>
                         <div className="py-12 text-center text-gray-400 text-sm">暂无资产</div>
                     ) : (
                         <div className="grid grid-cols-2 gap-4">
-                            {tradingItems.map((item) => (
-                                <div
-                                    key={item.displayKey}
-                                    className="bg-white rounded-2xl overflow-hidden shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100 hover:border-gray-200 hover:shadow-lg transition-all active:scale-[0.98] group"
-                                    onClick={() => onProductSelect && onProductSelect({
-                                        id: String(item.id),
-                                        title: item.title,
-                                        price: item.price,
-                                        image: item.image,
-                                        artist: config.name,
-                                        category: 'Data Asset',
-                                        productType: 'collection'
-                                    } as Product)}
-                                >
-                                    <div className="aspect-square bg-gray-50 relative overflow-hidden">
-                                        <LazyImage src={item.image} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                                        <div className="absolute top-2 right-2 bg-black/40 backdrop-blur-md text-white text-[10px] px-2 py-1 rounded-full font-bold shadow-sm border border-white/20">
-                                            ID.{item.id}
-                                        </div>
-                                    </div>
-                                    <div className="p-4">
-                                        <h3 className="text-gray-900 text-sm font-bold line-clamp-1 mb-3">{item.title}</h3>
-                                        <div className="flex justify-between items-center">
-                                            <div className="text-red-500 font-extrabold text-base flex items-baseline gap-0.5">
-                                                <span className="text-xs">¥</span>
-                                                <span>{item.price.toLocaleString()}</span>
+                            {tradingItems
+                                .filter(item => {
+                                    if (activePriceZone === 'all') return true;
+                                    if (activePriceZone === '1k') return item.price >= 1000 && item.price < 2000;
+                                    if (activePriceZone === '2k') return item.price >= 2000 && item.price < 3000;
+                                    if (activePriceZone === '3k') return item.price >= 3000 && item.price < 4000;
+                                    if (activePriceZone === '4k') return item.price >= 4000;
+                                    return true;
+                                })
+                                .map((item) => (
+                                    <div
+                                        key={item.displayKey}
+                                        className="bg-white rounded-2xl overflow-hidden shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100 hover:border-gray-200 hover:shadow-lg transition-all active:scale-[0.98] group"
+                                        onClick={() => onProductSelect && onProductSelect({
+                                            id: String(item.id),
+                                            title: item.title,
+                                            price: item.price,
+                                            image: item.image,
+                                            artist: config.name,
+                                            category: 'Data Asset',
+                                            productType: 'collection'
+                                        } as Product)}
+                                    >
+                                        <div className="aspect-square bg-gray-50 relative overflow-hidden">
+                                            <LazyImage src={item.image} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                                            <div className="absolute top-2 right-2 bg-black/40 backdrop-blur-md text-white text-[10px] px-2 py-1 rounded-full font-bold shadow-sm border border-white/20">
+                                                ID.{item.id}
                                             </div>
-                                            <button className="bg-gray-50 hover:bg-gray-100 p-2 rounded-full text-gray-400 transition-colors">
-                                                <ArrowRight size={14} />
-                                            </button>
+                                        </div>
+                                        <div className="p-4">
+                                            <h3 className="text-gray-900 text-sm font-bold line-clamp-1 mb-1">{item.title}</h3>
+                                            <div className="text-[10px] text-gray-400 font-mono mb-2">
+                                                确权编号: 37-DATA-2025-{String(item.id).padStart(4, '0')}
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                                <div className="text-red-500 font-extrabold text-base flex items-baseline gap-0.5">
+                                                    <span className="text-xs">¥</span>
+                                                    <span>{item.price.toLocaleString()}</span>
+                                                </div>
+                                                <button className="bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-md shadow-orange-200 active:scale-95 transition-transform">
+                                                    申购
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            ))}
+                                ))}
                         </div>
                     )}
                 </div>
@@ -366,7 +401,15 @@ const TradingZone: React.FC<TradingZoneProps> = ({ onBack, onProductSelect }) =>
                                     <div className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold ${config.softBg} ${config.themeColor} mb-2.5 border border-transparent`}>
                                         {config.code}
                                     </div>
-                                    <h2 className="text-xl font-bold text-gray-900 leading-none mb-2">{config.name}</h2>
+                                    <h2 className="text-xl font-bold text-gray-900 leading-none mb-2">
+                                        {config.code === 'D-Asset' ? (
+                                            <span className="inline-block bg-gradient-to-r from-[#C5A572]/10 to-[#C5A572]/20 text-[#C5A572] px-3 py-1 rounded-full text-base border border-[#C5A572]/20 shadow-sm">
+                                                {config.name}
+                                            </span>
+                                        ) : (
+                                            config.name
+                                        )}
+                                    </h2>
                                     <p className="text-xs text-gray-400 font-medium">{config.subName}</p>
                                 </div>
 

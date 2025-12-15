@@ -185,11 +185,15 @@ export async function buyCollectionItem(params: {
 export interface MyCollectionItem {
     id: number;
     item_id: number;
-    title: string;
-    image: string;
+    title?: string;
+    item_title?: string; // 兼容后端返回字段
+    image?: string;
+    item_image?: string; // 兼容后端返回字段
     price: string; // 可能是字符串格式 '9880.00'
-    buy_time: number;
-    buy_time_text: string;
+    buy_time?: number;
+    pay_time?: number; // 兼容
+    buy_time_text?: string;
+    pay_time_text?: string; // 兼容
     delivery_status: number; // 0 未提货 1 已提货
     delivery_status_text: string;
     consignment_status: number; // 0 未寄售, 1 待寄售, 2 寄售中, 3 失败, 4 已售出

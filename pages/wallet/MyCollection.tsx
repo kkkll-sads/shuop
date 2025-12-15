@@ -154,17 +154,17 @@ const MyCollection: React.FC<MyCollectionProps> = ({ onBack }) => {
       return;
     }
 
-    const timeCheck = check48Hours(selectedItem.buy_time);
+    const timeCheck = check48Hours(selectedItem.pay_time || selectedItem.buy_time || 0);
     if (timeCheck.passed) {
       setCountdown(null);
       return;
     }
 
-    const initialCountdown = calculateCountdown(selectedItem.buy_time);
+    const initialCountdown = calculateCountdown(selectedItem.pay_time || selectedItem.buy_time || 0);
     setCountdown(initialCountdown);
 
     const interval = setInterval(() => {
-      const newCountdown = calculateCountdown(selectedItem.buy_time);
+      const newCountdown = calculateCountdown(selectedItem.pay_time || selectedItem.buy_time || 0);
       if (newCountdown) {
         setCountdown(newCountdown);
       } else {
@@ -267,10 +267,10 @@ const MyCollection: React.FC<MyCollectionProps> = ({ onBack }) => {
       if (isDelivered(selectedItem)) {
         return false;
       }
-      const timeCheck = check48Hours(selectedItem.buy_time);
+      const timeCheck = check48Hours(selectedItem.pay_time || selectedItem.buy_time || 0);
       return timeCheck.passed;
     } else {
-      const timeCheck = check48Hours(selectedItem.buy_time);
+      const timeCheck = check48Hours(selectedItem.pay_time || selectedItem.buy_time || 0);
       const hasTicket = checkConsignmentTicket();
       return timeCheck.passed && hasTicket;
     }
@@ -312,7 +312,7 @@ const MyCollection: React.FC<MyCollectionProps> = ({ onBack }) => {
         return;
       }
 
-      const timeCheck = check48Hours(selectedItem.buy_time);
+      const timeCheck = check48Hours(selectedItem.pay_time || selectedItem.buy_time || 0);
       if (!timeCheck.passed) {
         alert(`提货需要满足购买后48小时，还需等待 ${timeCheck.hoursLeft} 小时`);
         return;
@@ -367,7 +367,7 @@ const MyCollection: React.FC<MyCollectionProps> = ({ onBack }) => {
         return;
       }
 
-      const timeCheck = check48Hours(selectedItem.buy_time);
+      const timeCheck = check48Hours(selectedItem.pay_time || selectedItem.buy_time || 0);
       if (!timeCheck.passed) {
         alert(`寄售需要满足购买后48小时，还需等待 ${timeCheck.hoursLeft} 小时`);
         return;
@@ -406,32 +406,37 @@ const MyCollection: React.FC<MyCollectionProps> = ({ onBack }) => {
     }
   };
 
-  const renderCollectionItem = (item: MyCollectionItem) => (
-    <div
-      key={item.id}
-      className="bg-white rounded-lg p-4 mb-3 shadow-sm cursor-pointer active:bg-gray-50 transition-colors"
-      onClick={() => handleItemClick(item)}
-    >
-      <div className="flex gap-3">
-        <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-          <img
-            src={normalizeAssetUrl(item.image)}
-            alt={item.title}
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150';
-            }}
-          />
-        </div>
-        <div className="flex-1">
-          <div className="flex items-start justify-between mb-1">
-            <div className="text-sm font-medium text-gray-800 flex-1">{item.title}</div>
-            <ArrowRight size={16} className="text-gray-400 ml-2 flex-shrink-0" />
+  const renderCollectionItem = (item: MyCollectionItem) => {
+    // 兼容后端返回字段 item_title/item_image
+    const title = item.item_title || item.title || '未命名藏品';
+    const image = item.item_image || item.image || '';
+
+    return (
+      <div
+        key={item.id}
+        className="bg-white rounded-lg p-4 mb-3 shadow-sm cursor-pointer active:bg-gray-50 transition-colors"
+        onClick={() => handleItemClick(item)}
+      >
+        <div className="flex gap-3">
+          <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+            <img
+              src={normalizeAssetUrl(image)}
+              alt={title}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150';
+              }}
+            />
           </div>
-          {item.order_no && (
-            <div className="text-xs text-gray-400 mb-1">订单号: {item.order_no}</div>
-          )}
-          <div className="text-xs text-gray-500 mb-2">购买时间: {item.buy_time_text}</div>
+          <div className="flex-1">
+            <div className="flex items-start justify-between mb-1">
+              <div className="text-sm font-medium text-gray-800 flex-1">{title}</div>
+              <ArrowRight size={16} className="text-gray-400 ml-2 flex-shrink-0" />
+            </div>
+            {item.order_no && (
+              <div className="text-xs text-gray-400 mb-1">订单号: {item.order_no}</div>
+            )}
+          <div className="text-xs text-gray-500 mb-2">购买时间: {item.pay_time_text || item.buy_time_text}</div>
           <div className="text-sm font-bold text-gray-900 mb-2">¥ {item.price}</div>
 
           <div className="flex gap-2 flex-wrap">
@@ -495,6 +500,7 @@ const MyCollection: React.FC<MyCollectionProps> = ({ onBack }) => {
       </div>
     </div>
   );
+};
 
   return (
     <SubPageLayout title="我的藏品" onBack={onBack}>
@@ -542,8 +548,8 @@ const MyCollection: React.FC<MyCollectionProps> = ({ onBack }) => {
             <div className="flex gap-3 mb-4">
               <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                 <img
-                  src={normalizeAssetUrl(selectedItem.image)}
-                  alt={selectedItem.title}
+                  src={normalizeAssetUrl(selectedItem.item_image || selectedItem.image || '')}
+                  alt={selectedItem.item_title || selectedItem.title}
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150';
@@ -551,11 +557,11 @@ const MyCollection: React.FC<MyCollectionProps> = ({ onBack }) => {
                 />
               </div>
               <div className="flex-1">
-                <div className="text-sm font-medium text-gray-800 mb-1">{selectedItem.title}</div>
+                <div className="text-sm font-medium text-gray-800 mb-1">{selectedItem.item_title || selectedItem.title}</div>
                 {selectedItem.order_no && (
                   <div className="text-xs text-gray-400 mb-1">订单号: {selectedItem.order_no}</div>
                 )}
-                <div className="text-xs text-gray-500">购买时间: {selectedItem.buy_time_text}</div>
+                <div className="text-xs text-gray-500">购买时间: {selectedItem.pay_time_text || selectedItem.buy_time_text}</div>
                 <div className="text-sm font-bold text-gray-900 mt-1">¥ {selectedItem.price}</div>
               </div>
             </div>
@@ -651,7 +657,7 @@ const MyCollection: React.FC<MyCollectionProps> = ({ onBack }) => {
                   )}
 
                   {!isConsigning(selectedItem) && !hasConsignedSuccessfully(selectedItem) && !isDelivered(selectedItem) && (() => {
-                    const timeCheck = check48Hours(selectedItem.buy_time);
+                    const timeCheck = check48Hours(selectedItem.pay_time || selectedItem.buy_time || 0);
                     return timeCheck.passed ? (
                       <div className="flex items-center gap-2 text-xs text-green-600 bg-green-50 px-3 py-2 rounded-lg">
                         <CheckCircle size={16} />
@@ -689,7 +695,7 @@ const MyCollection: React.FC<MyCollectionProps> = ({ onBack }) => {
                   )}
 
                   {!isConsigning(selectedItem) && !hasConsignedSuccessfully(selectedItem) && (() => {
-                    const timeCheck = check48Hours(selectedItem.buy_time);
+                    const timeCheck = check48Hours(selectedItem.pay_time || selectedItem.buy_time || 0);
                     if (timeCheck.passed) {
                       return (
                         <div className="flex items-center gap-2 text-xs text-green-600 bg-green-50 px-3 py-2 rounded-lg">

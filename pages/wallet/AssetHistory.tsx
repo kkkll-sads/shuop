@@ -243,12 +243,12 @@ const AssetHistory: React.FC<AssetHistoryProps> = ({ onBack }) => {
 
       <div className="p-4">
         {/* Tabs */}
-        <div className="flex justify-between bg-white p-1 rounded-full mb-4">
+        <div className="flex overflow-x-auto whitespace-nowrap bg-white p-1 rounded-full mb-4 no-scrollbar">
           {tabs.map((tab, idx) => (
             <button
               key={idx}
               onClick={() => handleTabChange(idx)}
-              className={`flex-1 py-2 text-xs rounded-full transition-colors ${idx === activeTab ? 'bg-orange-100 text-orange-600 font-bold' : 'text-gray-500'
+              className={`flex-none px-4 py-2 text-xs rounded-full transition-colors whitespace-nowrap ${idx === activeTab ? 'bg-orange-100 text-orange-600 font-bold' : 'text-gray-500'
                 }`}
             >
               {tab}

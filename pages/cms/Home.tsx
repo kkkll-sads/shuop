@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Building2, Newspaper, Palette, Trophy, ChevronRight, UserCheck } from 'lucide-react';
+import { Building2, Newspaper, Palette, Trophy, ChevronRight, UserCheck, TreeDeciduous, Search, Wallet, Vault, Zap, FileBadge } from 'lucide-react';
 import { Banner, Artist, NewsItem } from '../../types';
 import { fetchBanners, fetchArtists, normalizeAssetUrl, ArtistApiItem } from '../../services/api';
 
@@ -146,39 +146,32 @@ const Home: React.FC<HomeProps> = ({ onNavigate, onSwitchTab, announcements = []
 
   const quickActions = [
     {
-      label: '中心介绍',
-      icon: Building2,
+      label: '专项金申购',
+      icon: Wallet,
       color: 'text-orange-500',
       bgColor: 'bg-orange-50',
-      action: () => onNavigate('home:about-us')
+      action: () => onNavigate('asset:balance-recharge')
     },
     {
-      label: '平台动态',
-      icon: Newspaper,
+      label: '收益提现',
+      icon: Vault,
       color: 'text-orange-500',
       bgColor: 'bg-orange-50',
-      action: () => onNavigate('news-center')
+      action: () => onNavigate('asset:balance-withdraw')
     },
     {
-      label: '作家风采',
-      icon: Palette,
+      label: '算力补充',
+      icon: Zap,
       color: 'text-orange-500',
       bgColor: 'bg-orange-50',
-      action: () => onNavigate('artist-showcase')
+      action: () => onNavigate('wallet:hashrate_exchange')
     },
     {
-      label: '佳作展示',
-      icon: Trophy,
+      label: '确权申报',
+      icon: FileBadge,
       color: 'text-orange-500',
       bgColor: 'bg-orange-50',
-      action: () => onNavigate('masterpiece-showcase')
-    },
-    {
-      label: '代理中心',
-      icon: UserCheck,
-      color: 'text-orange-500',
-      bgColor: 'bg-orange-50',
-      action: () => onNavigate('agent-auth')
+      action: () => onNavigate('cumulative-rights')
     },
   ];
 
@@ -188,8 +181,17 @@ const Home: React.FC<HomeProps> = ({ onNavigate, onSwitchTab, announcements = []
       <div className="absolute top-0 left-0 right-0 h-64 bg-gradient-to-b from-[#FFD6A5] to-gray-50 z-0" />
 
       {/* Header */}
-      <header className="px-4 py-3 flex items-center justify-center sticky top-0 z-10">
-        <h1 className="text-lg font-bold text-gray-800">数权中心</h1>
+      <header className="px-4 py-3 sticky top-0 z-10 bg-gradient-to-r from-[#FFD6A5] to-[#FFC3A0] shadow-sm">
+        <div 
+          className="flex items-center bg-white rounded-full p-1 pl-4 shadow-sm cursor-pointer active:scale-[0.99] transition-transform"
+          onClick={() => onNavigate('asset-trace')}
+        >
+          <Search size={16} className="text-gray-400 mr-2 flex-shrink-0" />
+          <span className="text-sm text-gray-400 flex-1 truncate">数据资产溯源查询...</span>
+          <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs font-medium px-4 py-1.5 rounded-full flex-shrink-0 ml-2">
+            搜索
+          </div>
+        </div>
       </header>
 
       {/* Banner Carousel */}
@@ -268,7 +270,7 @@ const Home: React.FC<HomeProps> = ({ onNavigate, onSwitchTab, announcements = []
 
       {/* Quick Actions */}
       <div className="pb-4 pt-4 relative z-0">
-        <div className="grid grid-cols-5 gap-2 px-2">
+        <div className="grid grid-cols-4 gap-2 px-2">
           {quickActions.map((item, index) => (
             <div
               key={index}

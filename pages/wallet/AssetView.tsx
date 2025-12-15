@@ -74,6 +74,296 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
   // 操作提交状态
   const [actionLoading, setActionLoading] = useState<boolean>(false);
 
+  // 检查是否满足48小时
+  const check48Hours = (time: number): { passed: boolean; hoursLeft: number } => {
+    if (!time) return { passed: true, hoursLeft: 0 };
+    const now = Math.floor(Date.now() / 1000);
+    const hoursPassed = (now - time) / 3600;
+    const hoursLeft = 48 - hoursPassed;
+    return {
+      passed: hoursPassed >= 48,
+      hoursLeft: Math.max(0, Math.ceil(hoursLeft)),
+    };
+  };
+
+  // 获取寄售券数量
+  const getConsignmentTicketCount = (): number => {
+    return consignmentTicketCount;
+  };
+
+  // 检查是否有寄售券
+  const checkConsignmentTicket = (): boolean => {
+    return getConsignmentTicketCount() > 0;
+  };
+
+  // 计算48小时倒计时
+  const calculateCountdown = (time: number) => {
+    if (!time) return null;
+    const now = Math.floor(Date.now() / 1000);
+    const elapsed = now - time;
+    const totalSeconds = 48 * 3600 - elapsed;
+
+    if (totalSeconds <= 0) {
+      return null;
+    }
+
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    return { hours, minutes, seconds };
+  };
+
+  // 检查是否曾经寄售过
+  const hasConsignedBefore = (item: MyCollectionItem): boolean => {
+    const status = item.consignment_status;
+    return typeof status === 'number' && status !== 0;
+  };
+
+  // 检查是否已经寄售成功（已售出）
+  const hasConsignedSuccessfully = (item: MyCollectionItem): boolean => {
+    return item.consignment_status === 4;
+  };
+
+  // 检查是否正在寄售中
+  const isConsigning = (item: MyCollectionItem): boolean => {
+    return item.consignment_status === 2 || item.consignment_status === 1;
+  };
+
+  // 检查是否已提货
+  const isDelivered = (item: MyCollectionItem): boolean => {
+    return item.delivery_status === 1;
+  };
+
+  // 获取藏品ID（兼容不同字段）
+  const resolveCollectionId = (item: MyCollectionItem): number | string | undefined => {
+    return item.user_collection_id || item.id;
+  };
+
+  // 更新倒计时
+  useEffect(() => {
+    if (!showActionModal || !selectedItem || actionTab !== 'consignment') {
+      setCountdown(null);
+      return;
+    }
+
+    const time = selectedItem.pay_time || selectedItem.buy_time || 0;
+    const timeCheck = check48Hours(time);
+    if (timeCheck.passed) {
+      setCountdown(null);
+      return;
+    }
+
+    const initialCountdown = calculateCountdown(time);
+    setCountdown(initialCountdown);
+
+    const interval = setInterval(() => {
+      const newCountdown = calculateCountdown(time);
+      if (newCountdown) {
+        setCountdown(newCountdown);
+      } else {
+        setCountdown(null);
+        clearInterval(interval);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [showActionModal, selectedItem, actionTab]);
+
+  // 如果曾经寄售过，强制切换到提货标签
+  useEffect(() => {
+    if (showActionModal && selectedItem) {
+      if (isConsigning(selectedItem) || hasConsignedSuccessfully(selectedItem) || hasConsignedBefore(selectedItem)) {
+        if (actionTab === 'consignment') {
+          setActionTab('delivery');
+        }
+      }
+    }
+  }, [showActionModal, selectedItem]);
+
+  // 当切换标签或选择的藏品变化时，重置错误信息
+  useEffect(() => {
+    if (!showActionModal || !selectedItem) {
+      setActionError(null);
+      return;
+    }
+    setActionError(null);
+  }, [actionTab, showActionModal, selectedItem]);
+
+  const handleItemClick = (item: MyCollectionItem) => {
+    setSelectedItem(item);
+    if (isConsigning(item) || hasConsignedSuccessfully(item) || hasConsignedBefore(item)) {
+      setActionTab('delivery');
+    } else if (item.delivery_status === 0) {
+      setActionTab('delivery');
+    } else if (item.consignment_status === 0) {
+      setActionTab('consignment');
+    } else {
+      setActionTab('delivery');
+    }
+    setActionError(null);
+    setShowActionModal(true);
+  };
+
+  const canPerformAction = (): boolean => {
+    if (!selectedItem) return false;
+
+    if (isConsigning(selectedItem)) {
+      return false;
+    }
+
+    if (hasConsignedSuccessfully(selectedItem)) {
+      return false;
+    }
+
+    const collectionId = resolveCollectionId(selectedItem);
+    if (collectionId === undefined || collectionId === null) {
+      return false;
+    }
+
+    if (actionTab === 'delivery') {
+      if (isDelivered(selectedItem)) {
+        return false;
+      }
+      const timeCheck = check48Hours(selectedItem.pay_time || selectedItem.buy_time || 0);
+      return timeCheck.passed;
+    } else {
+      const timeCheck = check48Hours(selectedItem.pay_time || selectedItem.buy_time || 0);
+      const hasTicket = checkConsignmentTicket();
+      return timeCheck.passed && hasTicket;
+    }
+  };
+
+  const handleConfirmAction = () => {
+    if (!selectedItem || actionLoading) return;
+
+    const token = localStorage.getItem(AUTH_TOKEN_KEY);
+    if (!token) {
+      alert('请先登录后再进行操作');
+      return;
+    }
+
+    const runLoad = () => {
+      setPage(1);
+      loadData();
+    };
+
+    const collectionId = resolveCollectionId(selectedItem);
+    if (collectionId === undefined || collectionId === null) {
+      alert('无法获取藏品ID，无法继续操作');
+      return;
+    }
+
+    if (actionTab === 'delivery') {
+      if (isConsigning(selectedItem)) {
+        alert('该藏品正在寄售中，无法提货');
+        return;
+      }
+
+      if (hasConsignedSuccessfully(selectedItem)) {
+        alert('该藏品已经寄售成功（已售出），无法提货');
+        return;
+      }
+
+      if (isDelivered(selectedItem)) {
+        alert('该藏品已经提货，无法再次提货');
+        return;
+      }
+
+      const timeCheck = check48Hours(selectedItem.pay_time || selectedItem.buy_time || 0);
+      if (!timeCheck.passed) {
+        alert(`提货需要满足购买后48小时，还需等待 ${timeCheck.hoursLeft} 小时`);
+        return;
+      }
+
+      const hasConsigned = hasConsignedBefore(selectedItem);
+      if (hasConsigned) {
+        if (confirm('该藏品曾经寄售过，确定要强制提货吗？')) {
+          setActionLoading(true);
+          deliverCollectionItem({
+            user_collection_id: collectionId,
+            address_id: null,
+            token,
+          })
+            .then((res) => {
+              alert(res.msg || '提货申请已提交');
+              setShowActionModal(false);
+              setSelectedItem(null);
+              runLoad();
+            })
+            .catch((err: any) => {
+              alert(err?.msg || err?.message || '提货申请失败');
+            })
+            .finally(() => setActionLoading(false));
+        }
+      } else {
+        setActionLoading(true);
+        deliverCollectionItem({
+          user_collection_id: collectionId,
+          address_id: null,
+          token,
+        })
+          .then((res) => {
+            alert(res.msg || '提货申请已提交');
+            setShowActionModal(false);
+            setSelectedItem(null);
+            runLoad();
+          })
+          .catch((err: any) => {
+            alert(err?.msg || err?.message || '提货申请失败');
+          })
+          .finally(() => setActionLoading(false));
+      }
+    } else {
+      if (isConsigning(selectedItem)) {
+        alert('该藏品正在寄售中，无法再次寄售');
+        return;
+      }
+
+      if (hasConsignedSuccessfully(selectedItem)) {
+        alert('该藏品已经寄售成功（已售出），无法再次寄售');
+        return;
+      }
+
+      const timeCheck = check48Hours(selectedItem.pay_time || selectedItem.buy_time || 0);
+      if (!timeCheck.passed) {
+        alert(`寄售需要满足购买后48小时，还需等待 ${timeCheck.hoursLeft} 小时`);
+        return;
+      }
+
+      const hasTicket = checkConsignmentTicket();
+      if (!hasTicket) {
+        alert('您没有寄售券，无法进行寄售');
+        return;
+      }
+
+      // 使用藏品原价作为寄售价格
+      const priceValue = parseFloat(selectedItem.price || '0');
+      if (Number.isNaN(priceValue) || priceValue <= 0) {
+        setActionError('藏品价格无效，无法进行寄售');
+        return;
+      }
+
+      setActionLoading(true);
+      consignCollectionItem({
+        user_collection_id: collectionId,
+        price: priceValue,
+        token,
+      })
+        .then((res) => {
+          alert(res.msg || '寄售申请已提交');
+          setShowActionModal(false);
+          setSelectedItem(null);
+          runLoad();
+        })
+        .catch((err: any) => {
+          const msg = err?.msg || err?.message || '寄售申请失败';
+          setActionError(msg);
+        })
+        .finally(() => setActionLoading(false));
+    }
+  };
+
   const tabs = ['专项金明细', '津贴明细', '确权金明细', '我的藏品'];
 
   // Reset page when tab changes
@@ -318,29 +608,34 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
 
   // ... (keeping other functions)
 
-  const renderCollectionItem = (item: MyCollectionItem) => (
-    <div
-      key={item.id}
-      className="bg-white rounded-lg p-4 mb-3 shadow-sm cursor-pointer active:bg-gray-50 transition-colors"
-      onClick={() => handleItemClick(item)}
-    >
-      <div className="flex gap-3">
-        <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-          <img
-            src={normalizeAssetUrl(item.image) || undefined}
-            alt={item.title}
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150';
-            }}
-          />
-        </div>
-        <div className="flex-1">
-          <div className="flex items-start justify-between mb-1">
-            <div className="text-sm font-medium text-gray-800 flex-1">{item.title}</div>
-            <ArrowRight size={16} className="text-gray-400 ml-2 flex-shrink-0" />
+  const renderCollectionItem = (item: MyCollectionItem) => {
+    // 兼容后端返回字段 item_title/item_image
+    const title = item.item_title || item.title || '未命名藏品';
+    const image = item.item_image || item.image || '';
+
+    return (
+      <div
+        key={item.id}
+        className="bg-white rounded-lg p-4 mb-3 shadow-sm cursor-pointer active:bg-gray-50 transition-colors"
+        onClick={() => handleItemClick(item)}
+      >
+        <div className="flex gap-3">
+          <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+            <img
+              src={normalizeAssetUrl(image) || undefined}
+              alt={title}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150';
+              }}
+            />
           </div>
-          <div className="text-xs text-gray-500 mb-2">购买时间: {item.buy_time_text}</div>
+          <div className="flex-1">
+            <div className="flex items-start justify-between mb-1">
+              <div className="text-sm font-medium text-gray-800 flex-1">{title}</div>
+              <ArrowRight size={16} className="text-gray-400 ml-2 flex-shrink-0" />
+            </div>
+          <div className="text-xs text-gray-500 mb-2">购买时间: {item.pay_time_text || item.buy_time_text}</div>
           <div className="text-sm font-bold text-gray-900 mb-2">¥ {item.price}</div>
 
           <div className="flex gap-2 flex-wrap">
@@ -387,6 +682,7 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
       </div>
     </div>
   );
+};
 
   const renderContent = () => {
     if (loading && page === 1) {
@@ -662,7 +958,7 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
               </div>
               <div className="flex-1">
                 <div className="text-sm font-medium text-gray-800 mb-1">{selectedItem.title}</div>
-                <div className="text-xs text-gray-500">购买时间: {selectedItem.buy_time_text}</div>
+                <div className="text-xs text-gray-500">购买时间: {selectedItem.pay_time_text || selectedItem.buy_time_text}</div>
                 <div className="text-sm font-bold text-gray-900 mt-1">¥ {selectedItem.price}</div>
               </div>
             </div>
@@ -732,7 +1028,7 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
 
                   {/* 48小时检查 */}
                   {!isConsigning(selectedItem) && !hasConsignedSuccessfully(selectedItem) && !isDelivered(selectedItem) && (() => {
-                    const timeCheck = check48Hours(selectedItem.buy_time);
+                    const timeCheck = check48Hours(selectedItem.pay_time || selectedItem.buy_time || 0);
                     return timeCheck.passed ? (
                       <div className="flex items-center gap-2 text-xs text-green-600 bg-green-50 px-3 py-2 rounded-lg">
                         <CheckCircle size={16} />
@@ -774,7 +1070,7 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
 
                   {/* 48小时倒计时 */}
                   {!isConsigning(selectedItem) && !hasConsignedSuccessfully(selectedItem) && (() => {
-                    const timeCheck = check48Hours(selectedItem.buy_time);
+                    const timeCheck = check48Hours(selectedItem.pay_time || selectedItem.buy_time || 0);
                     if (timeCheck.passed) {
                       return (
                         <div className="flex items-center gap-2 text-xs text-green-600 bg-green-50 px-3 py-2 rounded-lg">

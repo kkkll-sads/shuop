@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, Share2, Copy, Shield, FileText, Lock, Fingerprint, Award, Gavel } from 'lucide-react';
+import { ChevronLeft, Share2, Copy, Shield, FileText, Lock, Fingerprint, Award, Gavel, TrendingUp } from 'lucide-react';
 import { LoadingSpinner, LazyImage } from '../../components/common';
 import { Product } from '../../types';
 import {
@@ -14,9 +14,10 @@ import {
 interface ProductDetailProps {
   product: Product;
   onBack: () => void;
+  onNavigate: (page: string) => void;
 }
 
-const ProductDetail: React.FC<ProductDetailProps> = ({ product, onBack }) => {
+const ProductDetail: React.FC<ProductDetailProps> = ({ product, onBack, onNavigate }) => {
   const [detailData, setDetailData] = useState<CollectionItemDetailData | ShopProductDetailData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -95,42 +96,74 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, onBack }) => {
             <div className="text-[10px] text-gray-400 uppercase tracking-[0.2em]">Digital Property Rights Certificate</div>
           </div>
 
-          {/* Asset Image (Stamp Style) */}
-          <div className="relative w-full aspect-[16/9] bg-gray-50 mb-8 border border-gray-100 p-2 shadow-inner">
-            <div className="w-full h-full relative overflow-hidden grayscale-[20%] hover:grayscale-0 transition-all duration-500">
-              <LazyImage src={product.image} className="w-full h-full object-cover" />
-              {/* Official Stamp */}
-              <div className="absolute -right-4 -bottom-4 w-24 h-24 border-[3px] border-red-800 rounded-full flex items-center justify-center opacity-80 -rotate-12 mix-blend-multiply z-10 pointer-events-none">
-                <div className="w-[90%] h-[90%] border border-red-800 rounded-full flex items-center justify-center text-center">
-                  <span className="text-[10px] font-bold text-red-800 transform scale-75 leading-tight">
-                    数权中心<br />已确权<br />VERIFIED
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
+          {/* Asset Image Removed as requested */}
 
           {/* Certificate Fields */}
           <div className="space-y-6 relative z-10 font-sans">
-            <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase mb-1 tracking-wider">Asset Name / 资产名称</label>
-              <div className="text-lg font-bold text-gray-900 font-serif leading-tight">
-                {product.title}
+            {/* Core Info Area */}
+            <div className="text-center py-6 mb-2 relative">
+              {/* Complex Guilloche Pattern Background (Simulated with Radial Gradient) */}
+              <div className="absolute inset-0 opacity-[0.15] pointer-events-none rounded-lg border border-amber-900/5"
+                style={{
+                  backgroundImage: 'radial-gradient(circle, #C5A572 1px, transparent 1px), radial-gradient(circle, #C5A572 1px, transparent 1px)',
+                  backgroundSize: '20px 20px',
+                  backgroundPosition: '0 0, 10px 10px'
+                }}>
               </div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase mb-1 tracking-wider">Issue Date / 登记日</label>
-                <div className="text-sm font-bold text-gray-800">
-                  2025-12-12
-                </div>
+              {/* Line 1: Certificate Number */}
+              <div className="text-xs text-gray-500 font-[DINAlternate-Bold,Roboto,sans-serif] tracking-widest mb-3 relative z-10">
+                确权编号：37-DATA-2025-{product.id.toString().padStart(4, '0')}
               </div>
-              <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase mb-1 tracking-wider">Asset Type / 类型</label>
-                <div className="text-sm font-bold text-gray-800">
-                  产业数据资产包
-                </div>
+
+              {/* Line 2: Product Name */}
+              <h3 className={`${product.title.length > 12 ? 'text-lg' : product.title.length > 8 ? 'text-xl' : product.title.length > 5 ? 'text-2xl' : 'text-3xl'} font-extrabold text-gray-900 mb-3 font-serif tracking-tight leading-tight relative z-10 drop-shadow-sm whitespace-nowrap overflow-hidden text-ellipsis px-2`}>
+                【{product.title}】
+              </h3>
+
+              {/* Line 3: Asset Type / Artist */}
+              <div className="text-base font-bold text-[#C5A572] tracking-wide relative z-10">
+                {product.artist || '产业数据资产包'}
+              </div>
+
+              {/* Official Stamp (SVG) */}
+              <div className="absolute -right-4 -bottom-6 w-32 h-32 opacity-90 -rotate-12 mix-blend-multiply z-20 pointer-events-none">
+                <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <path id="textCircleTop" d="M 25,100 A 75,75 0 1,1 175,100" fill="none" />
+                    <filter id="roughPaper">
+                      <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" result="noise" />
+                      <feDisplacementMap in="SourceGraphic" in2="noise" scale="2" />
+                    </filter>
+                  </defs>
+
+                  <g filter="url(#roughPaper)" fill="#D60000" stroke="none">
+                    {/* Outer Ring */}
+                    <circle cx="100" cy="100" r="96" fill="none" stroke="#D60000" strokeWidth="3" />
+                    {/* Inner Ring */}
+                    <circle cx="100" cy="100" r="92" fill="none" stroke="#D60000" strokeWidth="1" />
+
+                    {/* Top Text */}
+                    <text fontSize="14" fontWeight="bold" fontFamily="SimSun, serif" fill="#D60000">
+                      <textPath href="#textCircleTop" startOffset="50%" textAnchor="middle" spacing="auto">
+                        树交所数字资产登记结算中心
+                      </textPath>
+                    </text>
+
+                    {/* Star */}
+                    <text x="100" y="100" fontSize="40" textAnchor="middle" dominantBaseline="middle" fill="#D60000">★</text>
+
+                    {/* Center Text */}
+                    <text x="100" y="135" fontSize="18" fontWeight="bold" fontFamily="SimHei, sans-serif" textAnchor="middle" fill="#D60000">
+                      确权专用章
+                    </text>
+
+                    {/* Bottom Number */}
+                    <text x="100" y="155" fontSize="10" fontFamily="Arial, sans-serif" fontWeight="bold" textAnchor="middle" fill="#D60000" letterSpacing="1">
+                      37010299821
+                    </text>
+                  </g>
+                </svg>
               </div>
             </div>
 
@@ -156,16 +189,9 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, onBack }) => {
                 <Copy size={12} className="absolute right-2 top-2 text-gray-500 group-hover:text-green-400" />
                 <div className="flex items-center gap-2 mb-1 text-gray-500 font-sans font-bold">
                   <Fingerprint size={12} />
-                  <span className="uppercase">Ethereum Mainnet</span>
+                  <span className="uppercase">TREE-CHAIN CONSORTIUM</span>
                 </div>
                 0x7d9a8b1c4e2f3a6b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a2b1c0d9e8f7a6
-              </div>
-            </div>
-
-            <div className="text-center pt-4">
-              <label className="block text-xs font-bold text-gray-300 uppercase mb-1 tracking-[0.3em]">Certificate Number</label>
-              <div className="text-base font-bold text-amber-900/80 font-mono">
-                37-DATA-2025-{product.id.toString().padStart(6, '0')}
               </div>
             </div>
 
@@ -174,18 +200,43 @@ const ProductDetail: React.FC<ProductDetailProps> = ({ product, onBack }) => {
       </div>
 
       {/* Bottom Action */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/90 backdrop-blur-md border-t border-gray-100 z-50 flex items-center justify-between gap-4">
-        <div className="text-left">
-          <div className="text-xs text-gray-400 uppercase font-bold">Starting Bid / 起拍价</div>
-          <div className="text-xl font-bold text-gray-900 font-mono flex items-baseline">
-            <span className="text-sm">¥</span>
-            {product.price.toLocaleString()}
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/90 backdrop-blur-md border-t border-gray-100 z-50">
+        {/* Market Heat Indicator */}
+        <div className="flex items-center justify-between bg-red-50 rounded-full px-3 py-1.5 mb-3 border border-red-100">
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+            </span>
+            <span className="text-[10px] font-bold text-red-600">当前热度：极高 | 剩余额度：28%</span>
           </div>
+          <div className="text-[10px] font-mono text-red-500 font-bold">00:14:23</div>
         </div>
-        <button className="flex-1 bg-[#8B0000] text-amber-100 hover:bg-[#A00000] transition-colors py-3.5 rounded-lg font-bold flex items-center justify-center gap-2 shadow-lg shadow-red-900/20 active:scale-[0.98]">
-          <Gavel size={18} />
-          参与竞价摘牌
-        </button>
+
+        <div className="flex items-center justify-between gap-4">
+          <div className="text-left">
+            <div className="flex flex-col">
+              <div className="text-xl font-bold text-gray-900 font-mono flex items-baseline leading-none">
+                <span className="text-sm mr-0.5">¥</span>
+                {product.price.toLocaleString()}
+                <span className="text-xs text-gray-400 font-bold ml-1">(起购价)</span>
+              </div>
+              {/* Expected Appreciation Label */}
+              <div className="flex items-center gap-1 mt-1">
+                <TrendingUp size={10} className="text-red-500" />
+                <span className="text-[10px] font-bold text-red-500 bg-red-50 px-1 py-0.5 rounded border border-red-100/50">
+                  预期增值 +4%~+6%
+                </span>
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={() => onNavigate('reservation')}
+            className="flex-1 bg-[#8B0000] text-amber-100 hover:bg-[#A00000] transition-colors py-3.5 rounded-lg font-bold flex items-center justify-center gap-2 shadow-lg shadow-red-900/20 active:scale-[0.98]">
+            <Gavel size={18} />
+            申请确权
+          </button>
+        </div>
       </div>
 
     </div>

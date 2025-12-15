@@ -46,6 +46,8 @@ import ArtistShowcase from './pages/market/ArtistShowcase';
 import ArtistDetail from './pages/market/ArtistDetail';
 import ArtistWorksShowcase from './pages/market/ArtistWorksShowcase';
 import MasterpieceShowcase from './pages/market/MasterpieceShowcase';
+import ReservationPage from './pages/market/ReservationPage';
+import ReservationRecordPage from './pages/market/ReservationRecordPage';
 
 // Wallet pages
 import AssetView from './pages/wallet/AssetView';
@@ -338,6 +340,25 @@ const App: React.FC = () => {
             setSelectedProduct(null);
             setProductDetailOrigin(null);
           }}
+          onNavigate={(page) => setSubPage(page)}
+        />
+      );
+    }
+
+    if (subPage === 'reservation' && selectedProduct) {
+      return (
+        <ReservationPage
+          product={selectedProduct}
+          onBack={() => setSubPage('product-detail')}
+          onNavigate={(page) => setSubPage(page)}
+        />
+      );
+    }
+
+    if (subPage === 'reservation-record') {
+      return (
+        <ReservationRecordPage
+          onBack={() => setSubPage(null)} // Or back to wherever appropriate
         />
       );
     }
@@ -640,7 +661,7 @@ const App: React.FC = () => {
                       const realNameStatus = realNameRes.data.real_name_status;
                       // 更新实名状态 (2=已通过)
                       updateRealNameStatus(realNameStatus, realNameRes.data.real_name);
-                      
+
                       // 如果未实名，显示弹窗
                       if (realNameStatus !== 2) {
                         setShowRealNameModal(true);

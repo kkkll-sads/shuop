@@ -481,14 +481,14 @@ export async function submitAgentReview(params: SubmitAgentReviewParams): Promis
 // 收货地址相关
 export interface AddressItem {
     id: number;
-    user_id: number;
-    receiver: string;
-    mobile: string;
-    province_id: number;
-    city_id: number;
-    area_id: number;
-    address: string;
-    is_default: number; // 1: 默认, 0: 非默认
+    user_id?: number;
+    name: string;       // 收货人姓名
+    phone: string;      // 手机号
+    province: string;   // 省份
+    city: string;       // 城市
+    district?: string;  // 区/县
+    address: string;    // 详细地址
+    is_default: number | string; // 1: 默认, 0: 非默认
     region_text?: string; // 前端组合显示的地区文本
     detail?: string;
     [key: string]: any;
@@ -508,13 +508,13 @@ export async function fetchAddressList(token: string): Promise<ApiResponse<Addre
 
 export interface SaveAddressParams {
     id?: number | string; // 有 id 为编辑，无 id 为新增
-    receiver: string;
-    mobile: string;
-    province_id?: number;
-    city_id?: number;
-    area_id?: number;
-    address: string;
-    is_default: boolean | number;
+    name: string;        // 收货人姓名
+    phone: string;       // 手机号
+    province: string;    // 省份
+    city: string;        // 城市
+    district?: string;   // 区/县
+    address: string;     // 详细地址
+    is_default: boolean | number; // 是否默认地址: 0=否, 1=是
     token?: string;
 }
 
@@ -523,14 +523,11 @@ export async function saveAddress(params: SaveAddressParams): Promise<ApiRespons
     const payload = new FormData();
 
     if (params.id) payload.append('id', String(params.id));
-    payload.append('receiver', params.receiver);
-    payload.append('mobile', params.mobile);
-
-    // 暂时使用模拟 ID 或默认值，实际应对接省市区数据
-    payload.append('province_id', String(params.province_id || 110000));
-    payload.append('city_id', String(params.city_id || 110100));
-    payload.append('area_id', String(params.area_id || 110101));
-
+    payload.append('name', params.name);
+    payload.append('phone', params.phone);
+    payload.append('province', params.province);
+    payload.append('city', params.city);
+    payload.append('district', params.district || '');
     payload.append('address', params.address);
     payload.append('is_default', params.is_default ? '1' : '0');
 

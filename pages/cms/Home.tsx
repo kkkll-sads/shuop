@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Building2, Newspaper, Palette, Trophy, ChevronRight, UserCheck, TreeDeciduous, Search, Wallet, Vault, Zap, FileBadge } from 'lucide-react';
+import { Building2, Newspaper, Palette, Trophy, ChevronRight, UserCheck, TreeDeciduous, Search, Wallet, Vault, Zap, FileBadge, ClipboardList, Clock, CheckCircle2 } from 'lucide-react';
 import { Banner, Artist, NewsItem } from '../../types';
 import { fetchBanners, fetchArtists, normalizeAssetUrl, ArtistApiItem } from '../../services/api';
 
@@ -180,9 +180,9 @@ const Home: React.FC<HomeProps> = ({ onNavigate, onSwitchTab, announcements = []
       {/* Top Background Gradient */}
       <div className="absolute top-0 left-0 right-0 h-64 bg-gradient-to-b from-[#FFD6A5] to-gray-50 z-0" />
 
-      {/* Header */}
-      <header className="px-4 py-3 sticky top-0 z-10 bg-gradient-to-r from-[#FFD6A5] to-[#FFC3A0] shadow-sm">
-        <div 
+      {/* Header - Fixed Positioning */}
+      <header className="px-4 py-3 fixed top-0 left-0 right-0 z-20 bg-gradient-to-r from-[#FFD6A5] to-[#FFC3A0] shadow-sm max-w-md mx-auto">
+        <div
           className="flex items-center bg-white rounded-full p-1 pl-4 shadow-sm cursor-pointer active:scale-[0.99] transition-transform"
           onClick={() => onNavigate('asset-trace')}
         >
@@ -194,8 +194,8 @@ const Home: React.FC<HomeProps> = ({ onNavigate, onSwitchTab, announcements = []
         </div>
       </header>
 
-      {/* Banner Carousel */}
-      <div className="p-4 pb-0 relative z-0">
+      {/* Banner Carousel - Added padding top for fixed header */}
+      <div className="p-4 pb-0 pt-[72px] relative z-0">
         <div
           className="w-full h-40 rounded-xl overflow-hidden relative shadow-lg touch-pan-y"
           onTouchStart={handleTouchStart}
@@ -299,30 +299,72 @@ const Home: React.FC<HomeProps> = ({ onNavigate, onSwitchTab, announcements = []
         </div>
       </div>
 
-      {/* Artist Showcase */}
-      <div className="mt-2 bg-white p-4 rounded-t-2xl shadow-sm relative z-0">
+      {/* Subscription Records Preview */}
+      <div className="mt-2 bg-white p-4 rounded-t-2xl shadow-sm relative z-0 pb-10">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="font-bold text-gray-800 text-lg border-l-4 border-orange-500 pl-2">艺术家风采</h2>
+          <h2 className="font-bold text-gray-800 text-lg border-l-4 border-orange-500 pl-2 flex items-center gap-2">
+            申购记录
+          </h2>
           <button
-            onClick={() => onNavigate('artist-showcase')}
-            className="text-gray-400 flex items-center text-xs"
+            onClick={() => onNavigate('reservation-record')}
+            className="text-gray-400 flex items-center text-xs bg-gray-50 px-2 py-1 rounded-full"
           >
-            更多 <ChevronRight size={16} />
+            全部记录 <ChevronRight size={14} />
           </button>
         </div>
-        <div className="grid grid-cols-2 gap-4">
-          {artists.map((artist) => (
-            <div
-              key={artist.id}
-              className="flex flex-col items-center active:scale-95 transition-transform cursor-pointer"
-              onClick={() => onNavigate(`artist-detail:${artist.id}`)}
-            >
-              <div className="w-full aspect-square rounded-lg overflow-hidden mb-2 bg-gray-100 shadow-sm">
-                <img src={artist.image} alt={artist.name} className="w-full h-full object-cover" />
-              </div>
-              <span className="text-sm text-gray-700 font-medium">{artist.name}</span>
+
+        <div className="space-y-3">
+          {/* Mock Record 1 */}
+          <div
+            className="bg-gray-50 rounded-xl p-3 flex gap-3 active:scale-[0.99] transition-transform"
+            onClick={() => onNavigate('reservation-record')}
+          >
+            <div className="w-16 h-16 bg-gray-200 rounded-lg overflow-hidden shrink-0">
+              <img src="https://images.unsplash.com/photo-1549281899-f75600a24107?auto=format&fit=crop&q=80&w=200" className="w-full h-full object-cover" alt="" />
             </div>
-          ))}
+            <div className="flex-1 min-w-0 flex flex-col justify-between">
+              <div className="flex justify-between items-start">
+                <h3 className="font-bold text-gray-900 text-sm truncate pr-2">山河锦绣 · 主题典藏</h3>
+                <span className="text-[10px] font-bold text-orange-500 bg-orange-100 px-1.5 py-0.5 rounded border border-orange-200 flex items-center gap-1 whitespace-nowrap">
+                  <Clock size={10} /> 待匹配
+                </span>
+              </div>
+              <div className="flex justify-between items-end">
+                <div className="text-xs text-gray-500">
+                  消耗算力 <span className="text-gray-900 font-bold">7.5</span>
+                </div>
+                <div className="text-sm font-mono font-bold text-gray-900">
+                  ¥1,000.00
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Mock Record 2 */}
+          <div
+            className="bg-gray-50 rounded-xl p-3 flex gap-3 active:scale-[0.99] transition-transform"
+            onClick={() => onNavigate('reservation-record')}
+          >
+            <div className="w-16 h-16 bg-gray-200 rounded-lg overflow-hidden shrink-0">
+              <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=200" className="w-full h-full object-cover" alt="" />
+            </div>
+            <div className="flex-1 min-w-0 flex flex-col justify-between">
+              <div className="flex justify-between items-start">
+                <h3 className="font-bold text-gray-900 text-sm truncate pr-2">江南水乡 · 限量款</h3>
+                <span className="text-[10px] font-bold text-green-500 bg-green-100 px-1.5 py-0.5 rounded border border-green-200 flex items-center gap-1 whitespace-nowrap">
+                  <CheckCircle2 size={10} /> 中签
+                </span>
+              </div>
+              <div className="flex justify-between items-end">
+                <div className="text-xs text-gray-500">
+                  消耗算力 <span className="text-gray-900 font-bold">10.0</span>
+                </div>
+                <div className="text-sm font-mono font-bold text-gray-900">
+                  ¥544.98
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

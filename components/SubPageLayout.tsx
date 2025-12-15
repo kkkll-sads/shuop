@@ -9,27 +9,27 @@ interface SubPageLayoutProps {
   bgColor?: string;
 }
 
-const SubPageLayout: React.FC<SubPageLayoutProps> = ({ 
-  title, 
-  onBack, 
-  children, 
+const SubPageLayout: React.FC<SubPageLayoutProps> = ({
+  title,
+  onBack,
+  children,
   rightAction,
-  bgColor = "bg-gray-50" 
+  bgColor = "bg-gray-50"
 }) => {
   return (
-    <div className={`min-h-screen ${bgColor} pb-safe`}>
-      <header className="bg-white px-4 py-3 flex items-center sticky top-0 z-30 shadow-sm">
-        <button 
-          onClick={onBack} 
+    <div className={`h-screen flex flex-col ${bgColor} pb-safe`}>
+      <header className="bg-white px-4 py-3 flex items-center shadow-sm shrink-0 z-30">
+        <button
+          onClick={onBack}
           className="absolute left-4 p-1 text-gray-600 active:bg-gray-100 rounded-full"
         >
-            <ArrowLeft size={20} />
+          <ArrowLeft size={20} />
         </button>
         <h1 className="text-lg font-bold text-gray-800 w-full text-center">{title}</h1>
         {rightAction && <div className="absolute right-4">{rightAction}</div>}
       </header>
-      
-      <div className="flex-1">
+
+      <div className="flex-1 overflow-y-auto relative flex flex-col scrollbar-hide">
         {children}
       </div>
     </div>

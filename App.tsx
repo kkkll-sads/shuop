@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import BottomNav from './components/BottomNav';
 import { Tab, Product, NewsItem, LoginSuccessPayload } from './types';
-import { AUTH_TOKEN_KEY, USER_INFO_KEY, fetchAnnouncements, AnnouncementItem, fetchProfile, fetchRealNameStatus } from './services/api';
+import { AUTH_TOKEN_KEY, USER_INFO_KEY, fetchAnnouncements, AnnouncementItem, fetchProfile, fetchRealNameStatus, MyCollectionItem } from './services/api';
 import useAuth from './hooks/useAuth';
 
 // Auth
@@ -48,6 +48,7 @@ import ArtistWorksShowcase from './pages/market/ArtistWorksShowcase';
 import MasterpieceShowcase from './pages/market/MasterpieceShowcase';
 import ReservationPage from './pages/market/ReservationPage';
 import ReservationRecordPage from './pages/market/ReservationRecordPage';
+import PointsProductDetail from './pages/market/PointsProductDetail';
 
 // Wallet pages
 import AssetView from './pages/wallet/AssetView';
@@ -60,6 +61,7 @@ import ExtensionWithdraw from './pages/wallet/ExtensionWithdraw';
 import ConsignmentVoucher from './pages/wallet/ConsignmentVoucher';
 import CumulativeRights from './pages/wallet/CumulativeRights';
 import MyCollection from './pages/wallet/MyCollection';
+import MyCollectionDetail from './pages/wallet/MyCollectionDetail';
 import ClaimStation from './pages/wallet/ClaimStation';
 import HashrateExchange from './pages/wallet/HashrateExchange';
 import { RealNameRequiredModal } from './components/common';
@@ -96,6 +98,7 @@ const App: React.FC = () => {
   const [checkingRealName, setCheckingRealName] = useState(false);
   const [subPage, setSubPage] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedCollectionItem, setSelectedCollectionItem] = useState<MyCollectionItem | null>(null);
   const [productDetailOrigin, setProductDetailOrigin] = useState<'market' | 'artist' | 'trading-zone' | null>(null);
 
   // Initialize news list based on storage
@@ -189,7 +192,12 @@ const App: React.FC = () => {
   const handleProductSelect = (product: Product, origin: 'market' | 'artist' | 'trading-zone' = 'market') => {
     setSelectedProduct(product);
     setProductDetailOrigin(origin);
-    setSubPage('product-detail');
+
+    if (product.productType === 'shop') {
+      setSubPage('points-product-detail');
+    } else {
+      setSubPage('product-detail');
+    }
   };
 
   // Helper to mark all news as read
@@ -326,6 +334,19 @@ const App: React.FC = () => {
       }
     }
 
+    if (subPage === 'points-product-detail' && selectedProduct) {
+      return (
+        <PointsProductDetail
+          product={selectedProduct}
+          onBack={() => {
+            setSubPage(null);
+            setSelectedProduct(null);
+          }}
+          onNavigate={(page) => setSubPage(page)}
+        />
+      );
+    }
+
     // Handle Product Detail Page
     if (subPage === 'product-detail' && selectedProduct) {
       return (
@@ -359,6 +380,20 @@ const App: React.FC = () => {
       return (
         <ReservationRecordPage
           onBack={() => setSubPage(null)} // Or back to wherever appropriate
+          onNavigate={(page) => setSubPage(page)}
+        />
+      );
+    }
+
+    if (subPage?.startsWith('my-collection-detail') && selectedCollectionItem) {
+      return (
+        <MyCollectionDetail
+          item={selectedCollectionItem}
+          onBack={() => {
+            setSubPage('my-collection');
+            setSelectedCollectionItem(null);
+          }}
+          onNavigate={(page) => setSubPage(page)}
         />
       );
     }
@@ -490,7 +525,15 @@ const App: React.FC = () => {
           />
         );
       case 'my-collection':
-        return <MyCollection onBack={() => setSubPage(null)} />;
+        return (
+          <MyCollection
+            onBack={() => setSubPage(null)}
+            onItemSelect={(item) => {
+              setSelectedCollectionItem(item);
+              setSubPage(`my-collection-detail:${item.id}`);
+            }}
+          />
+        );
       case 'address-list':
         return <AddressList onBack={() => setSubPage(null)} />;
       case 'real-name-auth':
@@ -558,7 +601,7 @@ const App: React.FC = () => {
       case 'consignment-voucher':
         return <ConsignmentVoucher onBack={() => setSubPage(null)} />;
       case 'service-center:message':
-        return <MessageCenter onBack={() => setSubPage(null)} />;
+        return <MessageCenter onBack={() => setSubPage(null)} onNavigate={(page) => setSubPage(page)} />;
       case 'news-center':
         return (
           <News

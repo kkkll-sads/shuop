@@ -93,6 +93,34 @@ const AddressList: React.FC<AddressListProps> = ({ onBack }) => {
     }
   };
 
+  const handleSetDefault = async (addr: AddressItem) => {
+    if (isDefault(addr)) return;
+
+    setLoading(true);
+    try {
+      const res = await saveAddress({
+        id: addr.id,
+        name: addr.name,
+        phone: addr.phone,
+        province: addr.province,
+        city: addr.city,
+        district: addr.district,
+        address: addr.address,
+        is_default: 1,
+      });
+
+      if (res.code === 1) {
+        await loadAddresses();
+      } else {
+        setError(res.msg || '设置默认地址失败');
+      }
+    } catch (e: any) {
+      setError(e?.msg || e?.response?.msg || e?.message || '设置默认地址失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleFormInputChange = (
     field: keyof AddressFormValues,
     value: string | boolean,
@@ -169,7 +197,7 @@ const AddressList: React.FC<AddressListProps> = ({ onBack }) => {
   };
 
   const isDefault = (addr: AddressItem) =>
-    String(addr.is_default ?? '') === '1';
+    ['1', 1, true, 'true'].includes(addr.is_default);
 
   return (
     <SubPageLayout
@@ -362,14 +390,21 @@ const AddressList: React.FC<AddressListProps> = ({ onBack }) => {
                   <span>{formatFullAddress(addr)}</span>
                 </div>
                 <div className="border-t border-gray-50 pt-3 flex justify-between items-center">
-                  <div className="flex items-center gap-2">
+                  <div
+                    className="flex items-center gap-2 cursor-pointer active:opacity-60 transition-opacity"
+                    onClick={() => handleSetDefault(addr)}
+                  >
                     <div
-                      className={`w-4 h-4 rounded-full border ${isDefault(addr)
+                      className={`w-4 h-4 rounded-full border flex items-center justify-center ${isDefault(addr)
                         ? 'border-red-500 bg-red-500'
                         : 'border-gray-300'
                         }`}
-                    ></div>
-                    <span className="text-xs text-gray-500">默认地址</span>
+                    >
+                      {isDefault(addr) && <div className="w-1.5 h-1.5 bg-white rounded-full" />}
+                    </div>
+                    <span className={`text-xs ${isDefault(addr) ? 'text-red-500 font-bold' : 'text-gray-500'}`}>
+                      默认地址
+                    </span>
                   </div>
                   <button
                     className="flex items-center gap-1 text-xs text-gray-500"

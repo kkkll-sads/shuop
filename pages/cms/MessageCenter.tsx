@@ -19,6 +19,7 @@ import {
 
 interface MessageCenterProps {
   onBack: () => void;
+  onNavigate: (page: string) => void;
 }
 
 interface MessageItem {
@@ -35,7 +36,7 @@ interface MessageItem {
   sourceId?: string | number; // 原始数据ID，用于跳转
 }
 
-const MessageCenter: React.FC<MessageCenterProps> = ({ onBack }) => {
+const MessageCenter: React.FC<MessageCenterProps> = ({ onBack, onNavigate }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [messages, setMessages] = useState<MessageItem[]>([]);
@@ -131,8 +132,8 @@ const MessageCenter: React.FC<MessageCenterProps> = ({ onBack }) => {
         // 2. 加载充值订单（最近的状态变更）
         try {
           const rechargeRes = await getMyOrderList({ page: 1, limit: 5, token });
-          if (rechargeRes.code === 1 && rechargeRes.data?.data) {
-            rechargeRes.data.data.forEach((item: RechargeOrderItem) => {
+          if (rechargeRes.code === 1 && rechargeRes.data?.list) {
+            rechargeRes.data.list.forEach((item: RechargeOrderItem) => {
               const id = `recharge-${item.id}`;
               const timestamp = item.create_time ? item.create_time * 1000 : Date.now();
 
@@ -170,8 +171,8 @@ const MessageCenter: React.FC<MessageCenterProps> = ({ onBack }) => {
         // 3. 加载提现记录（最近的状态变更）
         try {
           const withdrawRes = await getMyWithdrawList({ page: 1, limit: 5, token });
-          if (withdrawRes.code === 1 && withdrawRes.data?.data) {
-            withdrawRes.data.data.forEach((item: WithdrawOrderItem) => {
+          if (withdrawRes.code === 1 && withdrawRes.data?.list) {
+            withdrawRes.data.list.forEach((item: WithdrawOrderItem) => {
               const id = `withdraw-${item.id}`;
               const timestamp = item.create_time ? item.create_time * 1000 : Date.now();
 
@@ -362,6 +363,33 @@ const MessageCenter: React.FC<MessageCenterProps> = ({ onBack }) => {
     });
   };
 
+  const handleMessageClick = (message: MessageItem) => {
+    handleMarkAsRead(message.id);
+
+    // 根据消息类型跳转
+    switch (message.type) {
+      case 'notice':
+      case 'activity':
+        if (message.sourceId) {
+          onNavigate(`news-detail:${message.sourceId}`);
+        }
+        break;
+      case 'recharge':
+        onNavigate('asset:balance-recharge'); // 或者 asset-history
+        break;
+      case 'withdraw':
+        onNavigate('asset:balance-withdraw'); // 或者 asset-history
+        break;
+      case 'shop_order':
+        // 商城订单，跳转到订单列表（全部）
+        onNavigate('order-list:all:0');
+        break;
+      default:
+        // 默认行为
+        break;
+    }
+  };
+
   return (
     <SubPageLayout
       title="消息中心"
@@ -440,7 +468,7 @@ const MessageCenter: React.FC<MessageCenterProps> = ({ onBack }) => {
                 key={message.id}
                 className={`bg-white rounded-xl p-4 shadow-sm cursor-pointer active:bg-gray-50 transition-colors ${!message.isRead ? 'border-l-4 border-blue-500' : ''
                   }`}
-                onClick={() => handleMarkAsRead(message.id)}
+                onClick={() => handleMessageClick(message)}
               >
                 <div className="flex items-start gap-3">
                   <div

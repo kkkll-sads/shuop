@@ -3,6 +3,7 @@ import { ChevronLeft, CheckCircle2, Clock, Wallet, Zap, AlertCircle, ArrowRight 
 
 interface ReservationRecordPageProps {
     onBack: () => void;
+    onNavigate: (page: string) => void;
 }
 
 type RecordStatus = 'pending' | 'success' | 'failed';
@@ -77,7 +78,7 @@ const MOCK_RECORDS: ReservationRecord[] = [
     }
 ];
 
-const ReservationRecordPage: React.FC<ReservationRecordPageProps> = ({ onBack }) => {
+const ReservationRecordPage: React.FC<ReservationRecordPageProps> = ({ onBack, onNavigate }) => {
     const [statusFilter, setStatusFilter] = useState<string>('all');
     const [zoneFilter, setZoneFilter] = useState<string>('all');
 
@@ -117,8 +118,8 @@ const ReservationRecordPage: React.FC<ReservationRecordPageProps> = ({ onBack })
                             key={status}
                             onClick={() => setStatusFilter(status)}
                             className={`flex-1 py-3 text-sm font-bold border-b-2 transition-colors ${statusFilter === status
-                                    ? 'border-[#8B0000] text-[#8B0000]'
-                                    : 'border-transparent text-gray-400 hover:text-gray-600'
+                                ? 'border-[#8B0000] text-[#8B0000]'
+                                : 'border-transparent text-gray-400 hover:text-gray-600'
                                 }`}
                         >
                             {status === 'all' ? '全部' : status === 'pending' ? '待匹配' : status === 'success' ? '中签' : '未中签'}
@@ -132,8 +133,8 @@ const ReservationRecordPage: React.FC<ReservationRecordPageProps> = ({ onBack })
                             key={zone}
                             onClick={() => setZoneFilter(zone)}
                             className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap border transition-all ${zoneFilter === zone
-                                    ? 'bg-orange-50 border-orange-200 text-orange-600'
-                                    : 'bg-white border-gray-100 text-gray-500 hover:bg-gray-50'
+                                ? 'bg-orange-50 border-orange-200 text-orange-600'
+                                : 'bg-white border-gray-100 text-gray-500 hover:bg-gray-50'
                                 }`}
                         >
                             {zone === 'all' ? '全部金额' : `${zone}区`}
@@ -200,7 +201,10 @@ const ReservationRecordPage: React.FC<ReservationRecordPageProps> = ({ onBack })
                                     <button className="text-sm font-bold text-orange-500 bg-orange-50 px-4 py-2 rounded-lg w-full">等待撮合...</button>
                                 )}
                                 {record.status === 'success' && (
-                                    <button className="text-sm font-bold text-white bg-[#8B0000] px-4 py-2 rounded-lg w-full flex items-center justify-center gap-1 shadow-md shadow-red-900/10">
+                                    <button
+                                        onClick={() => onNavigate('my-collection')}
+                                        className="text-sm font-bold text-white bg-[#8B0000] px-4 py-2 rounded-lg w-full flex items-center justify-center gap-1 shadow-md shadow-red-900/10"
+                                    >
                                         去持仓查看 <ArrowRight size={14} />
                                     </button>
                                 )}

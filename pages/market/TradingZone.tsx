@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Clock, Globe, Database, Zap, Cpu, Activity, Lock, ArrowRight, ArrowLeft, Layers, Gem, Crown, Coins, TrendingUp, ClipboardList } from 'lucide-react';
 import PageContainer from '../../components/layout/PageContainer';
@@ -104,6 +105,7 @@ const TradingZone: React.FC<TradingZoneProps> = ({ onBack, onProductSelect, onNa
     const [sessions, setSessions] = useState<TradingSession[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [status, setStatus] = useState<'preview' | 'active' | 'closed'>('preview');
     const [tradingItems, setTradingItems] = useState<TradingDisplayItem[]>([]);
     const [itemsLoading, setItemsLoading] = useState(false);
     const [itemsError, setItemsError] = useState<string | null>(null);
@@ -261,12 +263,23 @@ const TradingZone: React.FC<TradingZoneProps> = ({ onBack, onProductSelect, onNa
                             <span className="w-1 h-5 rounded-full bg-orange-500"></span>
                             <span>资产申购列表</span>
                         </div>
-                        {status === 'active' && target && (
-                            <div className="text-xs font-mono text-white bg-red-500 px-3 py-1.5 rounded-full shadow-md shadow-red-200 flex items-center gap-1.5 animate-pulse">
-                                <Clock size={12} />
-                                <span className="font-bold tracking-wide">{formatDuration(target.getTime() - now.getTime())}</span>
-                            </div>
-                        )}
+                        <div className="flex items-center gap-2">
+                            {onNavigate && (
+                                <button
+                                    onClick={() => onNavigate('reservation-record')}
+                                    className="flex items-center gap-1.5 bg-orange-50 text-orange-600 px-3 py-1.5 rounded-full text-xs font-bold border border-orange-100 active:scale-95 transition-transform"
+                                >
+                                    <ClipboardList size={14} />
+                                    <span>申购记录</span>
+                                </button>
+                            )}
+                            {status === 'active' && target && (
+                                <div className="text-xs font-mono text-white bg-red-500 px-3 py-1.5 rounded-full shadow-md shadow-red-200 flex items-center gap-1.5 animate-pulse">
+                                    <Clock size={12} />
+                                    <span className="font-bold tracking-wide">{formatDuration(target.getTime() - now.getTime())}</span>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     {/* Price Partition Filters */}
@@ -361,31 +374,15 @@ const TradingZone: React.FC<TradingZoneProps> = ({ onBack, onProductSelect, onNa
 
             {/* 顶部导航区 */}
             <div className="relative z-10 px-5 pt-4 pb-2 flex justify-between items-center">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                     <button onClick={handleBack} className="p-2 -ml-2 text-gray-700 active:bg-black/5 rounded-full transition-colors">
                         <ArrowLeft size={24} />
                     </button>
                     <h1 className="font-bold text-xl text-gray-900 tracking-tight">资产交易</h1>
                 </div>
-
-                <div className="flex items-center gap-3">
-                    <div className="bg-white/90 backdrop-blur-sm rounded-full px-3 py-1.5 flex items-center gap-2 shadow-sm border border-orange-100/50">
-                        <span className="relative flex h-2 w-2">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                        </span>
-                        <span className="text-xs font-bold text-gray-800 tracking-wider font-mono">LIVE</span>
-                    </div>
-
-                    {/* Records Entry Point */}
-                    {onNavigate && (
-                        <button
-                            onClick={() => onNavigate('reservation-record')}
-                            className="bg-white/80 backdrop-blur-sm p-2 rounded-full text-gray-700 hover:bg-white hover:text-orange-600 transition-colors shadow-sm border border-transparent hover:border-orange-100"
-                        >
-                            <ClipboardList size={22} />
-                        </button>
-                    )}
+                <div className="flex items-center gap-1.5 bg-white/90 backdrop-blur px-3 py-1.5 rounded-full shadow-sm border border-white/60">
+                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse ring-4 ring-green-100"></div>
+                    <span className="text-xs font-bold text-gray-700 font-sans tracking-wide">LIVE</span>
                 </div>
             </div>
 
@@ -417,15 +414,7 @@ const TradingZone: React.FC<TradingZoneProps> = ({ onBack, onProductSelect, onNa
                                     <div className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold ${config.softBg} ${config.themeColor} mb-2.5 border border-transparent`}>
                                         {config.code}
                                     </div>
-                                    <h2 className="text-xl font-bold text-gray-900 leading-none mb-2">
-                                        {config.code === 'D-Asset' ? (
-                                            <span className="inline-block bg-gradient-to-r from-[#C5A572]/10 to-[#C5A572]/20 text-[#C5A572] px-3 py-1 rounded-full text-base border border-[#C5A572]/20 shadow-sm">
-                                                {config.name}
-                                            </span>
-                                        ) : (
-                                            config.name
-                                        )}
-                                    </h2>
+                                    <h2 className="text-xl font-bold text-gray-900 leading-none mb-2">{config.name}</h2>
                                     <p className="text-xs text-gray-400 font-medium">{config.subName}</p>
                                 </div>
 

@@ -512,9 +512,10 @@ const App: React.FC = () => {
     if (subPage?.startsWith('wallet:hashrate_exchange')) {
       // Check for return path: wallet:hashrate_exchange:fromPath
       const isFromProfile = subPage.includes(':profile');
+      const isFromReservation = subPage.includes(':reservation');
       return (
         <HashrateExchange
-          onBack={() => setSubPage(isFromProfile ? null : 'asset-view')}
+          onBack={() => setSubPage(isFromReservation ? 'reservation' : isFromProfile ? null : 'asset-view')}
           onNavigate={(page) => setSubPage(page)}
         />
       );
@@ -522,7 +523,8 @@ const App: React.FC = () => {
 
     if (subPage?.startsWith('asset:balance-recharge')) {
       const isFromProfile = subPage.includes(':profile');
-      return <BalanceRecharge onBack={() => setSubPage(isFromProfile ? null : 'asset-view')} />;
+      const isFromReservation = subPage.includes(':reservation');
+      return <BalanceRecharge onBack={() => setSubPage(isFromReservation ? 'reservation' : isFromProfile ? null : 'asset-view')} />;
     }
 
     if (subPage?.startsWith('asset:balance-withdraw')) {

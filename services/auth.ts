@@ -7,6 +7,7 @@ export interface RegisterParams {
     password: string;
     pay_password: string;
     invite_code: string;
+    captcha: string;
 }
 
 export interface LoginParams {
@@ -27,6 +28,7 @@ export async function register(params: RegisterParams): Promise<ApiResponse> {
         formData.append('password', params.password);
         formData.append('pay_password', params.pay_password);
         formData.append('invite_code', params.invite_code);
+        formData.append('captcha', params.captcha);
 
         const data = await apiFetch(API_ENDPOINTS.auth.checkIn, {
             method: 'POST',
@@ -73,6 +75,38 @@ export async function login(params: LoginParams): Promise<ApiResponse> {
             (corsError as any).isCorsError = true;
             throw corsError;
         }
+        throw error;
+    }
+}
+
+/**
+ * 找回密码参数接口
+ */
+export interface RetrievePasswordParams {
+    mobile: string;
+    captcha: string;
+    newpassword: string;
+}
+
+/**
+ * 找回密码接口
+ * @param params 找回密码参数
+ */
+export async function retrievePassword(params: RetrievePasswordParams): Promise<ApiResponse> {
+    try {
+        const formData = new FormData();
+        formData.append('mobile', params.mobile);
+        formData.append('captcha', params.captcha);
+        formData.append('newpassword', params.newpassword);
+
+        const data = await apiFetch(API_ENDPOINTS.account.retrievePassword, {
+            method: 'POST',
+            body: formData,
+        });
+        console.log('找回密码接口原始响应:', data);
+        return data;
+    } catch (error: any) {
+        console.error('找回密码失败:', error);
         throw error;
     }
 }

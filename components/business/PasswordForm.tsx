@@ -21,9 +21,11 @@ import { LoadingSpinner } from '../common';
 import {
     updatePassword,
     updatePayPassword,
+    retrievePassword,
     AUTH_TOKEN_KEY,
     USER_INFO_KEY,
 } from '../../services/api';
+import { sendSmsCode } from '../../services/common';
 
 /**
  * 表单类型枚举
@@ -141,18 +143,39 @@ const PasswordForm: React.FC<PasswordFormProps> = ({
     const [confirmPassword, setConfirmPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [countdown, setCountdown] = useState(0);
 
     /**
      * 发送验证码（找回密码场景）
      */
-    const handleSendCode = () => {
+    const handleSendCode = async () => {
         const phoneRegex = /^1[3-9]\d{9}$/;
         if (!phoneRegex.test(phone.trim())) {
             alert('请输入正确的手机号');
             return;
         }
-        // 演示功能，实际需接入短信接口
-        alert('验证码已发送到您的手机（演示）');
+        
+        try {
+            await sendSmsCode({
+                mobile: phone.trim(),
+                event: 'retrieve_password'
+            });
+            alert('验证码已发送');
+            setCountdown(60);
+            
+            // Start countdown timer
+            const timer = setInterval(() => {
+                setCountdown((prev) => {
+                    if (prev <= 1) {
+                        clearInterval(timer);
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+        } catch (error: any) {
+            alert(error.message || error.msg || '发送验证码失败');
+        }
     };
 
     /**
@@ -187,13 +210,21 @@ const PasswordForm: React.FC<PasswordFormProps> = ({
             setError('');
             setLoading(true);
 
-            // 暂无后端接口，演示功能
-            setTimeout(() => {
-                alert('重置密码成功（演示），请使用新密码重新登录');
-                setLoading(false);
+            try {
+                await retrievePassword({
+                    mobile: trimmedPhone,
+                    captcha: trimmedCode,
+                    newpassword: trimmedNewPassword
+                });
+                alert('重置密码成功，请使用新密码重新登录');
                 onSuccess?.();
                 onBack();
-            }, 800);
+            } catch (error: any) {
+                const message = error.msg || error.message || '重置密码失败，请检查验证码是否正确';
+                setError(message);
+            } finally {
+                setLoading(false);
+            }
             return;
         }
 
@@ -318,11 +349,14 @@ const PasswordForm: React.FC<PasswordFormProps> = ({
                                 </div>
                                 <button
                                     type="button"
-                                    className="mt-6 whitespace-nowrap rounded-lg border border-orange-500 px-3 py-2 text-xs font-medium text-orange-500 active:opacity-80"
+                                    className={`mt-6 whitespace-nowrap rounded-lg border px-3 py-2 text-xs font-medium ${countdown > 0
+                                            ? 'border-gray-300 text-gray-400 cursor-not-allowed'
+                                            : 'border-orange-500 text-orange-500 active:opacity-80'
+                                        }`}
                                     onClick={handleSendCode}
-                                    disabled={loading}
+                                    disabled={loading || countdown > 0}
                                 >
-                                    获取验证码
+                                    {countdown > 0 ? `${countdown}s 后重试` : '获取验证码'}
                                 </button>
                             </div>
                         )}

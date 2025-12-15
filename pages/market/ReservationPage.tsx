@@ -35,7 +35,8 @@ const ReservationPage: React.FC<ReservationPageProps> = ({ product, onBack, onNa
     
     // Calculate values from real data or fallbacks
     // Use carbon_quota for hashrate/points
-    const availableHashrate = userInfo ? parseFloat(String(userInfo.carbon_quota || '0')) : 0;
+    // TODO: Revert to real data when backend is ready
+    const availableHashrate = 15.5; // Mock data as requested by user
     const specialFund = userInfo ? parseFloat(userInfo.money || '0') : 0;
     const frozenAmount = product.price;
 
@@ -49,6 +50,14 @@ const ReservationPage: React.FC<ReservationPageProps> = ({ product, onBack, onNa
     const handleReservation = () => {
         if (!isHashrateSufficient || !isFundSufficient) return;
         setShowConfirmModal(true);
+    };
+
+    const handleRecharge = () => {
+        if (!isHashrateSufficient) {
+            onNavigate('wallet:hashrate_exchange:reservation');
+        } else if (!isFundSufficient) {
+            onNavigate('asset:balance-recharge:reservation');
+        }
     };
 
     const confirmSubmit = () => {
@@ -169,14 +178,13 @@ const ReservationPage: React.FC<ReservationPageProps> = ({ product, onBack, onNa
             {/* Footer Action */}
             <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 pb-safe">
                 <button
-                    onClick={handleReservation}
-                    disabled={!isHashrateSufficient || !isFundSufficient}
+                    onClick={(!isHashrateSufficient || !isFundSufficient) ? handleRecharge : handleReservation}
                     className={`w-full py-3.5 rounded-xl font-bold text-lg flex items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98] ${isHashrateSufficient && isFundSufficient
                             ? 'bg-[#8B0000] text-amber-50 shadow-red-900/20 hover:bg-[#A00000]'
-                            : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                            : 'bg-[#8B0000] text-white opacity-90'
                         }`}
                 >
-                    {isHashrateSufficient && isFundSufficient ? '确认预约' : '条件不满足'}
+                    {!isHashrateSufficient ? '前往获取算力' : !isFundSufficient ? '前往充值专项金' : '确认预约'}
                 </button>
             </div>
 

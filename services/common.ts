@@ -74,19 +74,18 @@ export interface SendSmsParams {
 export async function sendSmsCode(params: SendSmsParams, token?: string): Promise<ApiResponse<any>> {
     const authToken = token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
 
-    // Construct body
-    const body: Record<string, any> = {
-        mobile: params.mobile,
-        event: params.event,
-    };
+    // Construct body using FormData for compatibility
+    const payload = new FormData();
+    payload.append('mobile', params.mobile);
+    payload.append('event', params.event);
 
     if (params.password) {
-        body.password = params.password;
+        payload.append('password', params.password);
     }
 
     return apiFetch(API_ENDPOINTS.sms.send, {
         method: 'POST',
-        body: JSON.stringify(body),
+        body: payload,
         token: authToken,
     });
 }

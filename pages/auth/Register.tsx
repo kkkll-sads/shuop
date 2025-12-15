@@ -10,6 +10,7 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, XCircle, User, Lock, Smartphone, CreditCard, ShieldCheck, Check } from 'lucide-react';
 import { register, RegisterParams } from '../../services/api';
+import { sendSmsCode } from '../../services/common';
 import { isValidPhone } from '../../utils/validation';
 
 /**
@@ -44,9 +45,10 @@ const Register: React.FC<RegisterProps> = ({
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [payPassword, setPayPassword] = useState('');
-  const [verifyCode, setVerifyCode] = useState('888888');
+  const [verifyCode, setVerifyCode] = useState('');
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [countdown, setCountdown] = useState(0);
 
   // 组件加载时从URL参数中读取邀请码
   useEffect(() => {
@@ -55,6 +57,38 @@ const Register: React.FC<RegisterProps> = ({
       setInviteCode(urlInviteCode);
     }
   }, []);
+
+  /**
+   * 发送验证码
+   */
+  const handleSendCode = async () => {
+    const phoneValidation = isValidPhone(phone);
+    if (!phoneValidation.valid) {
+      alert(phoneValidation.message);
+      return;
+    }
+
+    try {
+      await sendSmsCode({
+        mobile: phone,
+        event: 'register'
+      });
+      alert('验证码已发送');
+      setCountdown(60);
+      const timer = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } catch (error: any) {
+      const msg = error.msg || error.message || '发送验证码失败';
+      alert(msg);
+    }
+  };
 
   /**
    * 处理注册
@@ -83,6 +117,7 @@ const Register: React.FC<RegisterProps> = ({
         password: password,
         pay_password: payPassword,
         invite_code: inviteCode,
+        captcha: verifyCode,
       };
 
       const response = await register(params);
@@ -190,8 +225,12 @@ const Register: React.FC<RegisterProps> = ({
             onChange={(e) => setVerifyCode(e.target.value)}
             className="flex-1 text-base outline-none placeholder-gray-400 bg-transparent text-gray-800"
           />
-          <button className="text-orange-500 text-sm font-medium whitespace-nowrap pl-3 border-l border-gray-200">
-            获取验证码
+          <button
+            onClick={handleSendCode}
+            disabled={countdown > 0}
+            className={`text-sm font-medium whitespace-nowrap pl-3 border-l border-gray-200 ${countdown > 0 ? 'text-gray-400' : 'text-orange-500'}`}
+          >
+            {countdown > 0 ? `${countdown}s 后重试` : '获取验证码'}
           </button>
         </div>
       </div>

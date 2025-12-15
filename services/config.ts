@@ -73,6 +73,7 @@ export const API_ENDPOINTS = {
     },
     account: {
         profile: '/Account/profile',
+        retrievePassword: '/Account/retrievePassword',
         cancelAccount: '/Account/cancelAccount',
         /** 余额日志（资金明细） */
         balance: '/Account/balance',

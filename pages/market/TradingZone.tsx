@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { Clock, Globe, Database, Zap, Cpu, Activity, Lock, ArrowRight, ArrowLeft, Layers, Gem, Crown, Coins, TrendingUp } from 'lucide-react';
+import { Clock, Globe, Database, Zap, Cpu, Activity, Lock, ArrowRight, ArrowLeft, Layers, Gem, Crown, Coins, TrendingUp, ClipboardList } from 'lucide-react';
 import PageContainer from '../../components/layout/PageContainer';
 import { LoadingSpinner, LazyImage } from '../../components/common';
 import { Product } from '../../types';
@@ -17,6 +16,7 @@ import {
 interface TradingZoneProps {
     onBack: () => void;
     onProductSelect?: (product: Product) => void;
+    onNavigate?: (page: string) => void;
 }
 
 interface TradingSession {
@@ -98,7 +98,7 @@ const getPoolType = (startTime: string) => {
     return 'default';
 };
 
-const TradingZone: React.FC<TradingZoneProps> = ({ onBack, onProductSelect }) => {
+const TradingZone: React.FC<TradingZoneProps> = ({ onBack, onProductSelect, onNavigate }) => {
     const [now, setNow] = useState(new Date());
     const [selectedSession, setSelectedSession] = useState<TradingSession | null>(null);
     const [sessions, setSessions] = useState<TradingSession[]>([]);
@@ -361,15 +361,31 @@ const TradingZone: React.FC<TradingZoneProps> = ({ onBack, onProductSelect }) =>
 
             {/* 顶部导航区 */}
             <div className="relative z-10 px-5 pt-4 pb-2 flex justify-between items-center">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                     <button onClick={handleBack} className="p-2 -ml-2 text-gray-700 active:bg-black/5 rounded-full transition-colors">
                         <ArrowLeft size={24} />
                     </button>
                     <h1 className="font-bold text-xl text-gray-900 tracking-tight">资产交易</h1>
                 </div>
-                <div className="flex items-center gap-1.5 bg-white/90 backdrop-blur px-3 py-1.5 rounded-full shadow-sm border border-white/60">
-                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse ring-4 ring-green-100"></div>
-                    <span className="text-xs font-bold text-gray-700 font-sans tracking-wide">LIVE</span>
+
+                <div className="flex items-center gap-3">
+                    <div className="bg-white/90 backdrop-blur-sm rounded-full px-3 py-1.5 flex items-center gap-2 shadow-sm border border-orange-100/50">
+                        <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                        </span>
+                        <span className="text-xs font-bold text-gray-800 tracking-wider font-mono">LIVE</span>
+                    </div>
+
+                    {/* Records Entry Point */}
+                    {onNavigate && (
+                        <button
+                            onClick={() => onNavigate('reservation-record')}
+                            className="bg-white/80 backdrop-blur-sm p-2 rounded-full text-gray-700 hover:bg-white hover:text-orange-600 transition-colors shadow-sm border border-transparent hover:border-orange-100"
+                        >
+                            <ClipboardList size={22} />
+                        </button>
+                    )}
                 </div>
             </div>
 

@@ -100,9 +100,6 @@ const getPoolType = (startTime: string) => {
     return 'default';
 };
 
-<<<<<<< HEAD
-const TradingZone: React.FC<TradingZoneProps> = ({ onBack, onProductSelect, onNavigate }) => {
-=======
 // 将接口数据（title、时间段）与视觉预设融合
 const buildPoolConfig = (session?: TradingSession | null) => {
     const poolType = session ? getPoolType(session.startTime) : 'default';
@@ -114,8 +111,7 @@ const buildPoolConfig = (session?: TradingSession | null) => {
     };
 };
 
-const TradingZone: React.FC<TradingZoneProps> = ({ onBack, onProductSelect }) => {
->>>>>>> 931393f (Enhance ProductDetail and TradingZone components: Updated ProductDetail to display collection details, including title, price, and session information. Improved TradingZone by integrating visual presets with trading session data and added isActive status handling for sessions.)
+const TradingZone: React.FC<TradingZoneProps> = ({ onBack, onProductSelect, onNavigate }) => {
     const [now, setNow] = useState(new Date());
     const [selectedSession, setSelectedSession] = useState<TradingSession | null>(null);
     const [sessions, setSessions] = useState<TradingSession[]>([]);

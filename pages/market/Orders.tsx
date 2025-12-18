@@ -107,9 +107,9 @@ const Orders: React.FC<OrdersProps> = ({ onNavigate }) => {
           ]}
         />
 
-        {/* 积分订单 */}
+        {/* 消费金订单 */}
         <OrderSection
-          title="积分订单"
+          title="消费金订单"
           onItemClick={handleNav}
           items={[
             { icon: Coins, label: '待付款', actionKey: 'points:0' },

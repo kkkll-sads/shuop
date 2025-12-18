@@ -436,7 +436,7 @@ export async function fetchHelpQuestions(
 }
 
 /**
- * 积分商城 / 商品相关接口
+ * 消费金商城 / 商品相关接口
  *
  * 示例：
  * - 列表:   http://18.166.211.131/index.php/api/shopProduct/index?page=1&limit=10
@@ -2480,7 +2480,7 @@ export interface AllLogData {
 export interface GetAllLogParams {
   page?: number;
   limit?: number;
-  /** 明细类型：all(全部), balance_available(可用余额), withdrawable_money(提现余额), service_fee_balance(服务费余额), score(积分) */
+  /** 明细类型：all(全部), balance_available(可用余额), withdrawable_money(提现余额), service_fee_balance(服务费余额), score(消费金) */
   type?: 'all' | 'balance_available' | 'withdrawable_money' | 'service_fee_balance' | 'score';
   token?: string;
 }
@@ -2764,7 +2764,7 @@ export interface BuyCollectionItemParams {
   consignment_id?: number | string;
   /** 购买数量，默认1 */
   quantity?: number;
-  /** 支付方式: money=余额, score=积分 */
+  /** 支付方式: money=余额, score=消费金 */
   pay_type: 'money' | 'score';
   /** 产品ID记录（如'第一天产品'） */
   product_id_record?: string;
@@ -3722,7 +3722,7 @@ export async function fetchArtistAllWorks(
 }
 
 /**
- * 积分订单相关接口
+ * 消费金订单相关接口
  * 对应后端:
  * - 待付款: /shopOrder/pendingPay
  * - 待发货: /shopOrder/pendingShip

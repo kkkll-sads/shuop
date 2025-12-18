@@ -152,7 +152,7 @@ const PointsProductDetail: React.FC<PointsProductDetailProps> = ({ product, onBa
                 <button onClick={onBack} className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors text-gray-800">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
                 </button>
-                <h1 className="text-lg font-bold text-gray-900">积分商品详情</h1>
+                <h1 className="text-lg font-bold text-gray-900">消费金商品详情</h1>
                 <button className="p-2 -mr-2 hover:bg-gray-100 rounded-full text-gray-800">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><line x1="8.59" x2="15.42" y1="13.51" y2="17.49" /><line x1="15.41" x2="8.59" y1="6.51" y2="10.49" /></svg>
                 </button>
@@ -174,7 +174,7 @@ const PointsProductDetail: React.FC<PointsProductDetailProps> = ({ product, onBa
                         {isScoreProduct ? '' : '¥'}{displayPrice}
                     </div>
                     <span className="text-sm text-orange-500 font-medium">
-                        {isScoreProduct ? '积分' : '元'}
+                        {isScoreProduct ? '消费金' : '元'}
                     </span>
                     {detailData?.price && isScoreProduct && (
                         <span className="text-xs text-gray-400 line-through ml-2">¥{detailData.price}</span>
@@ -244,7 +244,7 @@ const PointsProductDetail: React.FC<PointsProductDetailProps> = ({ product, onBa
                             <div className="flex-1 pt-1">
                                 <div className="text-xl font-bold text-orange-600 mb-1 font-mono">
                                     {isScoreProduct ? '' : '¥'}{displayPrice}
-                                    <span className="text-xs font-normal ml-1">{isScoreProduct ? '积分' : '元'}</span>
+                                    <span className="text-xs font-normal ml-1">{isScoreProduct ? '消费金' : '元'}</span>
                                 </div>
                                 <div className="text-xs text-gray-500">库存: {maxStock} 件</div>
                                 <div className="text-sm text-gray-900 mt-1 font-medium">已选: {quantity} 件</div>
@@ -360,7 +360,7 @@ const PointsProductDetail: React.FC<PointsProductDetailProps> = ({ product, onBa
                             <div className="mt-3 flex justify-end items-center gap-2">
                                 <span className="text-sm text-gray-600">共 {quantity} 件，小计：</span>
                                 <span className="text-lg font-bold text-orange-600 font-mono">
-                                    {isScoreProduct ? `${totalScore} 积分` : `¥${totalPrice}`}
+                                    {isScoreProduct ? `${totalScore} 消费金` : `¥${totalPrice}`}
                                 </span>
                             </div>
                         </div>
@@ -371,7 +371,7 @@ const PointsProductDetail: React.FC<PointsProductDetailProps> = ({ product, onBa
                         <div className="flex items-center gap-1">
                             <span className="text-sm text-gray-600">合计:</span>
                             <span className="text-xl font-bold text-orange-600 font-mono">
-                                {isScoreProduct ? `${totalScore} 积分` : `¥${totalPrice}`}
+                                {isScoreProduct ? `${totalScore} 消费金` : `¥${totalPrice}`}
                             </span>
                         </div>
                         <button

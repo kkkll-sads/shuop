@@ -20,7 +20,7 @@ import { useNotification } from '../../context/NotificationContext';
  */
 interface RegisterProps {
   onBack: () => void;
-  onRegisterSuccess: () => void;
+  onRegisterSuccess: (loginPayload?: { token: string; userInfo: any }) => void;
   onNavigateUserAgreement: () => void;
   onNavigatePrivacyPolicy: () => void;
 }
@@ -126,10 +126,34 @@ const Register: React.FC<RegisterProps> = ({
 
       const response = await register(params);
       console.log('注册接口响应:', response);
+      console.log('response.data:', response.data);
 
       if (response.code === 1) {
-        showToast('success', '注册成功', '正在登录...');
-        onRegisterSuccess();
+        // 提取用户信息和token
+        const userInfo = response.data?.userInfo || null;
+        const token = userInfo?.token || '';
+
+        console.log('提取的userInfo:', userInfo);
+        console.log('提取的token:', token);
+
+        if (!token) {
+          showToast('warning', '注册成功', '但未获取到登录凭证，请手动登录');
+          onRegisterSuccess();
+          return;
+        }
+
+        showToast('success', '注册成功', '正在自动登录...');
+
+        // 注册成功后自动登录
+        const loginPayload = {
+          token: token,
+          userInfo: userInfo,
+        };
+
+        console.log('准备自动登录，loginPayload:', loginPayload);
+
+        // 传递登录信息给父组件
+        onRegisterSuccess(loginPayload);
       } else {
         const errorMsg = response.msg || response.message || '注册失败，请稍后重试';
         showToast('error', '注册失败', errorMsg);

@@ -12,7 +12,7 @@ interface AssetHistoryProps {
 }
 
 const AssetHistory: React.FC<AssetHistoryProps> = ({ onBack }) => {
-  const [activeTab, setActiveTab] = useState<number>(0); // 0: 全部, 1: 可用余额, 2: 提现余额, 3: 服务费余额, 4: 积分
+  const [activeTab, setActiveTab] = useState<number>(0); // 0: 全部, 1: 可用余额, 2: 提现余额, 3: 服务费余额, 4: 消费金
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,9 +54,18 @@ const AssetHistory: React.FC<AssetHistoryProps> = ({ onBack }) => {
       };
 
       const type = typeMap[activeTab] || 'all';
+      console.log(`[AssetHistory] 当前tab: ${activeTab}, 请求type: ${type}`);
 
       const res = await getAllLog({ page, limit: 10, type, token });
+      console.log(`[AssetHistory] API响应:`, res);
+
       if (res.code === 1 && res.data) {
+        console.log(`[AssetHistory] 返回${res.data.list?.length || 0}条记录`);
+        // 打印前3条记录的type字段
+        res.data.list?.slice(0, 3).forEach((item, idx) => {
+          console.log(`[AssetHistory] 记录${idx + 1} - type: "${item.type}", amount: ${item.amount}, remark: ${item.remark || item.memo}`);
+        });
+
         if (page === 1) {
           setAllLogs(res.data.list || []);
         } else {
@@ -67,6 +76,7 @@ const AssetHistory: React.FC<AssetHistoryProps> = ({ onBack }) => {
         setError(res.msg || '获取明细失败');
       }
     } catch (e: any) {
+      console.error('[AssetHistory] 加载失败:', e);
       setError(e?.message || '加载数据失败');
     } finally {
       setLoading(false);

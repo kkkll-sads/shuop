@@ -47,12 +47,12 @@ const Market: React.FC<MarketProps> = ({ onProductSelect }) => {
     id: String(item.id),
     title: item.name,
     // 暂无艺术家字段，用分类占位，避免界面空白
-    artist: item.category || '积分商品',
-    // 使用积分价格为主，若没有则退回现金价
+    artist: item.category || '消费金商品',
+    // 使用消费金价格为主，若没有则退回现金价
     price: item.score_price || item.price || 0,
     image: normalizeAssetUrl(item.thumbnail),
     category: item.category || '其他',
-    productType: 'shop', // 标记为积分商城商品
+    productType: 'shop', // 标记为消费金商城商品
   });
 
   // 加载分类列表（只在首次加载时执行）
@@ -160,7 +160,7 @@ const Market: React.FC<MarketProps> = ({ onProductSelect }) => {
       {/* Header & Search */}
       <div className="bg-white p-3 sticky top-0 z-20 shadow-sm">
         <div className="flex items-center gap-3 mb-3">
-          <h1 className="font-bold text-lg text-gray-800 whitespace-nowrap">积分兑换</h1>
+          <h1 className="font-bold text-lg text-gray-800 whitespace-nowrap">消费金兑换</h1>
           <div className="flex-1 bg-gray-100 rounded-full flex items-center px-3 py-1.5 border border-gray-100 focus-within:border-orange-200 transition-colors">
             <Search size={16} className="text-gray-400 mr-2" />
             <input
@@ -257,7 +257,7 @@ const Market: React.FC<MarketProps> = ({ onProductSelect }) => {
                   </div>
                   <div className="text-red-500 font-bold text-base leading-none pt-1">
                     <span className="text-xs mr-0.5">¥</span>{product.price.toFixed(2)}
-                    <span className="text-[10px] font-normal text-gray-400 ml-1">积分</span>
+                    <span className="text-[10px] font-normal text-gray-400 ml-1">消费金</span>
                   </div>
                 </div>
               </div>

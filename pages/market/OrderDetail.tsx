@@ -188,7 +188,7 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ orderId, onBack, onNavigate }
                                     <div className="flex justify-between items-end mt-2">
                                         <div className="font-mono font-bold text-gray-900">
                                             {isScoreOrder ?
-                                                <span className="text-orange-600">{item.subtotal_score || item.score_price} 积分</span> :
+                                                <span className="text-orange-600">{item.subtotal_score || item.score_price} 消费金</span> :
                                                 <span>¥ {formatAmount(item.subtotal || item.price)}</span>
                                             }
                                         </div>
@@ -202,7 +202,7 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ orderId, onBack, onNavigate }
                         <div className="flex justify-between text-sm">
                             <span className="text-gray-600">商品总额</span>
                             <span className="font-medium">
-                                {isScoreOrder ? `${order.total_score || 0} 积分` : `¥${formatAmount(order.total_amount)}`}
+                                {isScoreOrder ? `${order.total_score || 0} 消费金` : `¥${formatAmount(order.total_amount)}`}
                             </span>
                         </div>
                         <div className="flex justify-between text-sm">
@@ -212,7 +212,7 @@ const OrderDetail: React.FC<OrderDetailProps> = ({ orderId, onBack, onNavigate }
                         <div className="flex justify-between items-center pt-2 mt-2 border-t border-gray-50">
                             <span className="font-bold text-gray-800">实付款</span>
                             <span className="text-xl font-bold font-mono text-orange-600">
-                                {isScoreOrder ? `${order.total_score || 0} 积分` : `¥${formatAmount(order.total_amount)}`}
+                                {isScoreOrder ? `${order.total_score || 0} 消费金` : `¥${formatAmount(order.total_amount)}`}
                             </span>
                         </div>
                     </div>

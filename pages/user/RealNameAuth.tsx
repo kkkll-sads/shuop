@@ -70,6 +70,9 @@ const RealNameAuth: React.FC<RealNameAuthProps> = ({ onBack }) => {
         return;
       }
 
+      // 从核身页面返回，重置verifying状态
+      setVerifying(false);
+
       // 从核身页面返回，处理核身结果
       try {
         setLoading(true);
@@ -89,12 +92,15 @@ const RealNameAuth: React.FC<RealNameAuthProps> = ({ onBack }) => {
         if (code && code !== '0') {
           const errorMsg = getErrorMsgByCode(code);
           setError(errorMsg);
+          showToast('error', '核身失败', errorMsg);
           setLoading(false);
           return;
         }
 
         if (success === 'false') {
-          setError('人脸核身验证失败，请重试');
+          const errorMsg = '人脸核身验证失败，请重试';
+          setError(errorMsg);
+          showToast('error', '核身失败', errorMsg);
           setLoading(false);
           return;
         }
@@ -107,7 +113,9 @@ const RealNameAuth: React.FC<RealNameAuthProps> = ({ onBack }) => {
           const result = recheckRes.data as H5RecheckResult;
 
           if (!result) {
-            setError('获取核身结果失败，返回数据为空');
+            const errorMsg = '获取核身结果失败，返回数据为空';
+            setError(errorMsg);
+            showToast('error', '核身失败', errorMsg);
             setLoading(false);
             return;
           }
@@ -119,14 +127,18 @@ const RealNameAuth: React.FC<RealNameAuthProps> = ({ onBack }) => {
             // 核身不通过
             const errorMsg = result.reasonTypeDesc || result.statusDesc || getErrorMsgByStatus(result.status, result.reasonType);
             setError(errorMsg);
+            showToast('error', '核身失败', errorMsg);
           }
         } else {
-          setError(recheckRes.msg || '获取核身结果失败');
+          const errorMsg = recheckRes.msg || '获取核身结果失败';
+          setError(errorMsg);
+          showToast('error', '核身失败', errorMsg);
         }
       } catch (e: any) {
         console.error('处理核身回调失败:', e);
         const errorMsg = e?.msg || e?.response?.msg || e?.message || '处理核身结果失败，请稍后重试';
         setError(errorMsg);
+        showToast('error', '处理失败', errorMsg);
       } finally {
         setLoading(false);
       }
@@ -246,11 +258,13 @@ const RealNameAuth: React.FC<RealNameAuthProps> = ({ onBack }) => {
     // 表单验证
     if (!realName?.trim()) {
       setError('请输入真实姓名');
+      showToast('warning', '请输入真实姓名');
       return;
     }
 
     if (!idCard?.trim()) {
       setError('请输入身份证号码');
+      showToast('warning', '请输入身份证号码');
       return;
     }
 
@@ -261,7 +275,9 @@ const RealNameAuth: React.FC<RealNameAuthProps> = ({ onBack }) => {
 
       const token = localStorage.getItem(AUTH_TOKEN_KEY) || '';
       if (!token) {
-        setError('未找到登录信息，请先登录');
+        const errorMsg = '未找到登录信息，请先登录';
+        setError(errorMsg);
+        showToast('error', '登录信息缺失', errorMsg);
         setVerifying(false);
         return;
       }
@@ -284,17 +300,21 @@ const RealNameAuth: React.FC<RealNameAuthProps> = ({ onBack }) => {
         const authUrl = data?.authUrl;
 
         if (!authUrl) {
-          setError('获取认证地址失败，返回数据为空');
+          const errorMsg = '获取认证地址失败，返回数据为空';
+          setError(errorMsg);
+          showToast('error', '获取认证地址失败', errorMsg);
           setVerifying(false);
           return;
         }
 
         // 只有在成功获取到 authUrl 时才跳转
+        // 跳转前不重置verifying，因为页面会跳走
         window.location.href = authUrl;
       } else {
         // 接口返回错误，不跳转，显示错误信息
         const errorMsg = res.msg || '获取认证地址失败';
         setError(errorMsg);
+        showToast('error', '获取认证地址失败', errorMsg);
         setVerifying(false);
         return;
       }
@@ -303,6 +323,7 @@ const RealNameAuth: React.FC<RealNameAuthProps> = ({ onBack }) => {
       // 网络错误或其他异常，不跳转
       const errorMsg = e?.msg || e?.response?.msg || e?.message || '获取认证地址失败，请稍后重试';
       setError(errorMsg);
+      showToast('error', '网络错误', errorMsg);
       setVerifying(false);
     }
   };

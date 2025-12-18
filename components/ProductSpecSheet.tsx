@@ -53,12 +53,12 @@ const ProductSpecSheet: React.FC<ProductSpecSheetProps> = ({ isOpen, onClose, pr
       }
 
       // 根据商品类型选择不同的接口和支付方式
-      // shop: 积分商城，使用 buyShopOrder 接口（一步到位：创建订单并支付），使用积分支付
+      // shop: 消费金商城，使用 buyShopOrder 接口（一步到位：创建订单并支付），使用消费金支付
       // collection: 藏品商城，使用 buyCollectionItem 接口，使用余额支付
       let response;
 
       if (isShopProduct) {
-        // 积分商城商品，使用 createOrder 接口创建订单
+        // 消费金商城商品，使用 createOrder 接口创建订单
         const payType = 'score';
         const addressId = undefined;
 
@@ -94,15 +94,15 @@ const ProductSpecSheet: React.FC<ProductSpecSheetProps> = ({ isOpen, onClose, pr
       if (response.code === 1 || response.code === 200 || response.code === 0) {
         // 成功
         if (isShopProduct) {
-          // 积分商城商品：创建订单成功，显示支付弹窗
+          // 消费金商城商品：创建订单成功，显示支付弹窗
           // 尝试从响应中获取订单信息
           let orderData: ShopOrderItem | null = null;
-          
+
           if (response.data) {
             // 如果响应数据是订单对象
             if (typeof response.data === 'object' && 'id' in response.data) {
               orderData = response.data as ShopOrderItem;
-            } 
+            }
             // 如果响应数据包含订单ID（如 { order_id: 123 }）
             else if (typeof response.data === 'object' && 'order_id' in response.data) {
               orderData = {
@@ -128,7 +128,7 @@ const ProductSpecSheet: React.FC<ProductSpecSheetProps> = ({ isOpen, onClose, pr
               } as ShopOrderItem;
             }
           }
-          
+
           if (orderData && orderData.id) {
             // 订单已通过 createOrder 创建成功，显示支付弹窗
             setCreatedOrder(orderData);
@@ -212,17 +212,17 @@ const ProductSpecSheet: React.FC<ProductSpecSheetProps> = ({ isOpen, onClose, pr
     }
     onClose();
     // 提示用户订单已在待支付列表中
-    alert('订单已创建，您可以在"订单中心-积分订单-待付款"中查看并支付');
+    alert('订单已创建，您可以在"订单中心-消费金订单-待付款"中查看并支付');
   };
 
   const formatOrderPrice = (order: ShopOrderItem): string => {
     if (order.pay_type === 'score') {
-      const totalScore = order.total_score 
+      const totalScore = order.total_score
         ? (typeof order.total_score === 'string' ? parseFloat(order.total_score) : order.total_score)
         : 0;
-      return `${totalScore} 积分`;
+      return `${totalScore} 消费金`;
     } else {
-      const totalAmount = order.total_amount 
+      const totalAmount = order.total_amount
         ? (typeof order.total_amount === 'string' ? parseFloat(order.total_amount) : order.total_amount)
         : 0;
       return `¥ ${totalAmount.toFixed(2)}`;
@@ -250,7 +250,7 @@ const ProductSpecSheet: React.FC<ProductSpecSheetProps> = ({ isOpen, onClose, pr
           </div>
           <div className="flex-1 pt-1">
             <div className="text-orange-500 font-bold text-lg">
-              {product.price.toFixed(2)} <span className="text-xs">{product.productType === 'shop' ? '积分' : '元'}</span>
+              {product.price.toFixed(2)} <span className="text-xs">{product.productType === 'shop' ? '消费金' : '元'}</span>
             </div>
             <div className="text-xs text-gray-500 mt-1">
               已选: {selectedSpec}, {quantity}件
@@ -267,8 +267,8 @@ const ProductSpecSheet: React.FC<ProductSpecSheetProps> = ({ isOpen, onClose, pr
           <div className="flex flex-wrap gap-2">
             <button
               className={`px-4 py-1.5 text-xs rounded-md transition-colors ${selectedSpec === `${product.title} (${product.artist})`
-                  ? 'bg-gray-100 text-gray-900 font-medium border border-gray-200'
-                  : 'bg-gray-50 text-gray-500 border border-transparent'
+                ? 'bg-gray-100 text-gray-900 font-medium border border-gray-200'
+                : 'bg-gray-50 text-gray-500 border border-transparent'
                 }`}
               onClick={() => setSelectedSpec(`${product.title} (${product.artist})`)}
             >
@@ -397,9 +397,8 @@ const ProductSpecSheet: React.FC<ProductSpecSheetProps> = ({ isOpen, onClose, pr
               <button
                 onClick={handlePayOrder}
                 disabled={isPaying}
-                className={`flex-1 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg active:bg-blue-700 transition-colors shadow-sm ${
-                  isPaying ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
+                className={`flex-1 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg active:bg-blue-700 transition-colors shadow-sm ${isPaying ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
               >
                 {isPaying ? '支付中...' : '立即付款'}
               </button>

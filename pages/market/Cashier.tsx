@@ -103,7 +103,7 @@ const Cashier: React.FC<CashierProps> = ({ orderId, onBack, onNavigate }) => {
                 <div className="text-center mb-8">
                     <div className="text-sm text-gray-500 mb-2">订单号：{order.order_no}</div>
                     <div className="text-4xl font-bold text-gray-900 font-mono">
-                        {amount} <span className="text-sm font-normal text-gray-500">{isScore ? '积分' : '元'}</span>
+                        {amount} <span className="text-sm font-normal text-gray-500">{isScore ? '消费金' : '元'}</span>
                     </div>
                 </div>
 
@@ -116,8 +116,8 @@ const Cashier: React.FC<CashierProps> = ({ orderId, onBack, onNavigate }) => {
                                     <Coins size={20} />
                                 </div>
                                 <div>
-                                    <div className="font-bold text-gray-900">积分支付</div>
-                                    <div className="text-xs text-gray-500">当前余额: {userBalance.score} 积分</div>
+                                    <div className="font-bold text-gray-900">消费金支付</div>
+                                    <div className="text-xs text-gray-500">当前余额: {userBalance.score} 消费金</div>
                                 </div>
                             </div>
                             <div className="w-5 h-5 rounded-full border-[5px] border-orange-500 bg-white"></div>

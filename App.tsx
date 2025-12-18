@@ -89,7 +89,7 @@ const saveReadNewsIds = (ids: string[]) => {
 
 const AppContent: React.FC = () => {
   // Auth State (using useAuth hook)
-  const { isLoggedIn: isLoggedInFromHook, isRealNameVerified, login: loginFromHook, updateRealNameStatus } = useAuth();
+  const { isLoggedIn: isLoggedInFromHook, isRealNameVerified, login: loginFromHook, updateRealNameStatus, refreshRealNameStatus } = useAuth();
 
   // For backward compatibility, maintain local state
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
@@ -99,15 +99,22 @@ const AppContent: React.FC = () => {
   // Modal state for real-name verification prompt
   const [showRealNameModal, setShowRealNameModal] = useState<boolean>(false);
 
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedCollectionItem, setSelectedCollectionItem] = useState<MyCollectionItem | null>(null);
+  const [productDetailOrigin, setProductDetailOrigin] = useState<'market' | 'artist' | 'trading-zone'>('market');
   const [activeTab, setActiveTab] = useState<Tab>('home');
   const [checkingRealName, setCheckingRealName] = useState(false);
   const [subPage, setSubPage] = useState<string | null>(null);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [selectedCollectionItem, setSelectedCollectionItem] = useState<MyCollectionItem | null>(null);
-  const [productDetailOrigin, setProductDetailOrigin] = useState<'market' | 'artist' | 'trading-zone' | null>(null);
-
-  // Initialize news list based on storage
+  const [consignmentTicketCount, setConsignmentTicketCount] = useState<number>(0);
   const [newsList, setNewsList] = useState<NewsItem[]>([]);
+
+  // 刷新实名认证状态当页面切换时
+  useEffect(() => {
+    // 当用户已登录且切换tab或subPage时，刷新实名认证状态
+    if (isLoggedIn) {
+      refreshRealNameStatus();
+    }
+  }, [activeTab, subPage, isLoggedIn, refreshRealNameStatus]);
 
   // 将公告接口返回的数据转换为前端使用的 NewsItem 结构
   const mapAnnouncementToNewsItem = (item: AnnouncementItem, readIds: string[], newsType: 'announcement' | 'dynamic'): NewsItem => {
@@ -134,6 +141,46 @@ const AppContent: React.FC = () => {
       content,
     };
   };
+
+  // 应用启动时验证登录状态
+  useEffect(() => {
+    const verifyLoginStatus = async () => {
+      const token = localStorage.getItem(AUTH_TOKEN_KEY);
+      const authFlag = localStorage.getItem(AUTH_KEY);
+
+      // 如果本地存储显示已登录，验证token是否有效
+      if (authFlag === 'true' && token) {
+        try {
+          // 尝试获取用户信息来验证token是否有效
+          const response = await fetchProfile(token);
+          if (response.code === 1 && response.data?.userInfo) {
+            // Token有效，更新用户信息
+            localStorage.setItem(USER_INFO_KEY, JSON.stringify(response.data.userInfo));
+            setIsLoggedIn(true);
+            loginFromHook({ token, userInfo: response.data.userInfo });
+            console.log('登录状态验证成功');
+          } else {
+            // Token无效，清除登录状态
+            console.warn('Token无效，清除登录状态');
+            handleLogout();
+          }
+        } catch (error: any) {
+          // 如果是need login错误（code 303），已经在networking.ts中处理了跳转
+          console.error('验证登录状态失败:', error);
+          // 只有在非303错误时才清除登录状态
+          if (error.code !== 303 && !error.needLogin) {
+            handleLogout();
+          }
+        }
+      } else if (authFlag === 'true' && !token) {
+        // 有登录标记但没有token，清除状态
+        console.warn('登录标记存在但缺少token，清除登录状态');
+        handleLogout();
+      }
+    };
+
+    verifyLoginStatus();
+  }, []); // 只在组件挂载时执行一次
 
   // 首次加载时从接口获取平台公告和平台动态列表
   useEffect(() => {
@@ -166,18 +213,22 @@ const AppContent: React.FC = () => {
   }, []);
 
   const handleLogin = (payload?: LoginSuccessPayload) => {
+    console.log('[handleLogin] 开始执行登录，payload:', payload);
     setIsLoggedIn(true);
     localStorage.setItem(AUTH_KEY, 'true');
     if (payload?.token) {
+      console.log('[handleLogin] 保存token:', payload.token);
       localStorage.setItem(AUTH_TOKEN_KEY, payload.token);
     }
     if (payload?.userInfo) {
+      console.log('[handleLogin] 保存用户信息:', payload.userInfo);
       localStorage.setItem(USER_INFO_KEY, JSON.stringify(payload.userInfo));
     }
 
     // Call useAuth login to fetch real-name status
     loginFromHook(payload);
 
+    console.log('[handleLogin] 设置登录状态完成，跳转到首页');
     setSubPage(null);
     setActiveTab('home');
     setSelectedProduct(null);
@@ -265,7 +316,18 @@ const AppContent: React.FC = () => {
       return (
         <Register
           onBack={() => setSubPage(null)}
-          onRegisterSuccess={() => setSubPage(null)}
+          onRegisterSuccess={(loginPayload) => {
+            console.log('[App] 收到注册成功回调，loginPayload:', loginPayload);
+            if (loginPayload && loginPayload.token) {
+              // 注册成功后自动登录
+              console.log('[App] 开始自动登录，token:', loginPayload.token);
+              handleLogin(loginPayload);
+            } else {
+              // 如果没有返回登录信息，只关闭注册页面
+              console.warn('[App] 没有收到登录信息，只关闭注册页面');
+              setSubPage(null);
+            }
+          }}
           onNavigateUserAgreement={() => setSubPage('user-agreement')}
           onNavigatePrivacyPolicy={() => setSubPage('privacy-policy')}
         />
@@ -757,7 +819,6 @@ const AppContent: React.FC = () => {
           }}
         />
       )}
-      <GlobalNotificationSystem />
     </div>
   );
 };
@@ -765,6 +826,7 @@ const AppContent: React.FC = () => {
 const App: React.FC = () => {
   return (
     <NotificationProvider>
+      <GlobalNotificationSystem />
       <AppContent />
     </NotificationProvider>
   );

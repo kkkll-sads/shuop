@@ -22,6 +22,7 @@ import {
   USER_INFO_KEY,
   normalizeAssetUrl,
 } from '../../services/api';
+import { getIntegralLog, IntegralLogItem } from '../../services/integral';
 import { Product, UserInfo } from '../../types';
 import { useNotification } from '../../context/NotificationContext';
 
@@ -42,6 +43,8 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
   const [rechargeOrders, setRechargeOrders] = useState<RechargeOrderItem[]>([]);
   const [withdrawOrders, setWithdrawOrders] = useState<WithdrawOrderItem[]>([]);
   const [serviceFeeLogs, setServiceFeeLogs] = useState<ServiceFeeLogItem[]>([]);
+  const [integralLogs, setIntegralLogs] = useState<IntegralLogItem[]>([]);
+  const [incomeLogs, setIncomeLogs] = useState<BalanceLogItem[]>([]);  // 收益明细
   const [myCollections, setMyCollections] = useState<MyCollectionItem[]>([]);
 
   const [page, setPage] = useState<number>(1);
@@ -361,7 +364,7 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
     }
   };
 
-  const tabs = ['专项金明细', '津贴明细', '确权金明细', '我的藏品'];
+  const tabs = ['专项金明细', '收益明细', '津贴明细', '确权金明细', '消费金明细', '我的藏品'];
 
   // Reset page when tab changes
   useEffect(() => {
@@ -370,6 +373,8 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
     setRechargeOrders([]);
     setWithdrawOrders([]);
     setServiceFeeLogs([]);
+    setIntegralLogs([]);
+    setIncomeLogs([]);
     setMyCollections([]);
   }, [activeTab]);
 
@@ -441,6 +446,19 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
           setError(res.msg || '获取余额明细失败');
         }
       } else if (activeTab === 1) {
+        // 收益明细 - 使用withdrawable_money类型
+        const res = await getBalanceLog({ page, limit: 10, token });
+        if (res.code === 1 && res.data) {
+          if (page === 1) {
+            setIncomeLogs(res.data.list || []);
+          } else {
+            setIncomeLogs(prev => [...prev, ...(res.data?.list || [])]);
+          }
+          setHasMore((res.data.list?.length || 0) >= 10);
+        } else {
+          setError(res.msg || '获取收益明细失败');
+        }
+      } else if (activeTab === 2) {
         // 拓展明细 (提现记录)
         const res = await getMyWithdrawList({ page, limit: 10, token });
         if (res.code === 1 && res.data) {
@@ -453,7 +471,7 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
         } else {
           setError(res.msg || '获取拓展明细失败');
         }
-      } else if (activeTab === 2) {
+      } else if (activeTab === 3) {
         // 服务费明细
         const res = await getServiceFeeLog({ page, limit: 10, token });
         if (res.code === 1 && res.data) {
@@ -466,7 +484,17 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
         } else {
           setError(res.msg || '获取服务费明细失败');
         }
-      } else if (activeTab === 3) {
+      } else if (activeTab === 4) {
+        // 消费金明细
+        const res = await getIntegralLog({ limit: 10, token });
+        if (res.code === 1 && res.data) {
+          // 注意：这个API不支持分页，只返回最近10条
+          setIntegralLogs(res.data.list || []);
+          setHasMore(false); // 该API不支持分页
+        } else {
+          setError(res.msg || '获取消费金明细失败');
+        }
+      } else if (activeTab === 5) {
         // 我的藏品
         const res = await getMyCollection({ page, token });
         if (res.code === 1 && res.data) {
@@ -603,6 +631,31 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
     </div>
   );
 
+  const renderIntegralLogItem = (item: IntegralLogItem) => {
+    const displayAmount = Math.abs(item.amount);
+    const displayBefore = Math.abs(item.before_value);
+    const displayAfter = Math.abs(item.after_value);
+
+    return (
+      <div key={item.id} className="bg-white rounded-lg p-4 mb-3 shadow-sm">
+        <div className="flex justify-between items-start mb-2">
+          <div className="flex-1">
+            <div className="text-sm font-medium text-gray-800 mb-1">{item.remark || '消费金变动'}</div>
+            <div className="text-xs text-gray-500">{formatTime(item.create_time)}</div>
+          </div>
+          <div className="text-right">
+            <div className={`text-lg font-bold font-[DINAlternate-Bold,Roboto,sans-serif] ${item.amount >= 0 ? 'text-[#FF6B00]' : 'text-gray-900'}`}>
+              {item.amount >= 0 ? '+' : ''}{displayAmount.toFixed(0)}
+            </div>
+          </div>
+        </div>
+        <div className="text-xs text-gray-400 mt-2 pt-2 border-t border-gray-100">
+          消费金余额: {displayBefore.toFixed(0)} → {displayAfter.toFixed(0)}
+        </div>
+      </div>
+    );
+  };
+
   // ... (keeping other functions)
 
   const renderCollectionItem = (item: MyCollectionItem) => {
@@ -724,6 +777,32 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
         </div>
       );
     } else if (activeTab === 1) {
+      // 收益明细
+      if (incomeLogs.length === 0) {
+        return (
+          <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+            <div className="w-16 h-16 mb-4 border-2 border-gray-200 rounded-lg flex items-center justify-center">
+              <FileText size={32} className="opacity-50" />
+            </div>
+            <span className="text-xs">暂无数据</span>
+          </div>
+        );
+      }
+      return (
+        <div>
+          {incomeLogs.map(renderBalanceLogItem)}
+          {hasMore && (
+            <button
+              onClick={() => setPage(prev => prev + 1)}
+              disabled={loading}
+              className="w-full py-2 text-sm text-orange-600 disabled:opacity-50"
+            >
+              {loading ? '加载中...' : '加载更多'}
+            </button>
+          )}
+        </div>
+      );
+    } else if (activeTab === 2) {
       // 拓展明细
       if (withdrawOrders.length === 0) {
         return (
@@ -749,7 +828,7 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
           )}
         </div>
       );
-    } else if (activeTab === 2) {
+    } else if (activeTab === 3) {
       // 服务费明细
       if (serviceFeeLogs.length === 0) {
         return (
@@ -775,8 +854,25 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
           )}
         </div>
       );
+    } else if (activeTab === 4) {
+      // 消费金明细
+      if (integralLogs.length === 0) {
+        return (
+          <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+            <div className="w-16 h-16 mb-4 border-2 border-gray-200 rounded-lg flex items-center justify-center">
+              <FileText size={32} className="opacity-50" />
+            </div>
+            <span className="text-xs">暂无数据</span>
+          </div>
+        );
+      }
+      return (
+        <div>
+          {integralLogs.map(renderIntegralLogItem)}
+        </div>
+      );
     } else {
-      // 我的藏品（activeTab === 3）
+      // 我的藏品（activeTab === 5）
       if (myCollections.length === 0) {
         return (
           <div className="flex flex-col items-center justify-center py-12 text-gray-400">
@@ -884,7 +980,7 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
         <div className="grid grid-cols-4 gap-3 mb-6">
           {[
             { label: '申购专项金', icon: Wallet, page: 'asset:balance-recharge', color: 'text-orange-600' },
-            { label: '资金回笼', icon: Receipt, page: 'asset:balance-withdraw', color: 'text-orange-600' },
+            { label: '收益提现', icon: Receipt, page: 'asset:balance-withdraw', color: 'text-orange-600' },
             { label: '算力补充', icon: Leaf, page: 'wallet:hashrate_exchange', color: 'text-green-600' },
             { label: '确权金划转', icon: CreditCard, page: 'asset:service-recharge', color: 'text-purple-600' }
           ].map((item, idx) => (
@@ -904,18 +1000,26 @@ const AssetView: React.FC<AssetViewProps> = ({ onBack, onNavigate, onProductSele
           ))}
         </div>
 
-        {/* Tabs */}
-        <div className="flex bg-gray-100 p-1 rounded-xl mb-4">
-          {tabs.map((tab, idx) => (
-            <button
-              key={idx}
-              onClick={() => handleTabChange(idx)}
-              className={`flex-1 py-2 text-xs font-medium rounded-lg transition-all duration-200 ${idx === activeTab ? 'bg-white text-orange-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-                }`}
-            >
-              {tab}
-            </button>
-          ))}
+        {/* Tabs - 可左右滑动 */}
+        <div className="overflow-x-auto scrollbar-hide mb-4">
+          <div className="flex gap-2 p-1 bg-gray-50 rounded-xl inline-flex min-w-full">
+            {tabs.map((tab, idx) => (
+              <button
+                key={idx}
+                onClick={() => handleTabChange(idx)}
+                className={`
+                  flex-shrink-0 px-4 py-2.5 text-xs font-medium rounded-lg 
+                  transition-all duration-300 whitespace-nowrap
+                  ${idx === activeTab
+                    ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-md shadow-orange-200 scale-105 border border-orange-400'
+                    : 'bg-white text-gray-600 hover:text-orange-500 hover:bg-orange-50 border border-transparent'
+                  }
+                `}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Content */}

@@ -94,11 +94,11 @@ const CumulativeRights: React.FC<CumulativeRightsProps> = ({ onBack }) => {
     },
     {
       icon: ShieldCheck,
-      label: '当前积分',
+      label: '当前消费金',
       value: userInfo?.score?.toString() || '0',
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',
-      description: '当前拥有的积分',
+      description: '当前拥有的消费金',
     },
   ];
 
@@ -169,7 +169,7 @@ const CumulativeRights: React.FC<CumulativeRightsProps> = ({ onBack }) => {
               </div>
               <div className="flex items-start gap-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-1.5 flex-shrink-0" />
-                <div>当前积分：您当前拥有的积分数量</div>
+                <div>当前消费金：您当前拥有的消费金数量</div>
               </div>
             </div>
           </div>

@@ -183,7 +183,7 @@ const ArtistDetail: React.FC<ArtistDetailProps> = ({ artistId, onBack, onProduct
                       {work.price !== undefined && (
                         <div className="text-red-500 text-sm font-bold mt-1">
                           {work.price.toFixed(2)}{' '}
-                          <span className="text-[10px] font-normal text-gray-400">积分</span>
+                          <span className="text-[10px] font-normal text-gray-400">消费金</span>
                         </div>
                       )}
                       {work.description && !work.price && (

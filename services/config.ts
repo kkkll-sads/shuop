@@ -85,6 +85,8 @@ export const API_ENDPOINTS = {
         rechargeServiceFee: '/Account/rechargeServiceFee',
         /** 全部明细 */
         allLog: '/Account/allLog',
+        /** 消费金日志 */
+        integral: '/Account/integral',
     },
     address: {
         /** 收货地址列表 */

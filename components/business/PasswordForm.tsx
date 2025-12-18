@@ -26,6 +26,7 @@ import {
     USER_INFO_KEY,
 } from '../../services/api';
 import { sendSmsCode } from '../../services/common';
+import { useNotification } from '../../context/NotificationContext';
 
 /**
  * 表单类型枚举
@@ -132,6 +133,9 @@ const PasswordForm: React.FC<PasswordFormProps> = ({
     onSuccess,
     onNavigateForgotPassword,
 }) => {
+    // 获取通知上下文
+    const { showToast } = useNotification();
+
     // 获取表单配置
     const config = getFormConfig(type);
 
@@ -151,18 +155,18 @@ const PasswordForm: React.FC<PasswordFormProps> = ({
     const handleSendCode = async () => {
         const phoneRegex = /^1[3-9]\d{9}$/;
         if (!phoneRegex.test(phone.trim())) {
-            alert('请输入正确的手机号');
+            showToast('warning', '手机号错误', '请输入正确的手机号');
             return;
         }
-        
+
         try {
             await sendSmsCode({
                 mobile: phone.trim(),
                 event: 'retrieve_password'
             });
-            alert('验证码已发送');
+            showToast('success', '验证码已发送');
             setCountdown(60);
-            
+
             // Start countdown timer
             const timer = setInterval(() => {
                 setCountdown((prev) => {
@@ -174,7 +178,8 @@ const PasswordForm: React.FC<PasswordFormProps> = ({
                 });
             }, 1000);
         } catch (error: any) {
-            alert(error.message || error.msg || '发送验证码失败');
+            const msg = error.message || error.msg || '发送验证码失败';
+            showToast('error', '发送失败', msg);
         }
     };
 
@@ -216,12 +221,13 @@ const PasswordForm: React.FC<PasswordFormProps> = ({
                     captcha: trimmedCode,
                     newpassword: trimmedNewPassword
                 });
-                alert('重置密码成功，请使用新密码重新登录');
+                showToast('success', '重置成功', '请使用新密码重新登录');
                 onSuccess?.();
                 onBack();
             } catch (error: any) {
                 const message = error.msg || error.message || '重置密码失败，请检查验证码是否正确';
                 setError(message);
+                showToast('error', '重置失败', message);
             } finally {
                 setLoading(false);
             }
@@ -262,7 +268,7 @@ const PasswordForm: React.FC<PasswordFormProps> = ({
                 localStorage.removeItem(AUTH_TOKEN_KEY);
                 localStorage.removeItem(USER_INFO_KEY);
 
-                alert(response?.msg || '登录密码重置成功，请使用新密码重新登录');
+                showToast('success', '重置成功', response?.msg || '登录密码重置成功，请使用新密码重新登录');
                 onSuccess?.();
                 onBack();
             } else if (type === 'reset_pay') {
@@ -272,7 +278,7 @@ const PasswordForm: React.FC<PasswordFormProps> = ({
                     new_pay_password: trimmedNewPassword,
                 });
 
-                alert(response?.msg || '支付密码修改成功');
+                showToast('success', '修改成功', response?.msg || '支付密码修改成功');
                 onSuccess?.();
                 onBack();
             }
@@ -280,6 +286,7 @@ const PasswordForm: React.FC<PasswordFormProps> = ({
             const message =
                 err?.msg || err?.message || err?.data?.msg || '操作失败，请稍后重试';
             setError(message);
+            showToast('error', '操作失败', message);
         } finally {
             setLoading(false);
         }
@@ -350,8 +357,8 @@ const PasswordForm: React.FC<PasswordFormProps> = ({
                                 <button
                                     type="button"
                                     className={`mt-6 whitespace-nowrap rounded-lg border px-3 py-2 text-xs font-medium ${countdown > 0
-                                            ? 'border-gray-300 text-gray-400 cursor-not-allowed'
-                                            : 'border-orange-500 text-orange-500 active:opacity-80'
+                                        ? 'border-gray-300 text-gray-400 cursor-not-allowed'
+                                        : 'border-orange-500 text-orange-500 active:opacity-80'
                                         }`}
                                     onClick={handleSendCode}
                                     disabled={loading || countdown > 0}

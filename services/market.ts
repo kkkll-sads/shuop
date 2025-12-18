@@ -164,7 +164,7 @@ export async function buyCollectionItem(params: {
     // 购买数量，默认为 1
     payload.append('quantity', String(params.quantity ?? 1));
 
-    // 支付方式: money=余额, score=积分
+    // 支付方式: money=余额, score=消费金
     if (params.pay_type) {
         payload.append('pay_type', params.pay_type);
     }
@@ -290,7 +290,7 @@ export async function fetchArtistList(): Promise<ApiResponse<{ list: ArtistItem[
 
 
 // ----------------------------------------------------------------------------
-// Shop Order API (积分商城/普通商品订单)
+// Shop Order API (消费金商城/普通商品订单)
 // ----------------------------------------------------------------------------
 
 export interface ShopOrderItemDetail {

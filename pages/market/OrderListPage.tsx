@@ -70,7 +70,7 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ category, initialTab, onB
         };
       case 'points':
         return {
-          title: '积分订单',
+          title: '消费金订单',
           tabs: ['待付款', '待发货', '待收货', '已完成']
         };
       default:
@@ -940,7 +940,7 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ category, initialTab, onB
                           {(() => {
                             const priceInfo = getOrderPrice(order);
                             return priceInfo.isScore
-                              ? `${priceInfo.score} 积分`
+                              ? `${priceInfo.score} 消费金`
                               : `¥ ${formatOrderPrice(priceInfo.amount)}`;
                           })()}
                         </div>

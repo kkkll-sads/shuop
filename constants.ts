@@ -2,44 +2,44 @@ import { Artist, Product, Banner, Order } from './types';
 import { MyCollectionItem } from './services/api';
 
 export const ARTISTS: Artist[] = [
-  { 
-    id: '1', 
-    name: '崔宏波', 
+  {
+    id: '1',
+    name: '崔宏波',
     image: 'https://picsum.photos/seed/artist1/150/150',
     title: '国家一级美术师',
     bio: '崔宏波，当代著名山水画家。自幼酷爱丹青，师从多位名家。其作品风格独特，笔墨苍劲有力，意境深远。多次参加全国性美术展览并获奖，作品被多家博物馆及私人收藏家收藏。'
   },
-  { 
-    id: '2', 
-    name: '李泽江', 
+  {
+    id: '2',
+    name: '李泽江',
     image: 'https://picsum.photos/seed/artist2/150/150',
     title: '中国美术家协会会员',
     bio: '李泽江，擅长花鸟画，尤精牡丹。其笔下的牡丹雍容华贵，艳而不俗。致力于传统水墨与现代审美的融合，形成了鲜明的个人艺术风格。'
   },
-  { 
-    id: '3', 
-    name: '叶建波', 
+  {
+    id: '3',
+    name: '叶建波',
     image: 'https://picsum.photos/seed/artist3/150/150',
     title: '著名书法家',
     bio: '叶建波，书法家，书法理论家。工诸体，尤擅行草。其书法作品气势磅礴，行云流水，具有极高的艺术欣赏价值。'
   },
-  { 
-    id: '4', 
-    name: '何加玉', 
+  {
+    id: '4',
+    name: '何加玉',
     image: 'https://picsum.photos/seed/artist4/150/150',
     title: '当代实力派画家',
     bio: '何加玉，专注于山水画创作三十余年。作品多取材于祖国大好河山，画面气象万千，展现了深厚的传统功力与创新精神。'
   },
-  { 
-    id: '5', 
-    name: '张文轩', 
+  {
+    id: '5',
+    name: '张文轩',
     image: 'https://picsum.photos/seed/artist5/150/150',
     title: '新锐艺术家',
     bio: '张文轩，青年艺术家代表人物。作品风格前卫，色彩大胆，试图探索传统文化在当代语境下的新表达。'
   },
-  { 
-    id: '6', 
-    name: '刘艺', 
+  {
+    id: '6',
+    name: '刘艺',
     image: 'https://picsum.photos/seed/artist6/150/150',
     title: '资深画家',
     bio: '刘艺，擅长人物画。其人物造型生动，神态逼真，笔墨简练而传神，深受藏家喜爱。'
@@ -115,7 +115,7 @@ export const MOCK_ORDERS: Order[] = [
   },
   {
     id: 'ORD-20231110-04',
-    productName: '积分兑换商品A',
+    productName: '消费金兑换商品A',
     productImage: 'https://picsum.photos/seed/gift1/150/150',
     price: 200.00,
     quantity: 2,

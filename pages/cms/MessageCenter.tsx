@@ -207,7 +207,7 @@ const MessageCenter: React.FC<MessageCenterProps> = ({ onBack, onNavigate }) => 
           console.error('加载提现记录失败:', err);
         }
 
-        // 4. 加载积分商城订单（待付款、待发货、待确认收货）
+        // 4. 加载消费金商城订单（待付款、待发货、待确认收货）
         try {
           const [pendingPayRes, pendingShipRes, pendingConfirmRes] = await Promise.all([
             fetchPendingPayOrders({ page: 1, limit: 3, token }),

@@ -50,6 +50,8 @@ interface UseAuthResult {
     updateToken: (token: string) => void;
     /** 更新实名认证状态 */
     updateRealNameStatus: (status: number, name?: string) => void;
+    /** 刷新实名认证状态（从服务器获取最新状态） */
+    refreshRealNameStatus: () => Promise<void>;
 }
 
 /**
@@ -246,6 +248,39 @@ function useAuth(): UseAuthResult {
     }, []);
 
     /**
+     * 刷新实名认证状态
+     * 从服务器获取最新的实名认证状态
+     */
+    const refreshRealNameStatus = useCallback(async () => {
+        const currentToken = token || localStorage.getItem(AUTH_TOKEN_KEY);
+        if (!currentToken) {
+            console.warn('无法刷新实名认证状态：未找到token');
+            return;
+        }
+
+        try {
+            const response = await fetchRealNameStatus(currentToken);
+            if (response.code === 1 && response.data) {
+                const status = response.data.real_name_status;
+                const name = response.data.real_name;
+
+                console.log('[useAuth] 刷新实名认证状态成功:', { status, name });
+
+                setRealNameStatus(status);
+                localStorage.setItem(REAL_NAME_STATUS_KEY, String(status));
+
+                if (name) {
+                    setRealName(name);
+                    localStorage.setItem(REAL_NAME_KEY, name);
+                }
+            }
+        } catch (error) {
+            console.error('刷新实名认证状态失败:', error);
+            // 失败时不清除现有状态，保持当前状态
+        }
+    }, [token]);
+
+    /**
      * 监听其他标签页的登录状态变化
      * 实现多标签页同步登出
      */
@@ -277,6 +312,16 @@ function useAuth(): UseAuthResult {
             if (event.key === AUTH_TOKEN_KEY) {
                 setToken(event.newValue);
             }
+
+            // 监听实名认证状态变化
+            if (event.key === REAL_NAME_STATUS_KEY) {
+                try {
+                    const newStatus = event.newValue ? parseInt(event.newValue, 10) : null;
+                    setRealNameStatus(newStatus);
+                } catch {
+                    setRealNameStatus(null);
+                }
+            }
         };
 
         // 添加监听器
@@ -300,6 +345,7 @@ function useAuth(): UseAuthResult {
         updateUser,
         updateToken,
         updateRealNameStatus,
+        refreshRealNameStatus,
     };
 }
 

@@ -122,6 +122,7 @@ const Login: React.FC<LoginProps> = ({
 
       const response = await loginApi(params);
       console.log('登录接口响应:', response);
+      console.log('响应code类型:', typeof response.code, '值:', response.code);
 
       if (response.code === 1) {
         const token = response.data?.userInfo?.token;
@@ -136,6 +137,7 @@ const Login: React.FC<LoginProps> = ({
         });
       } else {
         const errorMsg = response.msg || response.message || '登录失败，请稍后重试';
+        console.log('登录失败，显示错误提示:', errorMsg);
         showToast('error', '登录失败', errorMsg);
       }
     } catch (error: any) {

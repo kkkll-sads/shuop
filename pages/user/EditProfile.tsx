@@ -7,11 +7,13 @@
  * @version 2.0.0
  */
 
+
 import React, { useMemo, useRef, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 import PageContainer from '../../components/layout/PageContainer';
 import { AUTH_TOKEN_KEY, USER_INFO_KEY, uploadImage, updateAvatar, updateNickname } from '../../services/api';
 import { UserInfo } from '../../types';
+import { useNotification } from '../../context/NotificationContext';
 
 /**
  * EditProfile 组件属性接口
@@ -25,6 +27,7 @@ interface EditProfileProps {
  * EditProfile 编辑资料页面组件
  */
 const EditProfile: React.FC<EditProfileProps> = ({ onBack, onLogout }) => {
+  const { showToast } = useNotification();
   // 从本地存储获取用户信息
   const cachedUser: UserInfo | null = useMemo(() => {
     try {
@@ -71,11 +74,11 @@ const EditProfile: React.FC<EditProfileProps> = ({ onBack, onLogout }) => {
 
       setUserInfo(updated);
       localStorage.setItem(USER_INFO_KEY, JSON.stringify(updated));
-      alert('保存成功');
+      showToast('success', '保存成功');
       onBack();
     } catch (error: any) {
       console.error('昵称更新失败:', error);
-      alert(error?.message || '昵称保存失败，请稍后重试');
+      showToast('error', '保存失败', error?.message || '昵称保存失败，请稍后重试');
     } finally {
       setSaving(false);
     }
@@ -86,7 +89,7 @@ const EditProfile: React.FC<EditProfileProps> = ({ onBack, onLogout }) => {
    */
   const handleAvatarClick = () => {
     if (!userInfo) {
-      alert('请先登录后再修改头像');
+      showToast('warning', '请先登录', '请先登录后再修改头像');
       return;
     }
     fileInputRef.current?.click();
@@ -138,10 +141,10 @@ const EditProfile: React.FC<EditProfileProps> = ({ onBack, onLogout }) => {
       setUserInfo(updatedUser);
       setAvatarPreview(updatedUser.avatar || '');
       localStorage.setItem(USER_INFO_KEY, JSON.stringify(updatedUser));
-      alert('头像更新成功');
+      showToast('success', '头像更新成功');
     } catch (error: any) {
       console.error('修改头像失败:', error);
-      alert(error?.message || '头像修改失败，请稍后重试');
+      showToast('error', '修改失败', error?.message || '头像修改失败，请稍后重试');
     } finally {
       setAvatarUploading(false);
       event.target.value = '';

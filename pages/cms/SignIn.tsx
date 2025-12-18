@@ -14,6 +14,7 @@ import {
     submitWithdraw,
     PaymentAccountItem
 } from '../../services/api';
+import { useNotification } from '../../context/NotificationContext';
 
 interface SignInProps {
     onBack: () => void;
@@ -21,6 +22,7 @@ interface SignInProps {
 }
 
 const SignIn: React.FC<SignInProps> = ({ onBack, onNavigate }) => {
+    const { showToast } = useNotification();
     const [balance, setBalance] = useState<number>(0);
     const [hasSignedIn, setHasSignedIn] = useState<boolean>(false);
     const [showRedPacket, setShowRedPacket] = useState<boolean>(false);
@@ -107,6 +109,7 @@ const SignIn: React.FC<SignInProps> = ({ onBack, onNavigate }) => {
                 }
             } catch (error: any) {
                 console.error('加载签到数据失败:', error);
+                showToast('error', '加载失败', '加载数据失败，请重试');
             } finally {
                 setLoading(false);
             }
@@ -123,7 +126,7 @@ const SignIn: React.FC<SignInProps> = ({ onBack, onNavigate }) => {
 
         const token = localStorage.getItem(AUTH_TOKEN_KEY);
         if (!token) {
-            alert('请先登录');
+            showToast('warning', '请先登录');
             return;
         }
 
@@ -171,11 +174,11 @@ const SignIn: React.FC<SignInProps> = ({ onBack, onNavigate }) => {
                     }
                 }
             } else {
-                alert(res.msg || '签到失败，请重试');
+                showToast('error', '签到失败', res.msg || '请重试');
             }
         } catch (error: any) {
             console.error('签到失败:', error);
-            alert(error?.msg || error?.message || '签到失败，请重试');
+            showToast('error', '签到失败', error?.msg || error?.message || '请重试');
         }
     };
 
@@ -219,7 +222,7 @@ const SignIn: React.FC<SignInProps> = ({ onBack, onNavigate }) => {
         const canWithdraw = progressInfo?.can_withdraw ?? (balance >= minAmount);
 
         if (!canWithdraw) {
-            alert(`余额不足 ${minAmount.toFixed(2)} 元，暂不可提现`);
+            showToast('warning', '余额不足', `余额不足 ${minAmount.toFixed(2)} 元，暂不可提现`);
             return;
         }
         setShowAccountModal(true);
@@ -248,7 +251,7 @@ const SignIn: React.FC<SignInProps> = ({ onBack, onNavigate }) => {
             });
 
             if (res.code === 1 || res.code === 0) {
-                alert('提现申请提交成功，请等待审核');
+                showToast('success', '提交成功', '提现申请已提交，请等待审核');
                 setShowAccountModal(false);
                 setPayPassword('');
                 // Refresh balance and progress from API

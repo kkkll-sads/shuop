@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, Zap, Server, Shield, Leaf, Activity } from 'lucide-react';
 import { LoadingSpinner } from '../../components/common';
+
 import { fetchProfile, USER_INFO_KEY, AUTH_TOKEN_KEY } from '../../services/api';
 import { UserInfo } from '../../types';
+import { useNotification } from '../../context/NotificationContext';
 
 interface HashrateExchangeProps {
     onBack: () => void;
     onNavigate: (page: string) => void;
 }
 
+
 const HashrateExchange: React.FC<HashrateExchangeProps> = ({ onBack, onNavigate }) => {
+    const { showToast } = useNotification();
     const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
     const [amount, setAmount] = useState<string>('');
     const [loading, setLoading] = useState(false);
@@ -43,21 +47,22 @@ const HashrateExchange: React.FC<HashrateExchangeProps> = ({ onBack, onNavigate 
         return val * SUBSIDIZED_RATE;
     };
 
+
     const handleExchange = () => {
         if (!amount || Number(amount) <= 0) {
-            alert('请输入兑换数量');
+            showToast('warning', '输入有误', '请输入兑换数量');
             return;
         }
         const cost = calculateCost();
         if (userInfo && userInfo.score < cost) {
-            alert(`消费金不足，当前余额: ${userInfo.score}`);
+            showToast('warning', '余额不足', `消费金不足，当前余额: ${userInfo.score}`);
             return;
         }
 
         setConfirming(true);
         // Mock API Call
         setTimeout(() => {
-            alert('兑换成功！绿色算力已到账');
+            showToast('success', '兑换成功', '绿色算力已到账');
             // Update local state mock
             if (userInfo) {
                 setUserInfo({

@@ -1,4 +1,5 @@
 
+
 import React, { useEffect, useState } from 'react';
 import { Plus, MapPin, Pencil, Trash2 } from 'lucide-react';
 import SubPageLayout from '../../components/SubPageLayout';
@@ -11,6 +12,7 @@ import {
   fetchAddressList,
   saveAddress,
 } from '../../services/api';
+import { useNotification } from '../../context/NotificationContext';
 
 interface AddressListProps {
   onBack: () => void;
@@ -38,6 +40,7 @@ const createInitialFormValues = (): AddressFormValues => ({
 });
 
 const AddressList: React.FC<AddressListProps> = ({ onBack }) => {
+  const { showToast, showDialog } = useNotification();
   const [addresses, setAddresses] = useState<AddressItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -81,16 +84,25 @@ const AddressList: React.FC<AddressListProps> = ({ onBack }) => {
 
   const handleDelete = async (id?: number | string) => {
     if (id === undefined || id === null || id === '') return;
-    if (!window.confirm('确定要删除该收货地址吗？')) return;
-    try {
-      await deleteAddress({ id });
-      // 删除成功后刷新列表
-      loadAddresses();
-    } catch (e: any) {
-      // 优先使用接口返回的错误消息
-      const errorMsg = e?.msg || e?.response?.msg || e?.message || '删除收货地址失败';
-      alert(errorMsg);
-    }
+
+    showDialog({
+      title: '删除地址',
+      description: '确定要删除该收货地址吗？此操作无法撤销。',
+      confirmText: '删除',
+      cancelText: '取消',
+      onConfirm: async () => {
+        try {
+          await deleteAddress({ id });
+          showToast('success', '删除成功');
+          // 删除成功后刷新列表
+          loadAddresses();
+        } catch (e: any) {
+          // 优先使用接口返回的错误消息
+          const errorMsg = e?.msg || e?.response?.msg || e?.message || '删除收货地址失败';
+          showToast('error', '删除失败', errorMsg);
+        }
+      }
+    });
   };
 
   const handleSetDefault = async (addr: AddressItem) => {

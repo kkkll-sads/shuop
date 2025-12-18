@@ -12,7 +12,6 @@ import {
   fetchCompletedOrders,
   confirmOrder,
   payOrder,
-  getOrderDetail,
   deleteOrder,
   getDeliveryList,
   getMyConsignmentList,
@@ -27,14 +26,16 @@ import {
   AUTH_TOKEN_KEY,
   normalizeAssetUrl,
 } from '../../services/api';
+import { useNotification } from '../../context/NotificationContext';
 
 interface OrderListPageProps {
   category: string; // product, transaction, delivery, points
   initialTab: number;
   onBack: () => void;
+  onNavigate: (page: string) => void;
 }
 
-const OrderListPage: React.FC<OrderListPageProps> = ({ category, initialTab, onBack }) => {
+const OrderListPage: React.FC<OrderListPageProps> = ({ category, initialTab, onBack, onNavigate }) => {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [orders, setOrders] = useState<ShopOrderItem[]>([]);
   const [consignmentOrders, setConsignmentOrders] = useState<MyConsignmentItem[]>([]);
@@ -42,10 +43,10 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ category, initialTab, onB
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-  const [showDetailModal, setShowDetailModal] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState<ShopOrderItem | null>(null);
+  // const [showDetailModal, setShowDetailModal] = useState(false); // Deprecated
+  // const [selectedOrder, setSelectedOrder] = useState<ShopOrderItem | null>(null); // Deprecated
   const [selectedConsignmentOrder, setSelectedConsignmentOrder] = useState<MyConsignmentItem | null>(null);
-  const [loadingDetail, setLoadingDetail] = useState(false);
+  // const [loadingDetail, setLoadingDetail] = useState(false); // Deprecated
   const [showConsignmentDetailModal, setShowConsignmentDetailModal] = useState(false);
   const [selectedConsignmentDetail, setSelectedConsignmentDetail] = useState<ConsignmentDetailData | null>(null);
   const [loadingConsignmentDetail, setLoadingConsignmentDetail] = useState(false);
@@ -78,6 +79,15 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ category, initialTab, onB
   };
 
   const config = getPageConfig();
+
+  // ... (fetch logic remains same)
+
+  // Navigate to Detail Page instead of Modal
+  const handleViewDetail = (id: number) => {
+    onNavigate(`order-detail:${id}`);
+  };
+
+  // ... (other handlers)
 
   // Fetch orders for points category
   useEffect(() => {
@@ -258,6 +268,11 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ category, initialTab, onB
     }
   }, [category, activeTab]);
 
+
+  const { showToast, showDialog } = useNotification();
+
+  // ... (keeping other hooks)
+
   const handleConfirmReceipt = async (orderId: number | string) => {
     try {
       const token = localStorage.getItem(AUTH_TOKEN_KEY) || '';
@@ -314,11 +329,11 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ category, initialTab, onB
           setLoading(false);
         }
       } else {
-        alert(response.msg || '确认收货失败');
+        showToast('error', '操作失败', response.msg || '确认收货失败');
       }
     } catch (error: any) {
       console.error('确认收货失败:', error);
-      alert(error.message || '确认收货失败');
+      showToast('error', '操作失败', error.message || '确认收货失败');
     }
   };
 
@@ -427,162 +442,153 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ category, initialTab, onB
   };
 
   const handlePayOrder = async (orderId: number | string) => {
-    if (!confirm('确定要支付此订单吗？')) {
-      return;
-    }
-
-    try {
-      const token = localStorage.getItem(AUTH_TOKEN_KEY) || '';
-      const response = await payOrder({ id: orderId, token });
-
-      if (response.code === 1) {
-        // Refresh orders after payment
-        setPage(1);
-        setOrders([]);
-
-        // Reload orders
-        setLoading(true);
+    showDialog({
+      title: '确认支付',
+      description: '确定要支付此订单吗？',
+      confirmText: '确定支付',
+      cancelText: '取消',
+      onConfirm: async () => {
         try {
-          let reloadResponse;
-          if (category === 'delivery') {
-            let status: 'paid' | 'shipped' | 'completed' | undefined;
-            switch (activeTab) {
-              case 0:
-                status = 'paid';
-                break;
-              case 1:
-                status = 'shipped';
-                break;
-              case 2:
-                status = 'completed';
-                break;
-            }
-            reloadResponse = await getDeliveryList({ page: 1, limit: 10, status, token });
-          } else {
-            switch (activeTab) {
-              case 0:
-                reloadResponse = await fetchPendingPayOrders({ page: 1, limit: 10, token });
-                break;
-              case 1:
-                reloadResponse = await fetchPendingShipOrders({ page: 1, limit: 10, token });
-                break;
-              case 2:
-                reloadResponse = await fetchPendingConfirmOrders({ page: 1, limit: 10, token });
-                break;
-              case 3:
-                reloadResponse = await fetchCompletedOrders({ page: 1, limit: 10, token });
-                break;
-              default:
-                reloadResponse = { code: 1, data: { list: [], total: 0, page: 1, limit: 10 } };
-            }
-          }
+          const token = localStorage.getItem(AUTH_TOKEN_KEY) || '';
+          const response = await payOrder({ id: orderId, token });
 
-          if (reloadResponse.code === 1 && reloadResponse.data) {
-            setOrders(reloadResponse.data.list || []);
+          if (response.code === 1) {
+            // Refresh orders after payment
+            setPage(1);
+            setOrders([]);
+
+            // Reload orders
+            setLoading(true);
+            try {
+              let reloadResponse;
+              if (category === 'delivery') {
+                let status: 'paid' | 'shipped' | 'completed' | undefined;
+                switch (activeTab) {
+                  case 0:
+                    status = 'paid';
+                    break;
+                  case 1:
+                    status = 'shipped';
+                    break;
+                  case 2:
+                    status = 'completed';
+                    break;
+                }
+                reloadResponse = await getDeliveryList({ page: 1, limit: 10, status, token });
+              } else {
+                switch (activeTab) {
+                  case 0:
+                    reloadResponse = await fetchPendingPayOrders({ page: 1, limit: 10, token });
+                    break;
+                  case 1:
+                    reloadResponse = await fetchPendingShipOrders({ page: 1, limit: 10, token });
+                    break;
+                  case 2:
+                    reloadResponse = await fetchPendingConfirmOrders({ page: 1, limit: 10, token });
+                    break;
+                  case 3:
+                    reloadResponse = await fetchCompletedOrders({ page: 1, limit: 10, token });
+                    break;
+                  default:
+                    reloadResponse = { code: 1, data: { list: [], total: 0, page: 1, limit: 10 } };
+                }
+              }
+
+              if (reloadResponse.code === 1 && reloadResponse.data) {
+                setOrders(reloadResponse.data.list || []);
+              }
+              showToast('success', '支付成功', '订单支付成功！');
+            } catch (error) {
+              console.error('重新加载订单失败:', error);
+            } finally {
+              setLoading(false);
+            }
+          } else {
+            showToast('error', '支付失败', response.msg || '支付失败');
           }
-          alert('支付成功！');
-        } catch (error) {
-          console.error('重新加载订单失败:', error);
-        } finally {
-          setLoading(false);
+        } catch (error: any) {
+          console.error('支付订单失败:', error);
+          showToast('error', '支付失败', error.message || '支付失败');
         }
-      } else {
-        alert(response.msg || '支付失败');
       }
-    } catch (error: any) {
-      console.error('支付订单失败:', error);
-      alert(error.message || '支付失败');
-    }
+    });
   };
 
   const handleDeleteOrder = async (orderId: number | string) => {
-    if (!confirm('确定要删除此订单吗？删除后无法恢复。')) {
-      return;
-    }
-
-    try {
-      const token = localStorage.getItem(AUTH_TOKEN_KEY) || '';
-      const response = await deleteOrder({ id: orderId, token });
-
-      if (response.code === 1) {
-        // Refresh orders after deletion
-        setPage(1);
-        setOrders([]);
-
-        // Reload orders
-        setLoading(true);
+    showDialog({
+      title: '确认删除',
+      description: '确定要删除此订单吗？删除后无法恢复。',
+      confirmText: '确定删除',
+      confirmColor: '#FF6B6B',
+      cancelText: '取消',
+      onConfirm: async () => {
         try {
-          let reloadResponse;
-          if (category === 'delivery') {
-            let status: 'paid' | 'shipped' | 'completed' | undefined;
-            switch (activeTab) {
-              case 0:
-                status = 'paid';
-                break;
-              case 1:
-                status = 'shipped';
-                break;
-              case 2:
-                status = 'completed';
-                break;
+          const token = localStorage.getItem(AUTH_TOKEN_KEY) || '';
+          const response = await deleteOrder({ id: orderId, token });
+
+          if (response.code === 1) {
+            // Refresh orders after deletion
+            setPage(1);
+            setOrders([]);
+
+            // Reload orders
+            setLoading(true);
+            try {
+              let reloadResponse;
+              if (category === 'delivery') {
+                let status: 'paid' | 'shipped' | 'completed' | undefined;
+                switch (activeTab) {
+                  case 0:
+                    status = 'paid';
+                    break;
+                  case 1:
+                    status = 'shipped';
+                    break;
+                  case 2:
+                    status = 'completed';
+                    break;
+                }
+                reloadResponse = await getDeliveryList({ page: 1, limit: 10, status, token });
+              } else {
+                switch (activeTab) {
+                  case 0:
+                    reloadResponse = await fetchPendingPayOrders({ page: 1, limit: 10, token });
+                    break;
+                  case 1:
+                    reloadResponse = await fetchPendingShipOrders({ page: 1, limit: 10, token });
+                    break;
+                  case 2:
+                    reloadResponse = await fetchPendingConfirmOrders({ page: 1, limit: 10, token });
+                    break;
+                  case 3:
+                    reloadResponse = await fetchCompletedOrders({ page: 1, limit: 10, token });
+                    break;
+                  default:
+                    reloadResponse = { code: 1, data: { list: [], total: 0, page: 1, limit: 10 } };
+                }
+              }
+
+              if (reloadResponse.code === 1 && reloadResponse.data) {
+                setOrders(reloadResponse.data.list || []);
+              }
+              showToast('success', '删除成功', '订单删除成功！');
+            } catch (error) {
+              console.error('重新加载订单失败:', error);
+            } finally {
+              setLoading(false);
             }
-            reloadResponse = await getDeliveryList({ page: 1, limit: 10, status, token });
           } else {
-            switch (activeTab) {
-              case 0:
-                reloadResponse = await fetchPendingPayOrders({ page: 1, limit: 10, token });
-                break;
-              case 1:
-                reloadResponse = await fetchPendingShipOrders({ page: 1, limit: 10, token });
-                break;
-              case 2:
-                reloadResponse = await fetchPendingConfirmOrders({ page: 1, limit: 10, token });
-                break;
-              case 3:
-                reloadResponse = await fetchCompletedOrders({ page: 1, limit: 10, token });
-                break;
-              default:
-                reloadResponse = { code: 1, data: { list: [], total: 0, page: 1, limit: 10 } };
-            }
+            showToast('error', '删除失败', response.msg || '删除失败');
           }
-
-          if (reloadResponse.code === 1 && reloadResponse.data) {
-            setOrders(reloadResponse.data.list || []);
-          }
-          alert('删除成功！');
-        } catch (error) {
-          console.error('重新加载订单失败:', error);
-        } finally {
-          setLoading(false);
+        } catch (error: any) {
+          console.error('删除订单失败:', error);
+          showToast('error', '删除失败', error.message || '删除失败');
         }
-      } else {
-        alert(response.msg || '删除失败');
       }
-    } catch (error: any) {
-      console.error('删除订单失败:', error);
-      alert(error.message || '删除失败');
-    }
+    });
   };
 
-  const handleViewDetail = async (orderId: number | string) => {
-    setLoadingDetail(true);
-    try {
-      const token = localStorage.getItem(AUTH_TOKEN_KEY) || '';
-      const response = await getOrderDetail({ id: orderId, token });
 
-      if (response.code === 1 && response.data) {
-        setSelectedOrder(response.data);
-        setShowDetailModal(true);
-      } else {
-        alert(response.msg || '获取订单详情失败');
-      }
-    } catch (error: any) {
-      console.error('获取订单详情失败:', error);
-      alert(error.message || '获取订单详情失败');
-    } finally {
-      setLoadingDetail(false);
-    }
-  };
 
   const handleViewConsignmentDetail = async (consignmentId: number) => {
     setLoadingConsignmentDetail(true);
@@ -594,65 +600,69 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ category, initialTab, onB
         setSelectedConsignmentDetail(response.data);
         setShowConsignmentDetailModal(true);
       } else {
-        alert(response.msg || '获取寄售详情失败');
+        showToast('error', '获取失败', response.msg || '获取寄售详情失败');
       }
     } catch (error: any) {
       console.error('获取寄售详情失败:', error);
-      alert(error.message || '获取寄售详情失败');
+      showToast('error', '获取失败', error.message || '获取寄售详情失败');
     } finally {
       setLoadingConsignmentDetail(false);
     }
   };
 
   const handleCancelConsignment = async (consignmentId: number) => {
-    if (!confirm('确定要取消此寄售吗？')) {
-      return;
-    }
-
-    try {
-      const token = localStorage.getItem(AUTH_TOKEN_KEY) || '';
-      const response = await cancelConsignment({ consignment_id: consignmentId, token });
-
-      if (response.code === 1) {
-        // Refresh consignment orders after cancellation
-        setPage(1);
-        setConsignmentOrders([]);
-
-        // Reload orders
-        setLoading(true);
+    showDialog({
+      title: '确认取消',
+      description: '确定要取消此寄售吗？',
+      confirmText: '确定取消',
+      cancelText: '取消',
+      onConfirm: async () => {
         try {
-          let status: number | undefined;
-          switch (activeTab) {
-            case 0:
-              status = 0;
-              break;
-            case 1:
-              status = 1;
-              break;
-            case 2:
-              status = 3;
-              break;
-            default:
-              status = 0;
-          }
-          const reloadResponse = await getMyConsignmentList({ page: 1, limit: 10, status, token });
+          const token = localStorage.getItem(AUTH_TOKEN_KEY) || '';
+          const response = await cancelConsignment({ consignment_id: consignmentId, token });
 
-          if (reloadResponse.code === 1 && reloadResponse.data) {
-            setConsignmentOrders(reloadResponse.data.list || []);
+          if (response.code === 1) {
+            // Refresh consignment orders after cancellation
+            setPage(1);
+            setConsignmentOrders([]);
+
+            // Reload orders
+            setLoading(true);
+            try {
+              let status: number | undefined;
+              switch (activeTab) {
+                case 0:
+                  status = 0;
+                  break;
+                case 1:
+                  status = 1;
+                  break;
+                case 2:
+                  status = 3;
+                  break;
+                default:
+                  status = 0;
+              }
+              const reloadResponse = await getMyConsignmentList({ page: 1, limit: 10, status, token });
+
+              if (reloadResponse.code === 1 && reloadResponse.data) {
+                setConsignmentOrders(reloadResponse.data.list || []);
+              }
+              showToast('success', '取消成功', '取消寄售成功！');
+            } catch (error) {
+              console.error('重新加载寄售订单失败:', error);
+            } finally {
+              setLoading(false);
+            }
+          } else {
+            showToast('error', '取消失败', response.msg || '取消寄售失败');
           }
-          alert('取消寄售成功！');
-        } catch (error) {
-          console.error('重新加载寄售订单失败:', error);
-        } finally {
-          setLoading(false);
+        } catch (error: any) {
+          console.error('取消寄售失败:', error);
+          showToast('error', '取消失败', error.message || '取消寄售失败');
         }
-      } else {
-        alert(response.msg || '取消寄售失败');
       }
-    } catch (error: any) {
-      console.error('取消寄售失败:', error);
-      alert(error.message || '取消寄售失败');
-    }
+    });
   };
 
   // For non-points, non-delivery, non-transaction, and non-product categories, use mock data
@@ -1018,282 +1028,7 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ category, initialTab, onB
         )}
       </div>
 
-      {/* Order Detail Modal */}
-      {showDetailModal && selectedOrder && (
-        <div
-          className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
-          onClick={() => setShowDetailModal(false)}
-        >
-          <div
-            className="bg-white rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto relative"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="sticky top-0 bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between z-10">
-              <h3 className="text-lg font-bold text-gray-900">订单详情</h3>
-              <button
-                type="button"
-                className="p-1 text-gray-400 hover:text-gray-600 active:bg-gray-100 rounded-full"
-                onClick={() => setShowDetailModal(false)}
-              >
-                <X size={20} />
-              </button>
-            </div>
 
-            {/* Content */}
-            <div className="p-4 space-y-4">
-              {/* Order Info Card */}
-              <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <FileText size={16} className="text-blue-600" />
-                    <span className="text-xs text-gray-600">订单号</span>
-                  </div>
-                  <span className="text-xs font-mono text-gray-800">{selectedOrder.order_no || selectedOrder.id}</span>
-                </div>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <Calendar size={16} className="text-blue-600" />
-                    <span className="text-xs text-gray-600">订单状态</span>
-                  </div>
-                  <span className="text-xs font-medium text-blue-600">{getOrderStatus(selectedOrder)}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <CreditCard size={16} className="text-blue-600" />
-                    <span className="text-xs text-gray-600">支付方式</span>
-                  </div>
-                  <span className="text-xs text-gray-800">{selectedOrder.pay_type_text || selectedOrder.pay_type || '未知'}</span>
-                </div>
-              </div>
-
-              {/* Price Info */}
-              <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">订单总额</span>
-                  {(() => {
-                    const priceInfo = getOrderPrice(selectedOrder);
-                    return (
-                      <span className="text-xl font-bold text-blue-600">
-                        {priceInfo.isScore
-                          ? `${priceInfo.score} 积分`
-                          : `¥ ${formatOrderPrice(priceInfo.amount)}`}
-                      </span>
-                    );
-                  })()}
-                </div>
-                {selectedOrder.product_type_text && (
-                  <div className="mt-2 text-xs text-gray-500">
-                    商品类型: {selectedOrder.product_type_text}
-                  </div>
-                )}
-              </div>
-
-              {/* Order Items */}
-              {selectedOrder.items && selectedOrder.items.length > 0 && (
-                <div className="space-y-3">
-                  <h4 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-                    <Package size={16} className="text-blue-600" />
-                    商品明细
-                  </h4>
-                  {selectedOrder.items.map((item, index) => (
-                    <div key={item.id || index} className="bg-gray-50 rounded-lg p-3 border border-gray-100">
-                      <div className="flex gap-3">
-                        <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 border border-gray-200 relative">
-                          {item.product_thumbnail ? (
-                            <>
-                              <img
-                                src={normalizeAssetUrl(item.product_thumbnail)}
-                                alt={item.product_name}
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  // 图片加载失败时隐藏图片，显示占位符
-                                  const img = e.target as HTMLImageElement;
-                                  img.style.display = 'none';
-                                  const container = img.parentElement;
-                                  if (container) {
-                                    const placeholder = container.querySelector('.image-placeholder') as HTMLElement;
-                                    if (placeholder) {
-                                      placeholder.style.display = 'flex';
-                                    }
-                                  }
-                                }}
-                              />
-                              <div className="image-placeholder hidden absolute inset-0 items-center justify-center bg-gray-100 text-gray-400">
-                                <Package size={20} />
-                              </div>
-                            </>
-                          ) : (
-                            <div className="absolute inset-0 flex items-center justify-center bg-gray-100 text-gray-400">
-                              <Package size={20} />
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <h5 className="text-sm font-medium text-gray-800 mb-1">{item.product_name}</h5>
-                          <div className="text-xs text-gray-500 mb-2">数量: {item.quantity}</div>
-                          <div className="flex items-center justify-between">
-                            {selectedOrder.pay_type === 'score' ? (
-                              <span className="text-sm font-semibold text-blue-600">
-                                {item.subtotal_score || item.score_price} 积分
-                              </span>
-                            ) : (
-                              <span className="text-sm font-semibold text-gray-900">
-                                ¥ {formatOrderPrice(item.subtotal || item.price)}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Shipping Info */}
-              {selectedOrder.recipient_name && (
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
-                  <h4 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                    <MapPin size={16} className="text-blue-600" />
-                    收货信息
-                  </h4>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm text-gray-700">
-                      <User size={14} className="text-gray-400" />
-                      <span>{selectedOrder.recipient_name}</span>
-                    </div>
-                    {selectedOrder.recipient_phone && (
-                      <div className="flex items-center gap-2 text-sm text-gray-700">
-                        <Phone size={14} className="text-gray-400" />
-                        <span>{selectedOrder.recipient_phone}</span>
-                      </div>
-                    )}
-                    {selectedOrder.recipient_address && (
-                      <div className="flex items-start gap-2 text-sm text-gray-700">
-                        <MapPin size={14} className="text-gray-400 mt-0.5 flex-shrink-0" />
-                        <span className="flex-1">{selectedOrder.recipient_address}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Shipping Company Info */}
-              {selectedOrder.shipping_no && (
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
-                  <h4 className="text-sm font-semibold text-gray-800 mb-2">物流信息</h4>
-                  <div className="space-y-1 text-sm text-gray-700">
-                    {selectedOrder.shipping_company && (
-                      <div>物流公司: {selectedOrder.shipping_company}</div>
-                    )}
-                    <div>物流单号: {selectedOrder.shipping_no}</div>
-                  </div>
-                </div>
-              )}
-
-              {/* Time Info */}
-              <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 space-y-2">
-                <h4 className="text-xs font-semibold text-gray-700 mb-2">时间信息</h4>
-                {selectedOrder.create_time && (() => {
-                  const formatted = formatOrderDate(selectedOrder.create_time, true);
-                  // 确保只返回格式化后的字符串，不包含任何额外内容
-                  return formatted ? (
-                    <div className="text-xs text-gray-600">
-                      <span className="text-gray-500">创建时间:</span> <span>{formatted}</span>
-                    </div>
-                  ) : null;
-                })()}
-                {selectedOrder.pay_time && selectedOrder.pay_time > 0 && (() => {
-                  const formatted = formatOrderDate(selectedOrder.pay_time, true);
-                  return formatted ? (
-                    <div className="text-xs text-gray-600">
-                      <span className="text-gray-500">支付时间:</span> <span>{formatted}</span>
-                    </div>
-                  ) : null;
-                })()}
-                {selectedOrder.ship_time && selectedOrder.ship_time > 0 && (() => {
-                  const formatted = formatOrderDate(selectedOrder.ship_time, true);
-                  return formatted ? (
-                    <div className="text-xs text-gray-600">
-                      <span className="text-gray-500">发货时间:</span> <span>{formatted}</span>
-                    </div>
-                  ) : null;
-                })()}
-                {selectedOrder.complete_time && selectedOrder.complete_time > 0 && (() => {
-                  const formatted = formatOrderDate(selectedOrder.complete_time, true);
-                  return formatted ? (
-                    <div className="text-xs text-gray-600">
-                      <span className="text-gray-500">完成时间:</span> <span>{formatted}</span>
-                    </div>
-                  ) : null;
-                })()}
-              </div>
-
-              {/* Remark */}
-              {selectedOrder.remark && (
-                <div className="bg-yellow-50 rounded-lg p-3 border border-yellow-100">
-                  <div className="text-xs text-gray-600 mb-1">订单备注</div>
-                  <div className="text-sm text-gray-800">{selectedOrder.remark}</div>
-                </div>
-              )}
-
-              {/* Admin Remark */}
-              {selectedOrder.admin_remark && (
-                <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
-                  <div className="text-xs text-gray-600 mb-1">管理员备注</div>
-                  <div className="text-sm text-gray-800">{selectedOrder.admin_remark}</div>
-                </div>
-              )}
-            </div>
-
-            {/* Footer Actions */}
-            <div className="sticky bottom-0 bg-white border-t border-gray-100 px-4 py-3">
-              {(activeTab === 0 && selectedOrder.status === 'pending') || activeTab === 2 || (activeTab === 1 && category === 'delivery') ? (
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setShowDetailModal(false)}
-                    className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg active:bg-gray-200 transition-colors"
-                  >
-                    关闭
-                  </button>
-                  {activeTab === 0 && selectedOrder.status === 'pending' && category === 'points' && (
-                    <>
-
-                      <button
-                        onClick={() => {
-                          setShowDetailModal(false);
-                          handlePayOrder(selectedOrder.id);
-                        }}
-                        className="flex-1 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg active:bg-blue-700 transition-colors shadow-sm"
-                      >
-                        立即付款
-                      </button>
-                    </>
-                  )}
-                  {(activeTab === 2 && category === 'points') || (activeTab === 1 && category === 'delivery') ? (
-                    <button
-                      onClick={() => {
-                        setShowDetailModal(false);
-                        handleConfirmReceipt(selectedOrder.id);
-                      }}
-                      className="flex-1 px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg active:bg-blue-700 transition-colors shadow-sm"
-                    >
-                      确认收货
-                    </button>
-                  ) : null}
-                </div>
-              ) : (
-                <button
-                  onClick={() => setShowDetailModal(false)}
-                  className="w-full px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg active:bg-blue-700 transition-colors shadow-sm"
-                >
-                  关闭
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
       {/* Consignment Detail Modal */}
       {showConsignmentDetailModal && selectedConsignmentDetail && (
         <div

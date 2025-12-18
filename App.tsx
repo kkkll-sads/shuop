@@ -49,6 +49,8 @@ import MasterpieceShowcase from './pages/market/MasterpieceShowcase';
 import ReservationPage from './pages/market/ReservationPage';
 import ReservationRecordPage from './pages/market/ReservationRecordPage';
 import PointsProductDetail from './pages/market/PointsProductDetail';
+import Cashier from './pages/market/Cashier';
+import OrderDetail from './pages/market/OrderDetail';
 
 // Wallet pages
 import AssetView from './pages/wallet/AssetView';
@@ -65,6 +67,9 @@ import MyCollectionDetail from './pages/wallet/MyCollectionDetail';
 import ClaimStation from './pages/wallet/ClaimStation';
 import HashrateExchange from './pages/wallet/HashrateExchange';
 import { RealNameRequiredModal } from './components/common';
+import { NotificationProvider } from './context/NotificationContext';
+import { GlobalNotificationSystem } from './components/common/GlobalNotificationSystem';
+import './styles/notifications.css';
 
 const STORAGE_KEY = 'cat_read_news_ids';
 const AUTH_KEY = 'cat_is_logged_in';
@@ -82,7 +87,7 @@ const saveReadNewsIds = (ids: string[]) => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
 };
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
   // Auth State (using useAuth hook)
   const { isLoggedIn: isLoggedInFromHook, isRealNameVerified, login: loginFromHook, updateRealNameStatus } = useAuth();
 
@@ -436,6 +441,7 @@ const App: React.FC = () => {
           category={category}
           initialTab={parseInt(tabIndex, 10)}
           onBack={() => setSubPage(null)}
+          onNavigate={(page) => setSubPage(page)}
         />
       );
     }
@@ -632,6 +638,30 @@ const App: React.FC = () => {
       return null; // Will be handled by useEffect below
     }
 
+    // Handle Cashier Page: "cashier:ORDER_ID"
+    if (subPage?.startsWith('cashier:')) {
+      const orderId = subPage.split(':')[1];
+      return (
+        <Cashier
+          orderId={orderId}
+          onBack={() => setSubPage(null)}
+          onNavigate={(page) => setSubPage(page)}
+        />
+      );
+    }
+
+    // Handle Order Detail Page: "order-detail:ORDER_ID"
+    if (subPage?.startsWith('order-detail:')) {
+      const orderId = subPage.split(':')[1];
+      return (
+        <OrderDetail
+          orderId={orderId}
+          onBack={() => setSubPage(null)} // Or setSubPage('orders')? Null is safer for history stack nature
+          onNavigate={(page) => setSubPage(page)}
+        />
+      );
+    }
+
     // Tab Routing
     switch (activeTab) {
       case 'home':
@@ -659,6 +689,7 @@ const App: React.FC = () => {
         );
     }
   };
+
 
   return (
     <div className="bg-gray-100 min-h-screen font-sans antialiased text-gray-900 max-w-md mx-auto relative shadow-2xl">
@@ -726,7 +757,16 @@ const App: React.FC = () => {
           }}
         />
       )}
+      <GlobalNotificationSystem />
     </div>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <NotificationProvider>
+      <AppContent />
+    </NotificationProvider>
   );
 };
 

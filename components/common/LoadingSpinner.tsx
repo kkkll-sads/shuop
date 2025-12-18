@@ -12,15 +12,15 @@
  */
 
 import React from 'react';
-import { Loader2 } from 'lucide-react';
 
 /**
  * LoadingSpinner 组件属性接口
  */
 interface LoadingSpinnerProps {
     /** 加载器尺寸，默认 'md' */
-    size?: 'sm' | 'md' | 'lg';
+    size?: 'sm' | 'md' | 'lg' | number;
     /** 加载提示文字，可选 */
+    color?: string;
     text?: string;
     /** 是否全屏显示，默认 false */
     fullScreen?: boolean;
@@ -33,13 +33,16 @@ interface LoadingSpinnerProps {
  * @param size - 尺寸类型
  * @returns 包含类名和图标大小的对象
  */
-const getSizeConfig = (size: 'sm' | 'md' | 'lg') => {
+const getSizeConfig = (size: 'sm' | 'md' | 'lg' | number) => {
+    if (typeof size === 'number') {
+        return { iconSize: size, textClass: 'text-sm', gapClass: 'gap-2' };
+    }
     const sizeMap = {
         sm: { iconSize: 16, textClass: 'text-xs', gapClass: 'gap-1' },
         md: { iconSize: 24, textClass: 'text-sm', gapClass: 'gap-2' },
         lg: { iconSize: 32, textClass: 'text-base', gapClass: 'gap-3' },
     };
-    return sizeMap[size];
+    return sizeMap[size] || sizeMap.md;
 };
 
 /**
@@ -60,6 +63,7 @@ const getSizeConfig = (size: 'sm' | 'md' | 'lg') => {
 const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
     size = 'md',
     text,
+    color,
     fullScreen = false,
     className = '',
 }) => {
@@ -71,14 +75,25 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
         ? 'fixed inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50'
         : `flex items-center justify-center ${gapClass} ${className}`;
 
+    const spinnerColor = color || "currentColor";
+
     return (
         <div className={containerClass}>
-            {/* 旋转的加载图标 */}
-            <Loader2
-                size={iconSize}
-                className="animate-spin text-orange-500"
+            {/* 旋转的加载图标 - SVG */}
+            <svg
+                width={iconSize}
+                height={iconSize}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke={spinnerColor}
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className={`animate-spin ${!color && 'text-orange-500'}`}
                 aria-hidden="true"
-            />
+            >
+                <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+            </svg>
 
             {/* 加载提示文字 */}
             {text && (

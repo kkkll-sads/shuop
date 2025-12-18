@@ -7,11 +7,13 @@
  * @version 2.0.0
  */
 
+
 import React, { useState } from 'react';
 import { Eye, EyeOff, User, Lock, Check } from 'lucide-react';
 import { login as loginApi, LoginParams } from '../../services/api';
 import { LoginSuccessPayload } from '../../types';
 import { isValidPhone } from '../../utils/validation';
+import { useNotification } from '../../context/NotificationContext';
 
 /**
  * Login 组件属性接口
@@ -34,6 +36,7 @@ const Login: React.FC<LoginProps> = ({
   onNavigatePrivacyPolicy,
   onNavigateForgotPassword,
 }) => {
+  const { showToast } = useNotification();
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [agreed, setAgreed] = useState(false);
@@ -48,12 +51,12 @@ const Login: React.FC<LoginProps> = ({
    */
   const handleSendCode = () => {
     if (!phone) {
-      alert('请输入手机号');
+      showToast('warning', '请输入手机号');
       return;
     }
     const phoneValidation = isValidPhone(phone);
     if (!phoneValidation.valid) {
-      alert(phoneValidation.message);
+      showToast('warning', '手机号错误', phoneValidation.message);
       return;
     }
 
@@ -69,7 +72,7 @@ const Login: React.FC<LoginProps> = ({
       });
     }, 1000);
 
-    alert('验证码已发送（模拟）');
+    showToast('success', '验证码已发送', '请查收（模拟）');
   };
 
   /**
@@ -77,29 +80,29 @@ const Login: React.FC<LoginProps> = ({
    */
   const handleLogin = async () => {
     if (!phone) {
-      alert('请输入手机号');
+      showToast('warning', '请输入手机号');
       return;
     }
 
     if (loginType === 'password' && !password) {
-      alert('请输入密码');
+      showToast('warning', '请输入密码');
       return;
     }
 
     if (loginType === 'code' && !verifyCode) {
-      alert('请输入验证码');
+      showToast('warning', '请输入验证码');
       return;
     }
 
     if (!agreed) {
-      alert('请阅读并同意用户协议');
+      showToast('warning', '请阅读并同意用户协议');
       return;
     }
 
     // 使用验证工具函数
     const phoneValidation = isValidPhone(phone);
     if (!phoneValidation.valid) {
-      alert(phoneValidation.message);
+      showToast('warning', '手机号错误', phoneValidation.message);
       return;
     }
 
@@ -112,7 +115,7 @@ const Login: React.FC<LoginProps> = ({
 
       if (loginType === 'code') {
         // 模拟验证码登录
-        alert('验证码登录暂未对接后端API');
+        showToast('info', '暂未支持', '验证码登录暂未对接后端API');
         setLoading(false);
         return;
       }
@@ -123,26 +126,26 @@ const Login: React.FC<LoginProps> = ({
       if (response.code === 1) {
         const token = response.data?.userInfo?.token;
         if (!token) {
-          alert('登录成功，但未获取到 token，无法继续');
+          showToast('error', '登录异常', '登录成功，但未获取到 token，无法继续');
           return;
         }
-        alert(response.msg || '登录成功');
+        showToast('success', '登录成功', response.msg);
         onLogin({
           token,
           userInfo: response.data?.userInfo || null,
         });
       } else {
         const errorMsg = response.msg || response.message || '登录失败，请稍后重试';
-        alert(errorMsg);
+        showToast('error', '登录失败', errorMsg);
       }
     } catch (error: any) {
       console.error('登录失败:', error);
       if (error.isCorsError) {
-        alert(error.message);
+        showToast('error', '网络错误', error.message);
       } else if (error.message) {
-        alert(`登录失败: ${error.message}`);
+        showToast('error', '登录失败', error.message);
       } else {
-        alert('登录失败，请检查网络连接后重试');
+        showToast('error', '登录失败', '请检查网络连接后重试');
       }
     } finally {
       if (loginType !== 'code') {

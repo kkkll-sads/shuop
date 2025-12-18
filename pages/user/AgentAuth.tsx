@@ -7,6 +7,7 @@
  * @version 2.0.0
  */
 
+
 import React, { useEffect, useState } from 'react';
 import { Building2, User, IdCard, Image as ImageIcon } from 'lucide-react';
 import PageContainer from '../../components/layout/PageContainer';
@@ -19,6 +20,7 @@ import {
   uploadImage,
   normalizeAssetUrl,
 } from '../../services/api';
+import { useNotification } from '../../context/NotificationContext';
 
 /**
  * AgentAuth 组件属性接口
@@ -31,6 +33,7 @@ interface AgentAuthProps {
  * AgentAuth 代理商申请页面组件
  */
 const AgentAuth: React.FC<AgentAuthProps> = ({ onBack }) => {
+  const { showToast } = useNotification();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [uploadingLicense, setUploadingLicense] = useState(false);
@@ -92,10 +95,11 @@ const AgentAuth: React.FC<AgentAuthProps> = ({ onBack }) => {
     e.target.value = '';
     if (!file) return;
 
+
     try {
       setUploadingLicense(true);
       const res = await uploadImage(file);
-      const data = res.data || {};
+      const data = (res.data || {}) as any;
       const path = data.url || data.path || data.filepath || '';
       const fullUrl = data.fullurl || data.fullUrl || data.url || path;
 
@@ -106,10 +110,11 @@ const AgentAuth: React.FC<AgentAuthProps> = ({ onBack }) => {
       setLicenseImagePath(path || fullUrl);
       const previewUrl = normalizeAssetUrl(fullUrl || path);
       setLicensePreview(previewUrl);
+      showToast('success', '上传成功');
     } catch (err: any) {
       console.error('营业执照上传失败:', err);
       const errorMsg = err?.msg || err?.response?.msg || err?.message || '营业执照上传失败，请稍后重试';
-      alert(errorMsg);
+      showToast('error', '上传失败', errorMsg);
     } finally {
       setUploadingLicense(false);
     }
@@ -135,7 +140,9 @@ const AgentAuth: React.FC<AgentAuthProps> = ({ onBack }) => {
         token,
       });
       if (res?.msg) {
-        alert(res.msg);
+        showToast(res.code === 1 ? 'success' : 'info', '提示', res.msg);
+      } else {
+        showToast('success', '提交成功');
       }
 
       // 刷新状态
@@ -150,7 +157,7 @@ const AgentAuth: React.FC<AgentAuthProps> = ({ onBack }) => {
     } catch (e: any) {
       console.error('提交代理商申请失败:', e);
       const errorMsg = e?.msg || e?.response?.msg || e?.message || '提交代理商申请失败，请稍后重试';
-      alert(errorMsg);
+      showToast('error', '提交失败', errorMsg);
     } finally {
       setSubmitting(false);
     }

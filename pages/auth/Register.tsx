@@ -7,11 +7,13 @@
  * @version 2.0.0
  */
 
+
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, XCircle, User, Lock, Smartphone, CreditCard, ShieldCheck, Check } from 'lucide-react';
 import { register, RegisterParams } from '../../services/api';
 import { sendSmsCode } from '../../services/common';
 import { isValidPhone } from '../../utils/validation';
+import { useNotification } from '../../context/NotificationContext';
 
 /**
  * Register 组件属性接口
@@ -32,6 +34,8 @@ const Register: React.FC<RegisterProps> = ({
   onNavigateUserAgreement,
   onNavigatePrivacyPolicy,
 }) => {
+  const { showToast } = useNotification();
+
   /**
    * 从URL参数中获取邀请码
    */
@@ -64,7 +68,7 @@ const Register: React.FC<RegisterProps> = ({
   const handleSendCode = async () => {
     const phoneValidation = isValidPhone(phone);
     if (!phoneValidation.valid) {
-      alert(phoneValidation.message);
+      showToast('warning', '手机号错误', phoneValidation.message);
       return;
     }
 
@@ -73,7 +77,7 @@ const Register: React.FC<RegisterProps> = ({
         mobile: phone,
         event: 'register'
       });
-      alert('验证码已发送');
+      showToast('success', '验证码已发送');
       setCountdown(60);
       const timer = setInterval(() => {
         setCountdown((prev) => {
@@ -86,7 +90,7 @@ const Register: React.FC<RegisterProps> = ({
       }, 1000);
     } catch (error: any) {
       const msg = error.msg || error.message || '发送验证码失败';
-      alert(msg);
+      showToast('error', '验证码发送失败', msg);
     }
   };
 
@@ -95,18 +99,18 @@ const Register: React.FC<RegisterProps> = ({
    */
   const handleRegister = async () => {
     if (!phone || !password || !payPassword || !verifyCode) {
-      alert('请填写完整信息');
+      showToast('warning', '请填写完整信息');
       return;
     }
     if (!agreed) {
-      alert('请阅读并同意用户协议');
+      showToast('warning', '请阅读并同意用户协议');
       return;
     }
 
     // 使用验证工具函数验证手机号
     const phoneValidation = isValidPhone(phone);
     if (!phoneValidation.valid) {
-      alert(phoneValidation.message);
+      showToast('warning', '手机号错误', phoneValidation.message);
       return;
     }
 
@@ -124,20 +128,20 @@ const Register: React.FC<RegisterProps> = ({
       console.log('注册接口响应:', response);
 
       if (response.code === 1) {
-        alert('注册成功！');
+        showToast('success', '注册成功', '正在登录...');
         onRegisterSuccess();
       } else {
         const errorMsg = response.msg || response.message || '注册失败，请稍后重试';
-        alert(errorMsg);
+        showToast('error', '注册失败', errorMsg);
       }
     } catch (error: any) {
       console.error('注册失败:', error);
       if (error.isCorsError) {
-        alert(error.message);
+        showToast('error', '网络错误', error.message);
       } else if (error.message) {
-        alert(`注册失败: ${error.message}`);
+        showToast('error', '注册失败', error.message);
       } else {
-        alert('注册失败，请检查网络连接后重试');
+        showToast('error', '注册失败', '请检查网络连接后重试');
       }
     } finally {
       setLoading(false);

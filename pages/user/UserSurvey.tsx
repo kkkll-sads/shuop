@@ -7,10 +7,12 @@
  * @version 2.0.0
  */
 
+
 import React, { useState } from 'react';
 import PageContainer from '../../components/layout/PageContainer';
 import { ResultModal } from '../../components/common';
 import { useModal } from '../../hooks';
+import { useNotification } from '../../context/NotificationContext';
 
 /**
  * UserSurvey 组件属性接口
@@ -34,6 +36,7 @@ const FREQUENCY_OPTIONS = [
  * UserSurvey 用户问卷页面组件
  */
 const UserSurvey: React.FC<UserSurveyProps> = ({ onBack }) => {
+  const { showToast } = useNotification();
   const [rating, setRating] = useState<number | null>(null);
   const [useFrequency, setUseFrequency] = useState('');
   const [suggestion, setSuggestion] = useState('');
@@ -47,7 +50,7 @@ const UserSurvey: React.FC<UserSurveyProps> = ({ onBack }) => {
    */
   const handleSubmit = () => {
     if (!rating) {
-      alert('请先选择整体满意度');
+      showToast('warning', '请评分', '请先选择整体满意度');
       return;
     }
     setSubmitted(true);

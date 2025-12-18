@@ -8,6 +8,7 @@
  * @version 2.0.0
  */
 
+
 import React, { useEffect, useState } from 'react';
 import { ShieldCheck, Clock, CheckCircle, AlertCircle, UserCheck } from 'lucide-react';
 import PageContainer from '../../components/layout/PageContainer';
@@ -23,6 +24,8 @@ import {
   H5AuthTokenResult,
 } from '../../services/api';
 import { formatIdCard } from '../../utils/format';
+import { useNotification } from '../../context/NotificationContext';
+
 
 /**
  * RealNameAuth 组件属性接口
@@ -31,10 +34,12 @@ interface RealNameAuthProps {
   onBack: () => void;
 }
 
+
 /**
  * RealNameAuth 实名认证页面组件
  */
 const RealNameAuth: React.FC<RealNameAuthProps> = ({ onBack }) => {
+  const { showToast } = useNotification();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [verifying, setVerifying] = useState(false);
@@ -96,17 +101,17 @@ const RealNameAuth: React.FC<RealNameAuthProps> = ({ onBack }) => {
 
         // 调用校验接口获取核身结果
         const recheckRes = await h5Recheck({ authToken, token });
-        
+
         if (recheckRes.code === 1 || typeof recheckRes.code === 'undefined') {
           // 后端返回的数据在 data 字段中
           const result = recheckRes.data as H5RecheckResult;
-          
+
           if (!result) {
             setError('获取核身结果失败，返回数据为空');
             setLoading(false);
             return;
           }
-          
+
           if (result.status === 1) {
             // 核身通过，提交实名认证
             await submitRealNameWithAuthToken(authToken, token);
@@ -204,7 +209,7 @@ const RealNameAuth: React.FC<RealNameAuthProps> = ({ onBack }) => {
   const submitRealNameWithAuthToken = async (authToken: string, token: string) => {
     try {
       setSubmitting(true);
-      
+
       const res = await submitRealName({
         auth_token: authToken,
         token,
@@ -212,20 +217,20 @@ const RealNameAuth: React.FC<RealNameAuthProps> = ({ onBack }) => {
 
       const success = res?.code === 1 || typeof res?.code === 'undefined';
       const message = res?.msg || (success ? '实名认证提交成功，请等待审核' : '提交实名认证失败，请稍后重试');
-      
+
       if (success) {
-        alert(message);
+        showToast('success', '提交成功', message);
         // 刷新状态
         await loadRealNameStatus();
       } else {
         setError(message);
-        alert(message);
+        showToast('error', '提交失败', message);
       }
     } catch (e: any) {
       console.error('提交实名认证失败:', e);
       const errorMsg = e?.msg || e?.response?.msg || e?.message || '提交实名认证失败，请稍后重试';
       setError(errorMsg);
-      alert(errorMsg);
+      showToast('error', '提交失败', errorMsg);
     } finally {
       setSubmitting(false);
     }
@@ -277,7 +282,7 @@ const RealNameAuth: React.FC<RealNameAuthProps> = ({ onBack }) => {
         // 后端返回的数据在 data 字段中
         const data = res.data as H5AuthTokenResult;
         const authUrl = data?.authUrl;
-        
+
         if (!authUrl) {
           setError('获取认证地址失败，返回数据为空');
           setVerifying(false);
@@ -402,7 +407,7 @@ const RealNameAuth: React.FC<RealNameAuthProps> = ({ onBack }) => {
               </div>
 
               {/* 人脸核身说明 */}
-            
+
 
               {/* 提交按钮 */}
               <button

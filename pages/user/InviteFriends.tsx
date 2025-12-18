@@ -7,11 +7,13 @@
  * @version 2.0.0
  */
 
+
 import React, { useState, useEffect } from 'react';
 import { Copy, Share2 } from 'lucide-react';
 import PageContainer from '../../components/layout/PageContainer';
 import { LoadingSpinner } from '../../components/common';
 import { fetchPromotionCard, AUTH_TOKEN_KEY } from '../../services/api';
+import { useNotification } from '../../context/NotificationContext';
 
 /**
  * InviteFriends 组件属性接口
@@ -24,6 +26,7 @@ interface InviteFriendsProps {
  * InviteFriends 邀请好友页面组件
  */
 const InviteFriends: React.FC<InviteFriendsProps> = ({ onBack }) => {
+    const { showToast } = useNotification();
     const [inviteCode, setInviteCode] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -73,7 +76,7 @@ const InviteFriends: React.FC<InviteFriendsProps> = ({ onBack }) => {
     const copyToClipboard = async (text: string, type: 'code' | 'link') => {
         try {
             await navigator.clipboard.writeText(text);
-            alert(`${type === 'code' ? '邀请码' : '链接'}已复制!`);
+            showToast('success', `${type === 'code' ? '邀请码' : '链接'}已复制!`);
         } catch (err) {
             console.error('Failed to copy:', err);
             // 降级方案
@@ -83,9 +86,10 @@ const InviteFriends: React.FC<InviteFriendsProps> = ({ onBack }) => {
             textArea.select();
             try {
                 document.execCommand('copy');
-                alert(`${type === 'code' ? '邀请码' : '链接'}已复制!`);
+                showToast('success', `${type === 'code' ? '邀请码' : '链接'}已复制!`);
             } catch (err) {
                 console.error('Fallback copy failed', err);
+                showToast('error', '复制失败，请手动复制');
             }
             document.body.removeChild(textArea);
         }
@@ -163,10 +167,11 @@ const InviteFriends: React.FC<InviteFriendsProps> = ({ onBack }) => {
                         if (inviteLink) {
                             copyToClipboard(inviteLink, 'link');
                         } else {
-                            alert('邀请码加载中，请稍后再试');
+                            showToast('warning', '邀请码加载中，请稍后再试');
                         }
                     }}
                     disabled={!inviteLink}
+
                     className="w-full max-w-xs bg-gradient-to-r from-orange-500 to-orange-600 text-white py-4 rounded-2xl font-bold text-lg shadow-lg shadow-orange-200 flex items-center justify-center gap-3 active:scale-95 transition-transform z-10 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     <Share2 size={22} />

@@ -384,7 +384,7 @@ export async function confirmOrder(params: { id: number | string; token?: string
 export async function payOrder(params: { id: number | string; token?: string }): Promise<ApiResponse> {
     const token = params.token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
     const payload = new FormData();
-    payload.append('id', String(params.id));
+    payload.append('order_id', String(params.id));
 
     return apiFetch(API_ENDPOINTS.shopOrder.pay, {
         method: 'POST', body: payload, token

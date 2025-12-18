@@ -1,9 +1,11 @@
 
 import React, { useEffect, useState } from 'react';
 import { ChevronLeft, Zap, Radar, CheckCircle, Shield, AlertTriangle, X, Wallet, CreditCard, Banknote } from 'lucide-react';
+
 import { PageContainer, LoadingSpinner } from '../../components/common'; // Assuming common exports
 import { fetchCompanyAccountList, CompanyAccountItem, submitRechargeOrder } from '../../services/api';
 import { toast } from 'react-hot-toast'; // Assuming toast usage or replace with alert
+import { useNotification } from '../../context/NotificationContext';
 
 interface BalanceRechargeProps {
   onBack: () => void;
@@ -19,9 +21,12 @@ const PAYMENT_METHODS = [
 ];
 
 const BalanceRecharge: React.FC<BalanceRechargeProps> = ({ onBack, onNavigate }) => {
+
   // Common State
   const [amount, setAmount] = useState<string>('');
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
+
+  const { showToast } = useNotification();
 
   // Matching State
   const [isMatching, setIsMatching] = useState(false);
@@ -52,11 +57,11 @@ const BalanceRecharge: React.FC<BalanceRechargeProps> = ({ onBack, onNavigate })
 
   const startMatching = () => {
     if (!amount || Number(amount) <= 0) {
-      alert('请输入申购金额');
+      showToast('warning', '输入有误', '请输入申购金额');
       return;
     }
     if (!selectedMethod) {
-      alert('请选择支付方式');
+      showToast('warning', '请选择', '请选择支付方式');
       return;
     }
 

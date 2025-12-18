@@ -12,7 +12,9 @@ import {
   USER_INFO_KEY,
   normalizeAssetUrl,
 } from '../../services/api';
+
 import { UserInfo } from '../../types';
+import { useNotification } from '../../context/NotificationContext';
 
 interface MyCollectionProps {
   onBack: () => void;
@@ -300,12 +302,15 @@ const MyCollection: React.FC<MyCollectionProps> = ({ onBack, onItemSelect }) => 
     }
   };
 
+
+  const { showToast, showDialog } = useNotification();
+
   const handleConfirmAction = () => {
     if (!selectedItem || actionLoading) return;
 
     const token = localStorage.getItem(AUTH_TOKEN_KEY);
     if (!token) {
-      alert('请先登录后再进行操作');
+      showToast('warning', '请登录', '请先登录后再进行操作');
       return;
     }
 
@@ -316,53 +321,34 @@ const MyCollection: React.FC<MyCollectionProps> = ({ onBack, onItemSelect }) => 
 
     const collectionId = resolveCollectionId(selectedItem);
     if (collectionId === undefined || collectionId === null) {
-      alert('无法获取藏品ID，无法继续操作');
+      showToast('error', '错误', '无法获取藏品ID，无法继续操作');
       return;
     }
 
     if (actionTab === 'delivery') {
       if (isConsigning(selectedItem)) {
-        alert('该藏品正在寄售中，无法提货');
+        showToast('warning', '提示', '该藏品正在寄售中，无法提货');
         return;
       }
 
       if (hasConsignedSuccessfully(selectedItem)) {
-        alert('该藏品已经寄售成功（已售出），无法提货');
+        showToast('warning', '提示', '该藏品已经寄售成功（已售出），无法提货');
         return;
       }
 
       if (isDelivered(selectedItem)) {
-        alert('该藏品已经提货，无法再次提货');
+        showToast('warning', '提示', '该藏品已经提货，无法再次提货');
         return;
       }
 
       const timeCheck = check48Hours(selectedItem.pay_time || selectedItem.buy_time || 0);
       if (!timeCheck.passed) {
-        alert(`提货需要满足购买后48小时，还需等待 ${timeCheck.hoursLeft} 小时`);
+        showToast('warning', '时间未到', `提货需要满足购买后48小时，还需等待 ${timeCheck.hoursLeft} 小时`);
         return;
       }
 
       const hasConsigned = hasConsignedBefore(selectedItem);
-      if (hasConsigned) {
-        if (confirm('该藏品曾经寄售过，确定要强制提货吗？')) {
-          setActionLoading(true);
-          deliverCollectionItem({
-            user_collection_id: collectionId,
-            address_id: null,
-            token,
-          })
-            .then((res) => {
-              alert(res.msg || '提货申请已提交');
-              setShowActionModal(false);
-              setSelectedItem(null);
-              runLoad();
-            })
-            .catch((err: any) => {
-              alert(err?.msg || err?.message || '提货申请失败');
-            })
-            .finally(() => setActionLoading(false));
-        }
-      } else {
+      const doDelivery = () => {
         setActionLoading(true);
         deliverCollectionItem({
           user_collection_id: collectionId,
@@ -370,36 +356,48 @@ const MyCollection: React.FC<MyCollectionProps> = ({ onBack, onItemSelect }) => 
           token,
         })
           .then((res) => {
-            alert(res.msg || '提货申请已提交');
+            showToast('success', '提交成功', res.msg || '提货申请已提交');
             setShowActionModal(false);
             setSelectedItem(null);
             runLoad();
           })
           .catch((err: any) => {
-            alert(err?.msg || err?.message || '提货申请失败');
+            showToast('error', '提交失败', err?.msg || err?.message || '提货申请失败');
           })
           .finally(() => setActionLoading(false));
+      };
+
+      if (hasConsigned) {
+        showDialog({
+          title: '强制提货确认',
+          description: '该藏品曾经寄售过，确定要强制提货吗？',
+          confirmText: '确定提货',
+          cancelText: '取消',
+          onConfirm: doDelivery
+        });
+      } else {
+        doDelivery();
       }
     } else {
       if (isConsigning(selectedItem)) {
-        alert('该藏品正在寄售中，无法再次寄售');
+        showToast('warning', '提示', '该藏品正在寄售中，无法再次寄售');
         return;
       }
 
       if (hasConsignedSuccessfully(selectedItem)) {
-        alert('该藏品已经寄售成功（已售出），无法再次寄售');
+        showToast('warning', '提示', '该藏品已经寄售成功（已售出），无法再次寄售');
         return;
       }
 
       const timeCheck = check48Hours(selectedItem.pay_time || selectedItem.buy_time || 0);
       if (!timeCheck.passed) {
-        alert(`寄售需要满足购买后48小时，还需等待 ${timeCheck.hoursLeft} 小时`);
+        showToast('warning', '时间未到', `寄售需要满足购买后48小时，还需等待 ${timeCheck.hoursLeft} 小时`);
         return;
       }
 
       const hasTicket = checkConsignmentTicket();
       if (!hasTicket) {
-        alert('您没有寄售券，无法进行寄售');
+        showToast('warning', '缺少道具', '您没有寄售券，无法进行寄售');
         return;
       }
 
@@ -417,7 +415,7 @@ const MyCollection: React.FC<MyCollectionProps> = ({ onBack, onItemSelect }) => 
         token,
       })
         .then((res) => {
-          alert(res.msg || '寄售申请已提交');
+          showToast('success', '提交成功', res.msg || '寄售申请已提交');
           setShowActionModal(false);
           setSelectedItem(null);
           runLoad();

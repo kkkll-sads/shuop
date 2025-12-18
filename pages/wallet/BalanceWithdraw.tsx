@@ -9,12 +9,15 @@ import {
   USER_INFO_KEY,
 } from '../../services/api';
 
+import { useNotification } from '../../context/NotificationContext';
+
 interface BalanceWithdrawProps {
   onBack: () => void;
   onNavigate?: (page: string) => void;
 }
 
 const BalanceWithdraw: React.FC<BalanceWithdrawProps> = ({ onBack, onNavigate }) => {
+  const { showToast } = useNotification();
   const [accounts, setAccounts] = useState<PaymentAccountItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -23,9 +26,11 @@ const BalanceWithdraw: React.FC<BalanceWithdrawProps> = ({ onBack, onNavigate })
   const [showPasswordModal, setShowPasswordModal] = useState<boolean>(false);
   const [amount, setAmount] = useState<string>('');
   const [payPassword, setPayPassword] = useState<string>('');
+  const [remark, setRemark] = useState<string>('');
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [balance, setBalance] = useState<string>('0.00');
+
   const [loadingBalance, setLoadingBalance] = useState<boolean>(false);
 
   // 费率
@@ -101,9 +106,10 @@ const BalanceWithdraw: React.FC<BalanceWithdrawProps> = ({ onBack, onNavigate })
         amount: parseFloat(amount),
         payment_account_id: selectedAccount!.id,
         pay_password: payPassword,
+        remark: remark
       });
       if (res.code === 1) {
-        alert(res.msg || '提现申请提交成功');
+        showToast('success', '提交成功', res.msg || '提现申请提交成功');
         setAmount('');
         setPayPassword('');
         setSelectedAccount(null);
@@ -203,11 +209,23 @@ const BalanceWithdraw: React.FC<BalanceWithdrawProps> = ({ onBack, onNavigate })
                 {selectedAccount ? (selectedAccount.account_name || '已选账户') : '选择收款账户'}
               </div>
               <div className="text-xs text-gray-500 mt-0.5">
-                {selectedAccount ? `${selectedAccount.type_text} (${selectedAccount.account.slice(-4)})` : '点击选择绑定的银行卡/支付宝'}
+                {selectedAccount ? `${selectedAccount.type_text} (${selectedAccount.account?.slice(-4) || '****'})` : '点击选择绑定的银行卡/支付宝'}
               </div>
             </div>
           </div>
           <ChevronRight size={18} className="text-gray-300" />
+        </div>
+
+        {/* Remark Input */}
+        <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3">
+          <div className="text-sm font-bold text-gray-900 w-16">备注</div>
+          <input
+            type="text"
+            value={remark}
+            onChange={(e) => setRemark(e.target.value)}
+            placeholder="请输入提现备注 (选填)"
+            className="flex-1 text-sm text-gray-900 outline-none placeholder:text-gray-400"
+          />
         </div>
 
         {submitError && (

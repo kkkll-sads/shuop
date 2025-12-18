@@ -10,7 +10,9 @@ import {
   USER_INFO_KEY,
 } from '../../services/api';
 import { UserInfo } from '../../types';
+
 import { formatAmount } from '../../utils/format';
+import { useNotification } from '../../context/NotificationContext';
 
 interface ExtensionWithdrawProps {
   onBack: () => void;
@@ -18,6 +20,7 @@ interface ExtensionWithdrawProps {
 }
 
 const ExtensionWithdraw: React.FC<ExtensionWithdrawProps> = ({ onBack, onNavigate }) => {
+  const { showToast } = useNotification();
   const [userInfo, setUserInfo] = useState<UserInfo | null>(() => {
     try {
       const cached = localStorage.getItem(USER_INFO_KEY);
@@ -149,7 +152,7 @@ const ExtensionWithdraw: React.FC<ExtensionWithdrawProps> = ({ onBack, onNavigat
       });
 
       if (response.code === 1) {
-        alert(response.msg || '提现申请已提交，请等待审核');
+        showToast('success', '提交成功', response.msg || '提现申请已提交，请等待审核');
         setAmount('');
         setPayPassword('');
         setRemark('');

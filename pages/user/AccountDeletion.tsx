@@ -8,11 +8,13 @@
  * @version 2.0.0
  */
 
+
 import React, { useState } from 'react';
 import PageContainer from '../../components/layout/PageContainer';
 import { ConfirmModal } from '../../components/common';
 import { AUTH_TOKEN_KEY, USER_INFO_KEY, cancelAccount } from '../../services/api';
 import { useModal } from '../../hooks';
+import { useNotification } from '../../context/NotificationContext';
 
 /**
  * AccountDeletion 组件属性接口
@@ -33,6 +35,7 @@ const tips = [
  * AccountDeletion 账户注销页面组件
  */
 const AccountDeletion: React.FC<AccountDeletionProps> = ({ onBack }) => {
+  const { showToast } = useNotification();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [reason, setReason] = useState('');
@@ -90,12 +93,13 @@ const AccountDeletion: React.FC<AccountDeletionProps> = ({ onBack }) => {
       localStorage.removeItem(AUTH_TOKEN_KEY);
       localStorage.removeItem(USER_INFO_KEY);
 
-      alert(response?.msg || '您的注销申请已提交，我们将尽快处理。');
+      showToast('success', '提交成功', response?.msg || '您的注销申请已提交，我们将尽快处理。');
       onBack();
     } catch (err: any) {
       const message =
         err?.msg || err?.message || err?.data?.msg || '提交注销申请失败，请稍后重试';
       setError(message);
+      showToast('error', '注销失败', message);
     } finally {
       setLoading(false);
     }

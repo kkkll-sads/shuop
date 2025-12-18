@@ -351,8 +351,10 @@ export interface SubmitWithdrawParams {
 export async function submitWithdraw(params: SubmitWithdrawParams): Promise<ApiResponse> {
     const token = params.token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
     const payload = new FormData();
-    payload.append('user_account_id', String(params.payment_id || params.payment_account_id));
-    payload.append('money', String(params.amount));
+    // New API: payment_account_id, amount
+    payload.append('payment_account_id', String(params.payment_account_id || params.payment_id));
+    payload.append('amount', String(params.amount));
+
     if (params.pay_password) payload.append('pay_password', params.pay_password);
     if (params.remark) payload.append('remark', params.remark);
 

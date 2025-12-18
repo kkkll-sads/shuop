@@ -16,7 +16,11 @@ interface ClaimRecord {
     reason?: string;
 }
 
+
+import { useNotification } from '../../context/NotificationContext';
+
 const ClaimStation: React.FC<ClaimStationProps> = ({ onBack }) => {
+    const { showToast } = useNotification();
     // 1: 实名, 2: 凭证, 3: 审核, 4: 结果
     const [step] = useState(2);
     const [form, setForm] = useState({
@@ -66,18 +70,18 @@ const ClaimStation: React.FC<ClaimStationProps> = ({ onBack }) => {
             setForm(prev => ({ ...prev, images: [...prev.images, ...newImages] }));
 
             if (newFiles.length > remainingSlots) {
-                alert('最多只能上传8张凭证');
+                showToast('warning', '数量限制', '最多只能上传8张凭证');
             }
         }
     };
 
     const handleSubmit = () => {
         if (!form.amount || parseFloat(form.amount) <= 0) {
-            alert('请输入有效的确权金额');
+            showToast('warning', '输入有误', '请输入有效的确权金额');
             return;
         }
         if (form.images.length === 0) {
-            alert('请上传凭证截图');
+            showToast('warning', '缺少凭证', '请上传凭证截图');
             return;
         }
 
@@ -92,7 +96,7 @@ const ClaimStation: React.FC<ClaimStationProps> = ({ onBack }) => {
                 time: new Date().toLocaleString('zh-CN', { hour12: false }).replace(/\//g, '-').slice(0, 16)
             };
             setHistory([newRecord, ...history]);
-            alert('提交成功！请等待人工复核');
+            showToast('success', '提交成功', '提交成功！请等待人工复核');
             setForm({ type: 'screenshot', amount: '', images: [] });
         }, 1500);
     };

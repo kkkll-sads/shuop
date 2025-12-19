@@ -322,12 +322,12 @@ export interface SubmitRechargeOrderParams {
 export async function submitRechargeOrder(params: SubmitRechargeOrderParams): Promise<ApiResponse> {
     const token = params.token || localStorage.getItem(AUTH_TOKEN_KEY) || '';
     const payload = new FormData();
-    payload.append('recharge_id', String(params.company_account_id));
-    payload.append('money', String(params.amount));
+    payload.append('company_account_id', String(params.company_account_id));
+    payload.append('amount', String(params.amount));
 
     // 兼容不同的图片字段
     const image = params.voucher || params.payment_screenshot;
-    if (image) payload.append('image', image);
+    if (image) payload.append('payment_screenshot', image);
 
     if (params.remark) payload.append('remark', params.remark);
     if (params.payment_type) payload.append('payment_type', params.payment_type);
